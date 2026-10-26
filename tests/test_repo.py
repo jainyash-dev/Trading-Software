@@ -40,7 +40,7 @@ class Repo(unittest.TestCase):
 
     def test_root_matches_the_reel(self):
         root = sorted(d for d in os.listdir(ROOT) if not d.startswith(".git"))
-        self.assertEqual(root, sorted([".claude-plugin", "LICENSE", "README.md", "tests"] + SKILLS))
+        self.assertEqual(root, sorted([".claude-plugin", "LICENSE", "README.md", "nse", "tests"] + SKILLS))
 
     def test_frontmatter_name_and_description(self):
         for s in SKILLS:
@@ -86,9 +86,25 @@ class Repo(unittest.TestCase):
             with open(path, encoding="utf-8", errors="replace") as fh:
                 text = fh.read()
             rel = os.path.relpath(path, ROOT)
-            if not rel.startswith(os.path.join("tests", "fixtures")):  # fixtures are real data, kept as published
+            # fixtures are real data, and nse/sources holds the user's reference documents; both kept as published
+            if not rel.startswith((os.path.join("tests", "fixtures"), os.path.join("nse", "sources"))):
                 self.assertNotIn("\u2014", text, rel)
             self.assertNotIn("jakeschincariol" + "@" + "gmail.com", text, rel)  # built, so this file passes too
+
+    def test_nse_reference_sources_are_kept_verbatim(self):
+        # the em-dash exemption above covers exactly these two files, byte for byte
+        import hashlib
+        folder = os.path.join(ROOT, "nse", "sources")
+        pinned = {
+            "Demand&Supply Indicator.pine":
+                "14293fa5d3c8e5ba9309b45804a840bb5d8c43d47c193ebb6bca0480bc0a5519",
+            "Trading Rulebook 341a82c22ebf8056a235c9695e1c0d87.md":
+                "039883be6b97ca39b00e5afe80f219a5d759dae99fa9c4179475f506a275d54b",
+        }
+        self.assertEqual(sorted(os.listdir(folder)), sorted(pinned))
+        for name, digest in pinned.items():
+            with open(os.path.join(folder, name), "rb") as fh:
+                self.assertEqual(hashlib.sha256(fh.read()).hexdigest(), digest, name)
 
     def test_no_v1_only_skill_is_left_behind(self):
         for path in every_text_file():

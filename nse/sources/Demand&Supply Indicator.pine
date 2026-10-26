@@ -1,0 +1,3271 @@
+//@version=6
+indicator(title = "D&S Zone Engine", shorttitle = "D&S Zones", overlay = true, max_boxes_count = 500, max_lines_count = 500, max_labels_count = 500)
+
+group_zone = "Zone Marking Settings"
+i_show_demand = input.bool(true, "Demand Zone", group = group_zone, inline = "zones")
+i_demand_color = input.color(color.new(color.rgb(76, 175, 80), 80), "", group = group_zone, inline = "zones")
+i_show_supply = input.bool(true, "Supply Zone", group = group_zone, inline = "zones")
+i_supply_color = input.color(color.new(color.red, 80), "", group = group_zone, inline = "zones")
+i_zone_method = input.string("Body to Wick", "Zone Marking Method", options = ["Body to Wick", "Wick to Wick"], group = group_zone)
+i_max_base_candles = input.int(3, "Max Base Candles", options = [1, 2, 3, 4, 5], group = group_zone)
+i_base_threshold = input.float(0.5, "Base Body Ratio Threshold", options = [0.3, 0.4, 0.5, 0.6, 0.7], group = group_zone)
+i_legout_threshold = input.float(0.5, "Leg-Out Body Ratio Threshold", options = [0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1.0], group = group_zone)
+
+group_exceptional = "Exceptional Zones"
+i_enable_exceptional = input.bool(true, "Enable Exceptional Zone Detection", group = group_exceptional)
+i_exceptional_demand_color = input.color(color.new(color.rgb(76, 175, 80), 80), "Exceptional Demand Zone Color", group = group_exceptional)
+i_exceptional_supply_color = input.color(color.new(color.red, 80), "Exceptional Supply Zone Color", group = group_exceptional)
+
+group_border = "Zone Border Settings"
+i_only_zone_border = input.bool(false, "Only Zone Border", group = group_border)
+i_border_width = input.int(1, "Border Width", minval = 1, maxval = 3, group = group_border)
+i_border_style = input.string("Solid", "Border Style", options = ["Solid", "Dashed", "Dotted"], group = group_border)
+i_show_prox_line = input.bool(true, "Show Proximal Line", group = group_border)
+i_show_dist_line = input.bool(true, "Show Distal Line", group = group_border)
+i_zone_line_width = input.int(1, "Zone Line Width", minval = 1, maxval = 3, group = group_border)
+i_zone_line_style = input.string("Solid", "Zone Line Style", options = ["Solid", "Dashed", "Dotted"], group = group_border)
+
+group_info = "Zone Information"
+i_show_zone_values = input.bool(true, "Show Zone Values", group = group_info)
+i_show_prox_value = input.bool(true, "Show Proximal Value", group = group_info, inline = "vals")
+i_show_dist_value = input.bool(true, "Show Distal Value", group = group_info, inline = "vals")
+i_show_risk = input.bool(true, "Show Risk", group = group_info)
+i_text_color = input.color(color.black, "Text Color", group = group_info)
+i_text_size = input.string("Tiny", "Text Size", options = ["Tiny", "Small", "Normal", "Large", "Huge"], group = group_info)
+
+group_score = "Zone Score Display"
+i_show_score = input.bool(true, "Show Zone Score", group = group_score)
+i_show_pattern = input.bool(true, "Show Pattern Type", group = group_score)
+i_show_closing_flag = input.bool(true, "Show Closing Flag", group = group_score)
+
+group_tested = "Tested Zones"
+i_show_tested = input.bool(true, "Show Tested Zones", group = group_tested)
+i_show_tested_once = input.bool(true, "Show Tested-Once Zones", group = group_tested)
+i_tested_once_color = input.color(color.new(color.yellow, 70), "Tested Once Zone Color", group = group_tested)
+i_tested_color = input.color(color.new(color.gray, 70), "Tested Zone Color", group = group_tested)
+
+group_weekly = "Weekly Zones"
+i_show_weekly_demand = input.bool(true, "Weekly Demand Zone", group = group_weekly, inline = "w_demand")
+i_weekly_demand_color = input.color(color.new(color.blue, 75), "", group = group_weekly, inline = "w_demand")
+i_show_weekly_supply = input.bool(true, "Weekly Supply Zone", group = group_weekly, inline = "w_supply")
+i_weekly_supply_color = input.color(color.new(color.orange, 75), "", group = group_weekly, inline = "w_supply")
+i_weekly_exceptional_demand_color = input.color(color.new(color.blue, 70), "Exceptional Weekly Demand", group = group_weekly)
+i_weekly_exceptional_supply_color = input.color(color.new(color.orange, 70), "Exceptional Weekly Supply", group = group_weekly)
+i_weekly_line_style = input.string("Dashed", "Weekly Zone Line Style", options = ["Solid", "Dashed", "Dotted"], group = group_weekly)
+i_show_tested_weekly = input.bool(true, "Show Tested Weekly Zones", group = group_weekly)
+i_tested_weekly_color = input.color(color.new(color.gray, 75), "Tested Weekly Zone Color", group = group_weekly)
+
+group_monthly = "Monthly Zones"
+i_show_monthly_demand = input.bool(true, "Monthly Demand Zone", group = group_monthly, inline = "m_demand")
+i_monthly_demand_color = input.color(color.new(color.purple, 75), "", group = group_monthly, inline = "m_demand")
+i_show_monthly_supply = input.bool(true, "Monthly Supply Zone", group = group_monthly, inline = "m_supply")
+i_monthly_supply_color = input.color(color.new(color.maroon, 75), "", group = group_monthly, inline = "m_supply")
+i_monthly_exceptional_demand_color = input.color(color.new(color.purple, 70), "Exceptional Monthly Demand", group = group_monthly)
+i_monthly_exceptional_supply_color = input.color(color.new(color.maroon, 70), "Exceptional Monthly Supply", group = group_monthly)
+i_monthly_line_style = input.string("Dotted", "Monthly Zone Line Style", options = ["Solid", "Dashed", "Dotted"], group = group_monthly)
+i_show_tested_monthly = input.bool(true, "Show Tested Monthly Zones", group = group_monthly)
+i_tested_monthly_color = input.color(color.new(color.gray, 70), "Tested Monthly Zone Color", group = group_monthly)
+
+group_conflict = "HTF Conflict Warning"
+i_show_conflict = input.bool(true, "Enable HTF Conflict Warning", group = group_conflict)
+i_conflict_distance_pct = input.float(5.0, "Conflict Distance %", group = group_conflict, minval = 1.0, maxval = 20.0, step = 0.5, tooltip = "Maximum % distance between a Daily zone and an opposing HTF zone to flag as conflict. E.g., 5% means a Daily DZ with a Monthly SZ within 5% above will be flagged.")
+i_conflict_border_color = input.color(color.new(color.fuchsia, 0), "Conflict Border Color", group = group_conflict)
+
+group_sector = "Sector & Market Alignment"
+i_show_sector = input.bool(true, "Show Sector Alignment", group = group_sector)
+i_nifty_symbol = input.symbol("NSE:NIFTY", "Nifty Symbol", group = group_sector)
+i_sector_symbol = input.symbol("NSE:BANKNIFTY", "Sector Index Symbol", group = group_sector, tooltip = "Choose your stock's parent sector index: NSE:BANKNIFTY, NSE:CNXIT, NSE:CNXAUTO, NSE:CNXPHARMA, NSE:CNXMETAL, etc.")
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE INPUTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+var string GRP_TREND = "═══ Trend EMAs ═══"
+var string GRP_CROSS = "═══ Cross Signals ═══"
+var string GRP_HTF_EMA = "═══ HTF EMA Levels ═══"
+
+// ── Trend EMAs ───────────────────────────────────────────────────────────────
+i_show_trend_emas = input.bool(true, "Show Trend EMAs", group = GRP_TREND, tooltip = "Master toggle for EMA 20, 50, and 200 lines.")
+
+i_show_ema20 = input.bool(true, "Show EMA 20", group = GRP_TREND, inline = "ema20")
+i_ema20_color = input.color(#2196F3, "", group = GRP_TREND, inline = "ema20")
+i_ema20_width = input.int(1, "", group = GRP_TREND, inline = "ema20", minval = 1, maxval = 4)
+
+i_show_ema50 = input.bool(true, "Show EMA 50", group = GRP_TREND, inline = "ema50")
+i_ema50_color = input.color(#FF9800, "", group = GRP_TREND, inline = "ema50")
+i_ema50_width = input.int(1, "", group = GRP_TREND, inline = "ema50", minval = 1, maxval = 4)
+
+i_show_ema200 = input.bool(true, "Show EMA 200", group = GRP_TREND, inline = "ema200")
+i_ema200_color = input.color(#F44336, "", group = GRP_TREND, inline = "ema200")
+i_ema200_width = input.int(2, "", group = GRP_TREND, inline = "ema200", minval = 1, maxval = 4)
+i_ema200_type = input.string("SMA", "EMA 200 Type", options = ["EMA", "SMA"], group = GRP_TREND, tooltip = "SMA matches the conventional '200 DMA' watched by institutions. EMA reacts faster.")
+
+i_show_sma50_trend = input.bool(true, "Show SMA 50 Trend Line", group = GRP_TREND, inline = "sma50")
+i_sma50_width = input.int(2, "", group = GRP_TREND, inline = "sma50", minval = 1, maxval = 4)
+i_sma50_up_color = input.color(color.green, "Up", group = GRP_TREND, inline = "sma50col")
+i_sma50_down_color = input.color(color.red, "Down", group = GRP_TREND, inline = "sma50col")
+i_sma50_flat_color = input.color(color.gray, "Flat", group = GRP_TREND, inline = "sma50col")
+
+i_show_trend_bg = input.bool(false, "Show Trend Background", group = GRP_TREND, tooltip = "Tints chart background green (uptrend), red (downtrend), or gray (ranging). Subtle effect.")
+
+// ── Cross Signals ────────────────────────────────────────────────────────────
+i_show_major_cross = input.bool(true, "Show Major Crosses (EMA50 × EMA200)", group = GRP_CROSS, tooltip = "Golden Cross: EMA50 crosses above EMA200. Death Cross: EMA50 crosses below EMA200.")
+i_major_gc_color = input.color(color.green, "Golden Cross Color", group = GRP_CROSS, inline = "majorcol")
+i_major_dc_color = input.color(color.red, "Death Cross Color", group = GRP_CROSS, inline = "majorcol")
+
+i_show_minor_cross = input.bool(true, "Show Minor Crosses (EMA20 × EMA50)", group = GRP_CROSS, tooltip = "Minor Golden: EMA20 crosses above EMA50. Minor Death: EMA20 crosses below EMA50.")
+i_minor_gc_color = input.color(color.yellow, "Minor Golden Color", group = GRP_CROSS, inline = "minorcol")
+i_minor_dc_color = input.color(#FF5252, "Minor Death Color", group = GRP_CROSS, inline = "minorcol")
+
+// ── HTF EMA Levels ───────────────────────────────────────────────────────────
+i_show_htf_ema_levels = input.bool(true, "Show HTF EMA 20 Levels", group = GRP_HTF_EMA, tooltip = "Master toggle for all HTF EMA 20 horizontal levels. Each HTF level only shows on timeframes BELOW that HTF.")
+
+i_show_weekly_ema20 = input.bool(true, "Weekly EMA 20", group = GRP_HTF_EMA, inline = "wema")
+i_weekly_ema20_color = input.color(#9C27B0, "", group = GRP_HTF_EMA, inline = "wema")
+i_weekly_ema20_width = input.int(1, "", group = GRP_HTF_EMA, inline = "wema", minval = 1, maxval = 4)
+
+i_show_monthly_ema20 = input.bool(true, "Monthly EMA 20", group = GRP_HTF_EMA, inline = "mema")
+i_monthly_ema20_color = input.color(#009688, "", group = GRP_HTF_EMA, inline = "mema")
+i_monthly_ema20_width = input.int(1, "", group = GRP_HTF_EMA, inline = "mema", minval = 1, maxval = 4)
+
+i_show_quarterly_ema20 = input.bool(true, "Quarterly EMA 20", group = GRP_HTF_EMA, inline = "qema")
+i_quarterly_ema20_color = input.color(#FF5722, "", group = GRP_HTF_EMA, inline = "qema")
+i_quarterly_ema20_width = input.int(1, "", group = GRP_HTF_EMA, inline = "qema", minval = 1, maxval = 4)
+
+i_show_halfyear_ema20 = input.bool(true, "Half-Yearly EMA 20", group = GRP_HTF_EMA, inline = "hyema")
+i_halfyear_ema20_color = input.color(#673AB7, "", group = GRP_HTF_EMA, inline = "hyema")
+i_halfyear_ema20_width = input.int(1, "", group = GRP_HTF_EMA, inline = "hyema", minval = 1, maxval = 4)
+
+i_show_yearly_ema20 = input.bool(true, "Yearly EMA 20", group = GRP_HTF_EMA, inline = "yema")
+i_yearly_ema20_color = input.color(#795548, "", group = GRP_HTF_EMA, inline = "yema")
+i_yearly_ema20_width = input.int(1, "", group = GRP_HTF_EMA, inline = "yema", minval = 1, maxval = 4)
+
+i_htf_line_length = input.int(100, "Line Length (bars back)", group = GRP_HTF_EMA, minval = 20, maxval = 500, tooltip = "How far left the HTF level lines extend.")
+i_htf_extend_right = input.int(20, "Extend Right (bars)", group = GRP_HTF_EMA, minval = 5, maxval = 100, tooltip = "Extend horizontal line to the right toward the price scale.")
+i_htf_line_style = input.string("Dotted", "Line Style", options = ["Solid", "Dashed", "Dotted"], group = GRP_HTF_EMA)
+i_htf_transparency = input.int(50, "Line Transparency %", group = GRP_HTF_EMA, minval = 0, maxval = 90)
+i_htf_show_labels = input.bool(true, "Show Price Labels", group = GRP_HTF_EMA, tooltip = "Display current EMA value label on the right side.")
+i_htf_label_size = input.string("small", "Label Size", options = ["tiny", "small", "normal"], group = GRP_HTF_EMA)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 1 — MARKET INFORMATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+var string GRP_DASH1 = "═══ Dashboard 1 — Market Info ═══"
+
+i_show_dash1 = input.bool(true, "Show Dashboard 1", group = GRP_DASH1, tooltip = "Master toggle for Market Information dashboard.")
+
+i_dash1_position = input.string("Top Right", "Position", group = GRP_DASH1, options = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"])
+
+i_dash1_bg = input.color(color.new(#1E1E1E, 10), "Background", group = GRP_DASH1, inline = "d1theme1")
+i_dash1_text = input.color(color.new(#E0E0E0, 0), "Text", group = GRP_DASH1, inline = "d1theme1")
+i_dash1_border = input.color(color.new(#424242, 0), "Border", group = GRP_DASH1, inline = "d1theme2")
+i_dash1_transp = input.int(10, "Transparency %", group = GRP_DASH1, inline = "d1theme2", minval = 0, maxval = 90)
+
+i_dash1_text_size = input.string("Tiny", "Text Size", group = GRP_DASH1, options = ["Tiny", "Small", "Normal", "Large"])
+
+i_dash1_show_volume = input.bool(true, "Show Volume", group = GRP_DASH1, tooltip = "Display current volume, average, ratio, and highest volume.")
+i_dash1_vol_lookback = input.int(10, "Volume Lookback (bars)", group = GRP_DASH1, minval = 1, maxval = 500)
+
+i_dash1_show_atr = input.bool(true, "Show ATR", group = GRP_DASH1, tooltip = "Display ATR value and ATR as percentage of price.")
+i_dash1_atr_period = input.int(14, "ATR Period", group = GRP_DASH1, minval = 1, maxval = 100)
+
+i_dash1_show_rsi = input.bool(true, "Show RSI", group = GRP_DASH1, tooltip = "Display RSI value and overbought/oversold state.")
+i_dash1_rsi_period = input.int(14, "RSI Period", group = GRP_DASH1, minval = 1, maxval = 100)
+
+i_dash1_show_zone_count = input.bool(true, "Show Zone Counts", group = GRP_DASH1, tooltip = "Display count of active fresh zones (Daily, Weekly, Monthly).")
+i_dash1_show_zone_dist = input.bool(true, "Show Zone Distance", group = GRP_DASH1, tooltip = "Display distance to nearest fresh demand and supply zones.")
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 2 — TREND OVERVIEW
+// ══════════════════════════════════════════════════════════════════════════════
+
+var string GRP_DASH2 = "═══ Dashboard 2 — Trend Overview ═══"
+
+i_show_dash2 = input.bool(true, "Show Dashboard 2", group = GRP_DASH2, tooltip = "Master toggle for Trend Overview dashboard.")
+
+i_dash2_position = input.string("Bottom Right", "Position", group = GRP_DASH2, options = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"])
+
+i_dash2_bg = input.color(color.new(#1E1E1E, 10), "Background", group = GRP_DASH2, inline = "d2theme1")
+i_dash2_text = input.color(color.new(#E0E0E0, 0), "Text", group = GRP_DASH2, inline = "d2theme1")
+i_dash2_border = input.color(color.new(#424242, 0), "Border", group = GRP_DASH2, inline = "d2theme2")
+i_dash2_transp = input.int(10, "Transparency %", group = GRP_DASH2, inline = "d2theme2", minval = 0, maxval = 90)
+
+i_dash2_text_size = input.string("Tiny", "Text Size", group = GRP_DASH2, options = ["Tiny", "Small", "Normal", "Large"])
+
+i_dash2_show_daily_trend = input.bool(true, "Show Col 1 SMA50", group = GRP_DASH2, tooltip = "D/D below | W/Weekly | M/Monthly | Q/Quarterly | HY/HalfYear+")
+i_dash2_show_weekly_trend = input.bool(true, "Show Col 2 SMA50", group = GRP_DASH2, tooltip = "W | M | Q | HY | Y")
+i_dash2_show_monthly_trend = input.bool(true, "Show Col 3 SMA50", group = GRP_DASH2, tooltip = "M | Q | HY | Y")
+
+i_dash2_show_daily_emas = input.bool(true, "Show Daily EMA Values", group = GRP_DASH2, tooltip = "Display current TF EMA 20, EMA 50, and EMA/SMA 200 values.")
+i_dash2_show_htf_emas = input.bool(true, "Show HTF EMA Values", group = GRP_DASH2, tooltip = "Display Weekly and Monthly EMA 20 values.")
+
+i_dash2_show_ema_msg = input.bool(true, "Show EMA Message", group = GRP_DASH2, tooltip = "Display which EMA price is heading towards based on distance.")
+i_dash2_show_clock = input.bool(true, "Show SMA50 Clock Angle", group = GRP_DASH2, tooltip = "Display the SMA50 trend angle as a clock position (12=extreme up, 3=flat, 6=extreme down)")
+i_clock_lookback = input.int(5, "Clock Lookback Bars", group = GRP_DASH2, minval = 2, maxval = 20, tooltip = "Number of bars to measure SMA50 slope. Higher = smoother, lower = more responsive.")
+
+i_dash2_ranging_pct = input.float(0.1, "Ranging Threshold %", group = GRP_DASH2, minval = 0.01, maxval = 1.0, step = 0.01, tooltip = "SMA50 change below this % is treated as Ranging (flat trend). Prevents tiny fluctuations from showing Uptrend/Downtrend.")
+
+current_tf_seconds = timeframe.in_seconds()
+weekly_tf_seconds = timeframe.in_seconds("W")
+monthly_tf_seconds = timeframe.in_seconds("M")
+
+show_weekly_zones = current_tf_seconds < weekly_tf_seconds
+show_monthly_zones = current_tf_seconds < monthly_tf_seconds
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - TIMEFRAME CALCULATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+trend_current_tf_seconds = timeframe.in_seconds()
+trend_weekly_seconds = timeframe.in_seconds("W")
+trend_monthly_seconds = timeframe.in_seconds("M")
+trend_quarterly_seconds = timeframe.in_seconds("3M")
+trend_halfyear_seconds = timeframe.in_seconds("6M")
+trend_yearly_seconds = timeframe.in_seconds("12M")
+
+can_show_weekly_ema = trend_current_tf_seconds < trend_weekly_seconds
+can_show_monthly_ema = trend_current_tf_seconds < trend_monthly_seconds
+can_show_quarterly_ema = trend_current_tf_seconds < trend_quarterly_seconds
+can_show_halfyear_ema = trend_current_tf_seconds < trend_halfyear_seconds
+can_show_yearly_ema = trend_current_tf_seconds < trend_yearly_seconds
+
+display_weekly_ema = i_show_htf_ema_levels and i_show_weekly_ema20 and can_show_weekly_ema
+display_monthly_ema = i_show_htf_ema_levels and i_show_monthly_ema20 and can_show_monthly_ema
+display_quarterly_ema = i_show_htf_ema_levels and i_show_quarterly_ema20 and can_show_quarterly_ema
+display_halfyear_ema = i_show_htf_ema_levels and i_show_halfyear_ema20 and can_show_halfyear_ema
+display_yearly_ema = i_show_htf_ema_levels and i_show_yearly_ema20 and can_show_yearly_ema
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - EMA CALCULATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+trend_ema20 = ta.ema(close, 20)
+trend_ema50 = ta.ema(close, 50)
+trend_ema200 = i_ema200_type == "SMA" ? ta.sma(close, 200) : ta.ema(close, 200)
+trend_sma50 = ta.sma(close, 50)
+
+trend_sma50_rising = trend_sma50 > trend_sma50[1]
+trend_sma50_falling = trend_sma50 < trend_sma50[1]
+trend_state = trend_sma50_rising ? "UPTREND" : trend_sma50_falling ? "DOWNTREND" : "RANGING"
+trend_sma50_color = trend_sma50_rising ? i_sma50_up_color : trend_sma50_falling ? i_sma50_down_color : i_sma50_flat_color
+sma50_change_pct = trend_sma50 != 0 ? ((trend_sma50 - trend_sma50[i_clock_lookback]) / trend_sma50) * 100 : 0.0
+string clock_position = ""
+string clock_emoji = ""
+color clock_color = color.gray
+if sma50_change_pct > 2.0
+    clock_position := "12 o'clock"
+    clock_emoji := "⬆"
+    clock_color := color.new(color.green, 0)
+else if sma50_change_pct > 1.0
+    clock_position := "1 o'clock"
+    clock_emoji := "↗"
+    clock_color := color.new(color.green, 0)
+else if sma50_change_pct > 0.4
+    clock_position := "2 o'clock"
+    clock_emoji := "↗"
+    clock_color := color.new(color.green, 20)
+else if sma50_change_pct > 0.1
+    clock_position := "2-3 o'clock"
+    clock_emoji := "→↗"
+    clock_color := color.new(color.green, 40)
+else if sma50_change_pct > -0.1
+    clock_position := "3 o'clock"
+    clock_emoji := "→"
+    clock_color := color.new(color.gray, 0)
+else if sma50_change_pct > -0.4
+    clock_position := "3-4 o'clock"
+    clock_emoji := "→↘"
+    clock_color := color.new(color.red, 40)
+else if sma50_change_pct > -1.0
+    clock_position := "4 o'clock"
+    clock_emoji := "↘"
+    clock_color := color.new(color.red, 20)
+else if sma50_change_pct > -2.0
+    clock_position := "5 o'clock"
+    clock_emoji := "↘"
+    clock_color := color.new(color.red, 0)
+else
+    clock_position := "6 o'clock"
+    clock_emoji := "⬇"
+    clock_color := color.new(color.red, 0)
+
+htf_ema20_weekly = i_show_htf_ema_levels ? request.security(syminfo.tickerid, "W", ta.ema(close, 20), barmerge.gaps_off, barmerge.lookahead_off) : na
+htf_ema20_monthly = i_show_htf_ema_levels ? request.security(syminfo.tickerid, "M", ta.ema(close, 20), barmerge.gaps_off, barmerge.lookahead_off) : na
+htf_ema20_quarterly = i_show_htf_ema_levels ? request.security(syminfo.tickerid, "3M", ta.ema(close, 20), barmerge.gaps_off, barmerge.lookahead_off) : na
+htf_ema20_halfyear = i_show_htf_ema_levels ? request.security(syminfo.tickerid, "6M", ta.ema(close, 20), barmerge.gaps_off, barmerge.lookahead_off) : na
+htf_ema20_yearly = i_show_htf_ema_levels ? request.security(syminfo.tickerid, "12M", ta.ema(close, 20), barmerge.gaps_off, barmerge.lookahead_off) : na
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 2 — HTF SMA 50 FOR TREND DETECTION
+// Compare inside request.security for consistent results. Ranging threshold treats flat SMA as Ranging.
+// ══════════════════════════════════════════════════════════════════════════════
+
+_dash2_ranging_mult = 1.0 + i_dash2_ranging_pct / 100.0
+
+[dash2_d_is_up, dash2_d_is_down] = request.security(syminfo.tickerid, "D", [ta.sma(close, 50) > ta.sma(close, 50)[1] * _dash2_ranging_mult, ta.sma(close, 50) < ta.sma(close, 50)[1] / _dash2_ranging_mult], barmerge.gaps_off, barmerge.lookahead_off)
+
+[dash2_w_is_up, dash2_w_is_down] = request.security(syminfo.tickerid, "W", [ta.sma(close, 50) > ta.sma(close, 50)[1] * _dash2_ranging_mult, ta.sma(close, 50) < ta.sma(close, 50)[1] / _dash2_ranging_mult], barmerge.gaps_off, barmerge.lookahead_off)
+
+[dash2_m_is_up, dash2_m_is_down] = request.security(syminfo.tickerid, "M", [ta.sma(close, 50) > ta.sma(close, 50)[1] * _dash2_ranging_mult, ta.sma(close, 50) < ta.sma(close, 50)[1] / _dash2_ranging_mult], barmerge.gaps_off, barmerge.lookahead_off)
+
+[dash2_q_is_up, dash2_q_is_down] = request.security(syminfo.tickerid, "3M", [ta.sma(close, 50) > ta.sma(close, 50)[1] * _dash2_ranging_mult, ta.sma(close, 50) < ta.sma(close, 50)[1] / _dash2_ranging_mult], barmerge.gaps_off, barmerge.lookahead_off)
+
+[dash2_hy_is_up, dash2_hy_is_down] = request.security(syminfo.tickerid, "6M", [ta.sma(close, 50) > ta.sma(close, 50)[1] * _dash2_ranging_mult, ta.sma(close, 50) < ta.sma(close, 50)[1] / _dash2_ranging_mult], barmerge.gaps_off, barmerge.lookahead_off)
+
+[dash2_y_is_up, dash2_y_is_down] = request.security(syminfo.tickerid, "12M", [ta.sma(close, 50) > ta.sma(close, 50)[1] * _dash2_ranging_mult, ta.sma(close, 50) < ta.sma(close, 50)[1] / _dash2_ranging_mult], barmerge.gaps_off, barmerge.lookahead_off)
+
+major_golden_cross = ta.crossover(trend_ema50, trend_ema200)
+major_death_cross = ta.crossunder(trend_ema50, trend_ema200)
+minor_golden_cross = ta.crossover(trend_ema20, trend_ema50)
+minor_death_cross = ta.crossunder(trend_ema20, trend_ema50)
+
+body_size = math.abs(close - open)
+total_range = math.max(high - low, syminfo.mintick)
+body_ratio = body_size / total_range
+body_high = math.max(open, close)
+body_low = math.min(open, close)
+
+is_bull = close > open
+is_bear = close < open
+
+is_strong_bull = is_bull and (body_ratio > i_legout_threshold or close > high[1])
+is_strong_bear = is_bear and (body_ratio > i_legout_threshold or close < low[1])
+
+is_base = body_ratio <= i_base_threshold
+
+prev_body_size = math.abs(close[1] - open[1])
+prev_total_range = math.max(high[1] - low[1], syminfo.mintick)
+prev_body_ratio = prev_body_size / prev_total_range
+
+[w_open, w_high, w_low, w_close] = request.security(syminfo.tickerid, "W", [open, high, low, close], lookahead = barmerge.lookahead_off)
+[w_open1, w_high1, w_low1, w_close1] = request.security(syminfo.tickerid, "W", [open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_off)
+[w_open2, w_high2, w_low2, w_close2] = request.security(syminfo.tickerid, "W", [open[2], high[2], low[2], close[2]], lookahead = barmerge.lookahead_off)
+[w_open3, w_high3, w_low3, w_close3] = request.security(syminfo.tickerid, "W", [open[3], high[3], low[3], close[3]], lookahead = barmerge.lookahead_off)
+
+[m_open, m_high, m_low, m_close] = request.security(syminfo.tickerid, "M", [open, high, low, close], lookahead = barmerge.lookahead_off)
+[m_open1, m_high1, m_low1, m_close1] = request.security(syminfo.tickerid, "M", [open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_off)
+[m_open2, m_high2, m_low2, m_close2] = request.security(syminfo.tickerid, "M", [open[2], high[2], low[2], close[2]], lookahead = barmerge.lookahead_off)
+[m_open3, m_high3, m_low3, m_close3] = request.security(syminfo.tickerid, "M", [open[3], high[3], low[3], close[3]], lookahead = barmerge.lookahead_off)
+
+w_bar_change = ta.change(time("W")) != 0
+m_bar_change = ta.change(time("M")) != 0
+
+var bool in_cluster = false
+var int cluster_start = na
+var int cluster_count = 0
+var float cluster_wick_high = na
+var float cluster_wick_low = na
+var float cluster_body_high = na
+var float cluster_body_low = na
+var string cluster_leg_in_dir = ""
+var float legin_high = na
+var float legin_low = na
+var float legout_high = na
+var float legout_low = na
+var float last_base_body_high = na
+var float last_base_body_low = na
+var float last_base_wick_high = na
+var float last_base_wick_low = na
+var int last_base_bar = na
+var int pending_left = 0
+var bool pending_is_demand = false
+var bool pending_is_reversal = false
+var float pending_combined_high = na
+var float pending_combined_low = na
+var int pending_start_bar = na
+var float pending_cluster_wick_high = na
+var float pending_cluster_wick_low = na
+var float pending_cluster_body_high = na
+var float pending_cluster_body_low = na
+var float pending_legin_high = na
+var float pending_legin_low = na
+var float pending_legout_high = na
+var float pending_legout_low = na
+var float pending_last_base_body_high = na
+var float pending_last_base_body_low = na
+var float pending_last_base_wick_high = na
+var float pending_last_base_wick_low = na
+var int pending_last_base_bar = na
+var int pending_cluster_count = 0
+
+var bool w_in_cluster = false
+var int w_cluster_start = na
+var int w_cluster_count = 0
+var float w_cluster_wick_high = na
+var float w_cluster_wick_low = na
+var float w_cluster_body_high = na
+var float w_cluster_body_low = na
+var string w_cluster_leg_in_dir = ""
+var float w_legin_high = na
+var float w_legin_low = na
+var float w_legout_high = na
+var float w_legout_low = na
+var float w_last_base_body_high = na
+var float w_last_base_body_low = na
+var float w_last_base_wick_high = na
+var float w_last_base_wick_low = na
+var int w_last_base_bar = na
+var int w_last_strong_seq = na
+var string w_last_strong_dir = ""
+var float w_last_strong_high = na
+var float w_last_strong_low = na
+var int w_seq = 0
+
+var int w_pending_left = 0
+var bool w_pending_is_demand = false
+var bool w_pending_is_reversal = false
+var float w_pending_combined_high = na
+var float w_pending_combined_low = na
+var int w_pending_start_bar = na
+var float w_pending_cluster_wick_high = na
+var float w_pending_cluster_wick_low = na
+var float w_pending_cluster_body_high = na
+var float w_pending_cluster_body_low = na
+var float w_pending_legin_high = na
+var float w_pending_legin_low = na
+var float w_pending_legout_high = na
+var float w_pending_legout_low = na
+var float w_pending_last_base_body_high = na
+var float w_pending_last_base_body_low = na
+var float w_pending_last_base_wick_high = na
+var float w_pending_last_base_wick_low = na
+var int w_pending_last_base_bar = na
+var int w_pending_cluster_count = 0
+
+var bool m_in_cluster = false
+var int m_cluster_start = na
+var int m_cluster_count = 0
+var float m_cluster_wick_high = na
+var float m_cluster_wick_low = na
+var float m_cluster_body_high = na
+var float m_cluster_body_low = na
+var string m_cluster_leg_in_dir = ""
+var float m_legin_high = na
+var float m_legin_low = na
+var float m_legout_high = na
+var float m_legout_low = na
+var float m_last_base_body_high = na
+var float m_last_base_body_low = na
+var float m_last_base_wick_high = na
+var float m_last_base_wick_low = na
+var int m_last_base_bar = na
+var int m_last_strong_seq = na
+var string m_last_strong_dir = ""
+var float m_last_strong_high = na
+var float m_last_strong_low = na
+var int m_seq = 0
+
+var int m_pending_left = 0
+var bool m_pending_is_demand = false
+var bool m_pending_is_reversal = false
+var float m_pending_combined_high = na
+var float m_pending_combined_low = na
+var int m_pending_start_bar = na
+var float m_pending_cluster_wick_high = na
+var float m_pending_cluster_wick_low = na
+var float m_pending_cluster_body_high = na
+var float m_pending_cluster_body_low = na
+var float m_pending_legin_high = na
+var float m_pending_legin_low = na
+var float m_pending_legout_high = na
+var float m_pending_legout_low = na
+var float m_pending_last_base_body_high = na
+var float m_pending_last_base_body_low = na
+var float m_pending_last_base_wick_high = na
+var float m_pending_last_base_wick_low = na
+var int m_pending_last_base_bar = na
+var int m_pending_cluster_count = 0
+
+var int last_strong_index = na
+var string last_strong_dir = ""
+
+if barstate.isconfirmed and (is_strong_bull or is_strong_bear)
+    last_strong_index := bar_index
+    last_strong_dir := is_strong_bull ? "bull" : "bear"
+
+f_cluster_can_continue() =>
+    inside_wick = high <= cluster_wick_high and low >= cluster_wick_low
+    is_transition = inside_wick and body_ratio <= i_base_threshold * 1.5
+    breaks_out = close > cluster_wick_high or close < cluster_wick_low
+    (is_base and not breaks_out) or is_transition
+
+var box[] zone_boxes = array.new_box()
+var line[] zone_prox_lines = array.new_line()
+var line[] zone_dist_lines = array.new_line()
+var label[] zone_labels = array.new_label()
+var int[] zone_start_time = array.new_int()
+var float[] zone_tops = array.new_float()
+var float[] zone_bottoms = array.new_float()
+var bool[] zone_is_demand = array.new_bool()
+var int[] zone_test_count = array.new_int()
+var int[] zone_last_test_bar = array.new_int()
+var bool[] zone_is_exceptional = array.new_bool()
+var bool[] zone_origin_enabled = array.new_bool()
+var bool[] zone_strong_closing = array.new_bool()
+var bool[] zone_has_gap = array.new_bool()
+var string[] zone_pattern_type = array.new_string()
+var int[] zone_bar = array.new_int()
+var int[] zone_legout_count = array.new_int()
+var int[] zone_base_count = array.new_int()
+
+var box[] origin_boxes = array.new_box()
+var line[] origin_prox_lines = array.new_line()
+var line[] origin_dist_lines = array.new_line()
+var label[] origin_labels = array.new_label()
+var int[] origin_start_time = array.new_int()
+var float[] origin_tops = array.new_float()
+var float[] origin_bottoms = array.new_float()
+
+var box[] w_zone_boxes = array.new_box()
+var line[] w_zone_prox_lines = array.new_line()
+var line[] w_zone_dist_lines = array.new_line()
+var label[] w_zone_labels = array.new_label()
+var float[] w_zone_tops = array.new_float()
+var float[] w_zone_bottoms = array.new_float()
+var bool[] w_zone_is_demand = array.new_bool()
+var int[] w_zone_test_count = array.new_int()
+var int[] w_zone_last_test_bar = array.new_int()
+var bool[] w_zone_is_exceptional = array.new_bool()
+var bool[] w_zone_origin_enabled = array.new_bool()
+var bool[] w_zone_strong_closing = array.new_bool()
+var bool[] w_zone_has_gap = array.new_bool()
+var string[] w_zone_pattern_type = array.new_string()
+var int[] w_zone_bar = array.new_int()
+var int[] w_zone_legout_count = array.new_int()
+var int[] w_zone_base_count = array.new_int()
+
+var box[] w_origin_boxes = array.new_box()
+var line[] w_origin_prox_lines = array.new_line()
+var line[] w_origin_dist_lines = array.new_line()
+var label[] w_origin_labels = array.new_label()
+var float[] w_origin_tops = array.new_float()
+var float[] w_origin_bottoms = array.new_float()
+
+var box[] m_zone_boxes = array.new_box()
+var line[] m_zone_prox_lines = array.new_line()
+var line[] m_zone_dist_lines = array.new_line()
+var label[] m_zone_labels = array.new_label()
+var float[] m_zone_tops = array.new_float()
+var float[] m_zone_bottoms = array.new_float()
+var bool[] m_zone_is_demand = array.new_bool()
+var int[] m_zone_test_count = array.new_int()
+var int[] m_zone_last_test_bar = array.new_int()
+var bool[] m_zone_is_exceptional = array.new_bool()
+var bool[] m_zone_origin_enabled = array.new_bool()
+var bool[] m_zone_strong_closing = array.new_bool()
+var bool[] m_zone_has_gap = array.new_bool()
+var string[] m_zone_pattern_type = array.new_string()
+var int[] m_zone_bar = array.new_int()
+var int[] m_zone_legout_count = array.new_int()
+var int[] m_zone_base_count = array.new_int()
+
+var box[] m_origin_boxes = array.new_box()
+var line[] m_origin_prox_lines = array.new_line()
+var line[] m_origin_dist_lines = array.new_line()
+var label[] m_origin_labels = array.new_label()
+var float[] m_origin_tops = array.new_float()
+var float[] m_origin_bottoms = array.new_float()
+
+border_style = i_border_style == "Dashed" ? line.style_dashed : i_border_style == "Dotted" ? line.style_dotted : line.style_solid
+zone_line_style = i_zone_line_style == "Dashed" ? line.style_dashed : i_zone_line_style == "Dotted" ? line.style_dotted : line.style_solid
+text_size = i_text_size == "Small" ? size.small : i_text_size == "Normal" ? size.normal : i_text_size == "Large" ? size.large : i_text_size == "Huge" ? size.huge : size.tiny
+weekly_line_style = i_weekly_line_style == "Dashed" ? line.style_dashed : i_weekly_line_style == "Dotted" ? line.style_dotted : line.style_solid
+monthly_line_style = i_monthly_line_style == "Dashed" ? line.style_dashed : i_monthly_line_style == "Dotted" ? line.style_dotted : line.style_solid
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - HTF EMA LINE MANAGEMENT
+// ══════════════════════════════════════════════════════════════════════════════
+
+f_get_line_style(string style_str) =>
+    switch style_str
+        "Solid" => line.style_solid
+        "Dashed" => line.style_dashed
+        "Dotted" => line.style_dotted
+        => line.style_dotted
+
+f_get_label_size(string size_str) =>
+    switch size_str
+        "tiny" => size.tiny
+        "small" => size.small
+        "normal" => size.normal
+        => size.small
+
+f_calc_core_score(int test_count, int legout_count, bool has_gap, int base_count) =>
+    float freshness = test_count == 0 ? 3.0 : test_count == 1 ? 1.5 : 0.0
+    float strength = 0.0
+    if legout_count >= 2 or (legout_count >= 1 and has_gap)
+        strength := 2.0
+    else if legout_count >= 1
+        strength := 1.0
+    float time_score = base_count <= 3 ? 2.0 : base_count <= 5 ? 1.0 : 0.0
+    freshness + strength + time_score
+
+htf_line_style_val = f_get_line_style(i_htf_line_style)
+htf_label_size_val = f_get_label_size(i_htf_label_size)
+
+var line htf_line_weekly = na
+var line htf_line_monthly = na
+var line htf_line_quarterly = na
+var line htf_line_halfyear = na
+var line htf_line_yearly = na
+
+var label htf_label_weekly = na
+var label htf_label_monthly = na
+var label htf_label_quarterly = na
+var label htf_label_halfyear = na
+var label htf_label_yearly = na
+
+f_manage_htf_ema_level(bool should_display, float ema_value, color line_color, int line_width, line line_ref, label label_ref, string label_prefix) =>
+    line updated_line = line_ref
+    label updated_label = label_ref
+    if should_display and not na(ema_value)
+        int line_left = bar_index - i_htf_line_length
+        int line_right = bar_index + i_htf_extend_right
+        color faded_color = color.new(line_color, i_htf_transparency)
+        if na(updated_line)
+            updated_line := line.new(line_left, ema_value, line_right, ema_value, xloc.bar_index, extend.none, faded_color, htf_line_style_val, line_width)
+        else
+            line.set_xy1(updated_line, line_left, ema_value)
+            line.set_xy2(updated_line, line_right, ema_value)
+            line.set_color(updated_line, faded_color)
+            line.set_style(updated_line, htf_line_style_val)
+            line.set_width(updated_line, line_width)
+        if i_htf_show_labels
+            string label_text = label_prefix + ": " + str.tostring(ema_value, format.mintick)
+            if na(updated_label)
+                updated_label := label.new(line_right, ema_value, label_text, xloc.bar_index, yloc.price, line_color, label.style_label_left, color.white, htf_label_size_val)
+            else
+                label.set_xy(updated_label, line_right, ema_value)
+                label.set_text(updated_label, label_text)
+                label.set_color(updated_label, line_color)
+                label.set_size(updated_label, htf_label_size_val)
+        else
+            if not na(updated_label)
+                label.delete(updated_label)
+                updated_label := na
+    else
+        if not na(updated_line)
+            line.delete(updated_line)
+            updated_line := na
+        if not na(updated_label)
+            label.delete(updated_label)
+            updated_label := na
+    [updated_line, updated_label]
+
+f_create_zone(is_demand, proximal, distal, start_bar, is_exceptional) =>
+    zone_enabled = (is_demand and i_show_demand) or (not is_demand and i_show_supply)
+    if zone_enabled and barstate.isconfirmed
+        z_top = math.max(proximal, distal)
+        z_bot = math.min(proximal, distal)
+        col_base = is_demand ? (is_exceptional ? i_exceptional_demand_color : i_demand_color) : (is_exceptional ? i_exceptional_supply_color : i_supply_color)
+        bg_col = i_only_zone_border ? na : col_base
+        b_alpha = i_only_zone_border ? 0 : 40
+        b = box.new(start_bar, z_top, bar_index, z_bot, bgcolor = bg_col, border_width = i_border_width, border_color = color.new(col_base, b_alpha), extend = extend.right)
+        box.set_border_style(b, border_style)
+        l_prox = line.new(start_bar, proximal, bar_index, proximal, color = color.new(col_base, 0), width = i_zone_line_width, style = zone_line_style, extend = extend.right)
+        l_dist = line.new(start_bar, distal, bar_index, distal, color = color.new(col_base, 0), width = i_zone_line_width, style = zone_line_style, extend = extend.right)
+        off = int(bar_index - start_bar)
+        st = off >= 0 ? time[off] : time
+        lb = label.new(st, proximal, "", xloc = xloc.bar_time, style = label.style_label_left, textcolor = i_text_color, size = text_size, color = na)
+        if not i_show_prox_line
+            line.set_color(l_prox, na)
+        if not i_show_dist_line
+            line.set_color(l_dist, na)
+        array.push(zone_boxes, b)
+        array.push(zone_prox_lines, l_prox)
+        array.push(zone_dist_lines, l_dist)
+        array.push(zone_labels, lb)
+        array.push(zone_start_time, st)
+        array.push(zone_tops, z_top)
+        array.push(zone_bottoms, z_bot)
+        array.push(zone_is_demand, is_demand)
+        array.push(zone_test_count, 0)
+        array.push(zone_last_test_bar, na)
+        array.push(zone_is_exceptional, is_exceptional)
+        array.push(zone_origin_enabled, false)
+        array.push(zone_bar, bar_index)
+        array.push(zone_legout_count, 1)
+
+f_create_origin_zone(proximal, distal, start_bar, col) =>
+    if barstate.isconfirmed
+        z_top = math.max(proximal, distal)
+        z_bot = math.min(proximal, distal)
+        bg_col = i_only_zone_border ? na : col
+        b_alpha = i_only_zone_border ? 0 : 40
+        b = box.new(start_bar, z_top, bar_index, z_bot, bgcolor = bg_col, border_width = i_border_width, border_color = color.new(col, b_alpha), extend = extend.right)
+        box.set_border_style(b, border_style)
+        l_prox = line.new(start_bar, proximal, bar_index, proximal, color = color.new(col, 0), width = i_zone_line_width, style = zone_line_style, extend = extend.right)
+        l_dist = line.new(start_bar, distal, bar_index, distal, color = color.new(col, 0), width = i_zone_line_width, style = zone_line_style, extend = extend.right)
+        off = int(bar_index - start_bar)
+        st = off >= 0 ? time[off] : time
+        lb = label.new(st, proximal, "", xloc = xloc.bar_time, style = label.style_label_left, textcolor = i_text_color, size = text_size, color = na)
+        if not i_show_prox_line
+            line.set_color(l_prox, na)
+        if not i_show_dist_line
+            line.set_color(l_dist, na)
+        array.push(origin_boxes, b)
+        array.push(origin_prox_lines, l_prox)
+        array.push(origin_dist_lines, l_dist)
+        array.push(origin_labels, lb)
+        array.push(origin_start_time, st)
+        array.push(origin_tops, z_top)
+        array.push(origin_bottoms, z_bot)
+
+f_update_origin_visibility(idx) =>
+    enabled = array.get(zone_origin_enabled, idx)
+    is_demand_zone = array.get(zone_is_demand, idx)
+    test_count = array.get(zone_test_count, idx)
+    is_tested_zone = test_count >= 1
+    is_exceptional_zone = array.get(zone_is_exceptional, idx)
+    color col = na
+    if enabled
+        if test_count >= 2
+            col := i_tested_color
+        else if test_count == 1
+            col := i_tested_once_color
+        else if is_exceptional_zone
+            col := is_demand_zone ? i_exceptional_demand_color : i_exceptional_supply_color
+        else
+            col := is_demand_zone ? i_demand_color : i_supply_color
+        if (is_demand_zone and not i_show_demand) or (not is_demand_zone and not i_show_supply)
+            col := na
+        if is_tested_zone and not i_show_tested
+            col := na
+        if test_count == 1 and not i_show_tested_once
+            col := na
+    b = array.get(origin_boxes, idx)
+    l_prox = array.get(origin_prox_lines, idx)
+    l_dist = array.get(origin_dist_lines, idx)
+    lb = array.get(origin_labels, idx)
+    st = array.get(origin_start_time, idx)
+    box.set_bgcolor(b, (na(col) or i_only_zone_border) ? na : col)
+    b_alpha = i_only_zone_border ? 0 : 40
+    box.set_border_color(b, na(col) ? na : color.new(col, b_alpha))
+    box.set_border_width(b, i_border_width)
+    box.set_border_style(b, border_style)
+    if not i_show_prox_line or na(col)
+        line.set_color(l_prox, na)
+    else
+        line.set_color(l_prox, color.new(col, 0))
+    line.set_width(l_prox, i_zone_line_width)
+    line.set_style(l_prox, zone_line_style)
+    if not i_show_dist_line or na(col)
+        line.set_color(l_dist, na)
+    else
+        line.set_color(l_dist, color.new(col, 0))
+    line.set_width(l_dist, i_zone_line_width)
+    line.set_style(l_dist, zone_line_style)
+    o_top = array.get(origin_tops, idx)
+    o_bot = array.get(origin_bottoms, idx)
+    proximal = is_demand_zone ? o_top : o_bot
+    distal = is_demand_zone ? o_bot : o_top
+    show_text = i_show_zone_values and not na(col)
+    txt = ""
+    if show_text
+        if i_show_score
+            string pattern = array.get(zone_pattern_type, idx)
+            int test_cnt = array.get(zone_test_count, idx)
+            int lo_count = array.get(zone_legout_count, idx)
+            bool has_gap_flag = array.get(zone_has_gap, idx)
+            int base_cnt = array.get(zone_base_count, idx)
+            float core_score = f_calc_core_score(test_cnt, lo_count, has_gap_flag, base_cnt)
+            bool strong_close = array.get(zone_strong_closing, idx)
+            string close_flag = ""
+            if i_show_closing_flag
+                close_flag := strong_close ? " ✓" : " ✗"
+            string gap_flag = has_gap_flag ? " G" : ""
+            string test_flag = test_cnt > 0 ? " T:" + str.tostring(test_cnt) : ""
+            if i_show_pattern
+                txt += pattern + " "
+            txt += str.tostring(core_score, "#.#") + "/7" + close_flag + gap_flag + test_flag
+        if i_show_prox_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "P: " + str.tostring(proximal, format.mintick)
+        if i_show_dist_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "D: " + str.tostring(distal, format.mintick)
+        if i_show_risk
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "R: " + str.tostring(math.abs(proximal - distal), format.mintick)
+    label.set_x(lb, st)
+    label.set_y(lb, proximal)
+    label.set_text(lb, txt)
+    label.set_textcolor(lb, show_text ? i_text_color : na)
+    label.set_size(lb, text_size)
+    label.set_color(lb, na)
+
+// Check if a Daily demand zone has an opposing Weekly/Monthly supply zone within X% above it
+// Check if a Daily supply zone has an opposing Weekly/Monthly demand zone within X% below it
+f_check_zone_conflict(int zone_idx) =>
+    bool has_conflict = false
+    string conflict_detail = ""
+    if not i_show_conflict
+        [false, ""]
+    else
+        bool is_demand_z = array.get(zone_is_demand, zone_idx)
+        float z_top = array.get(zone_tops, zone_idx)
+        float z_bot = array.get(zone_bottoms, zone_idx)
+        float z_proximal = is_demand_z ? z_top : z_bot
+        float conflict_range = z_proximal * (i_conflict_distance_pct / 100.0)
+
+        // Check against Weekly zones
+        if array.size(w_zone_boxes) > 0
+            for j = 0 to array.size(w_zone_boxes) - 1
+                bool w_is_demand = array.get(w_zone_is_demand, j)
+                int w_test_cnt = array.get(w_zone_test_count, j)
+                // Conflict = opposing direction AND fresh or tested-once
+                if is_demand_z != w_is_demand and w_test_cnt < 2
+                    float w_prox = w_is_demand ? array.get(w_zone_tops, j) : array.get(w_zone_bottoms, j)
+                    if is_demand_z
+                        if w_prox > z_proximal and w_prox - z_proximal <= conflict_range
+                            has_conflict := true
+                            conflict_detail := "W SZ @ " + str.tostring(w_prox, format.mintick)
+                            break
+                    else
+                        if w_prox < z_proximal and z_proximal - w_prox <= conflict_range
+                            has_conflict := true
+                            conflict_detail := "W DZ @ " + str.tostring(w_prox, format.mintick)
+                            break
+
+        // Check against Monthly zones (higher priority)
+        if array.size(m_zone_boxes) > 0
+            for j = 0 to array.size(m_zone_boxes) - 1
+                bool m_is_demand = array.get(m_zone_is_demand, j)
+                int m_test_cnt = array.get(m_zone_test_count, j)
+                if is_demand_z != m_is_demand and m_test_cnt < 2
+                    float m_prox = m_is_demand ? array.get(m_zone_tops, j) : array.get(m_zone_bottoms, j)
+                    if is_demand_z
+                        if m_prox > z_proximal and m_prox - z_proximal <= conflict_range
+                            has_conflict := true
+                            conflict_detail := "M SZ @ " + str.tostring(m_prox, format.mintick)
+                            break
+                    else
+                        if m_prox < z_proximal and z_proximal - m_prox <= conflict_range
+                            has_conflict := true
+                            conflict_detail := "M DZ @ " + str.tostring(m_prox, format.mintick)
+                            break
+
+        [has_conflict, conflict_detail]
+
+f_update_zone_visibility(idx) =>
+    is_demand_zone = array.get(zone_is_demand, idx)
+    test_count = array.get(zone_test_count, idx)
+    is_tested_zone = test_count >= 1
+    is_exceptional_zone = array.get(zone_is_exceptional, idx)
+    color col = na
+    if test_count >= 2
+        col := i_tested_color
+    else if test_count == 1
+        col := i_tested_once_color
+    else if is_exceptional_zone
+        col := is_demand_zone ? i_exceptional_demand_color : i_exceptional_supply_color
+    else
+        col := is_demand_zone ? i_demand_color : i_supply_color
+    if (is_demand_zone and not i_show_demand) or (not is_demand_zone and not i_show_supply)
+        col := na
+    if is_tested_zone and not i_show_tested
+        col := na
+    if test_count == 1 and not i_show_tested_once
+        col := na
+    b = array.get(zone_boxes, idx)
+    l_prox = array.get(zone_prox_lines, idx)
+    l_dist = array.get(zone_dist_lines, idx)
+    lb = array.get(zone_labels, idx)
+    st = array.get(zone_start_time, idx)
+    box.set_bgcolor(b, (na(col) or i_only_zone_border) ? na : col)
+    b_alpha = i_only_zone_border ? 0 : 40
+    box.set_border_color(b, na(col) ? na : color.new(col, b_alpha))
+    box.set_border_width(b, i_border_width)
+    box.set_border_style(b, border_style)
+    if not i_show_prox_line or na(col)
+        line.set_color(l_prox, na)
+    else
+        line.set_color(l_prox, color.new(col, 0))
+    line.set_width(l_prox, i_zone_line_width)
+    line.set_style(l_prox, zone_line_style)
+    if not i_show_dist_line or na(col)
+        line.set_color(l_dist, na)
+    else
+        line.set_color(l_dist, color.new(col, 0))
+    line.set_width(l_dist, i_zone_line_width)
+    line.set_style(l_dist, zone_line_style)
+    if i_show_conflict and not na(col)
+        [is_conflicting, conflict_info] = f_check_zone_conflict(idx)
+        if is_conflicting
+            box.set_border_color(array.get(zone_boxes, idx), i_conflict_border_color)
+            box.set_border_width(array.get(zone_boxes, idx), math.max(i_border_width, 2))
+
+    proximal = is_demand_zone ? array.get(zone_tops, idx) : array.get(zone_bottoms, idx)
+    distal = is_demand_zone ? array.get(zone_bottoms, idx) : array.get(zone_tops, idx)
+    show_text = i_show_zone_values and not na(col)
+    txt = ""
+    if show_text
+        if i_show_score
+            string pattern = array.get(zone_pattern_type, idx)
+            int test_cnt = array.get(zone_test_count, idx)
+            int lo_count = array.get(zone_legout_count, idx)
+            bool has_gap_flag = array.get(zone_has_gap, idx)
+            int base_cnt = array.get(zone_base_count, idx)
+            float core_score = f_calc_core_score(test_cnt, lo_count, has_gap_flag, base_cnt)
+            bool strong_close = array.get(zone_strong_closing, idx)
+            string close_flag = ""
+            if i_show_closing_flag
+                close_flag := strong_close ? " ✓" : " ✗"
+            string gap_flag = has_gap_flag ? " G" : ""
+            string test_flag = test_cnt > 0 ? " T:" + str.tostring(test_cnt) : ""
+            if i_show_pattern
+                txt += pattern + " "
+            txt += str.tostring(core_score, "#.#") + "/7" + close_flag + gap_flag + test_flag
+        if i_show_prox_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "P: " + str.tostring(proximal, format.mintick)
+        if i_show_dist_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "D: " + str.tostring(distal, format.mintick)
+        if i_show_risk
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "R: " + str.tostring(math.abs(proximal - distal), format.mintick)
+        if i_show_conflict
+            [is_conflicting, conflict_info] = f_check_zone_conflict(idx)
+            if is_conflicting
+                if str.length(txt) > 0
+                    txt += "\n"
+                txt += "⚠ " + conflict_info
+    label.set_x(lb, st)
+    label.set_y(lb, proximal)
+    label.set_text(lb, txt)
+    label.set_textcolor(lb, show_text ? i_text_color : na)
+    label.set_size(lb, text_size)
+    label.set_color(lb, na)
+
+f_create_weekly_zone(is_demand, proximal, distal, start_bar, is_exceptional) =>
+    zone_enabled = (is_demand and i_show_weekly_demand) or (not is_demand and i_show_weekly_supply)
+    if zone_enabled and barstate.isconfirmed
+        z_top = math.max(proximal, distal)
+        z_bot = math.min(proximal, distal)
+        col_base = is_demand ? (is_exceptional ? i_weekly_exceptional_demand_color : i_weekly_demand_color) : (is_exceptional ? i_weekly_exceptional_supply_color : i_weekly_supply_color)
+        bg_col = i_only_zone_border ? na : col_base
+        b_alpha = i_only_zone_border ? 0 : 40
+        b = box.new(start_bar, z_top, bar_index, z_bot, bgcolor = bg_col, border_width = i_border_width, border_color = color.new(col_base, b_alpha), extend = extend.right)
+        box.set_border_style(b, border_style)
+        l_prox = line.new(start_bar, proximal, bar_index, proximal, color = color.new(col_base, 0), width = i_zone_line_width, style = weekly_line_style, extend = extend.right)
+        l_dist = line.new(start_bar, distal, bar_index, distal, color = color.new(col_base, 0), width = i_zone_line_width, style = weekly_line_style, extend = extend.right)
+        lb = label.new(time, proximal, "W", xloc = xloc.bar_time, style = label.style_label_left, textcolor = i_text_color, size = text_size, color = na)
+        if not i_show_prox_line
+            line.set_color(l_prox, na)
+        if not i_show_dist_line
+            line.set_color(l_dist, na)
+        array.push(w_zone_boxes, b)
+        array.push(w_zone_prox_lines, l_prox)
+        array.push(w_zone_dist_lines, l_dist)
+        array.push(w_zone_labels, lb)
+        array.push(w_zone_tops, z_top)
+        array.push(w_zone_bottoms, z_bot)
+        array.push(w_zone_is_demand, is_demand)
+        array.push(w_zone_test_count, 0)
+        array.push(w_zone_last_test_bar, na)
+        array.push(w_zone_is_exceptional, is_exceptional)
+        array.push(w_zone_origin_enabled, false)
+        array.push(w_zone_bar, w_seq)
+        array.push(w_zone_legout_count, 1)
+
+f_create_weekly_origin_zone(proximal, distal, start_bar, col) =>
+    if barstate.isconfirmed
+        z_top = math.max(proximal, distal)
+        z_bot = math.min(proximal, distal)
+        bg_col = i_only_zone_border ? na : col
+        b_alpha = i_only_zone_border ? 0 : 40
+        b = box.new(start_bar, z_top, bar_index, z_bot, bgcolor = bg_col, border_width = i_border_width, border_color = color.new(col, b_alpha), extend = extend.right)
+        box.set_border_style(b, border_style)
+        l_prox = line.new(start_bar, proximal, bar_index, proximal, color = color.new(col, 0), width = i_zone_line_width, style = weekly_line_style, extend = extend.right)
+        l_dist = line.new(start_bar, distal, bar_index, distal, color = color.new(col, 0), width = i_zone_line_width, style = weekly_line_style, extend = extend.right)
+        lb = label.new(time, proximal, "", xloc = xloc.bar_time, style = label.style_label_left, textcolor = i_text_color, size = text_size, color = na)
+        if not i_show_prox_line
+            line.set_color(l_prox, na)
+        if not i_show_dist_line
+            line.set_color(l_dist, na)
+        array.push(w_origin_boxes, b)
+        array.push(w_origin_prox_lines, l_prox)
+        array.push(w_origin_dist_lines, l_dist)
+        array.push(w_origin_labels, lb)
+        array.push(w_origin_tops, z_top)
+        array.push(w_origin_bottoms, z_bot)
+
+f_create_monthly_zone(is_demand, proximal, distal, start_bar, is_exceptional) =>
+    zone_enabled = (is_demand and i_show_monthly_demand) or (not is_demand and i_show_monthly_supply)
+    if zone_enabled and barstate.isconfirmed
+        z_top = math.max(proximal, distal)
+        z_bot = math.min(proximal, distal)
+        col_base = is_demand ? (is_exceptional ? i_monthly_exceptional_demand_color : i_monthly_demand_color) : (is_exceptional ? i_monthly_exceptional_supply_color : i_monthly_supply_color)
+        bg_col = i_only_zone_border ? na : col_base
+        b_alpha = i_only_zone_border ? 0 : 40
+        b = box.new(start_bar, z_top, bar_index, z_bot, bgcolor = bg_col, border_width = i_border_width, border_color = color.new(col_base, b_alpha), extend = extend.right)
+        box.set_border_style(b, border_style)
+        l_prox = line.new(start_bar, proximal, bar_index, proximal, color = color.new(col_base, 0), width = i_zone_line_width, style = monthly_line_style, extend = extend.right)
+        l_dist = line.new(start_bar, distal, bar_index, distal, color = color.new(col_base, 0), width = i_zone_line_width, style = monthly_line_style, extend = extend.right)
+        lb = label.new(time, proximal, "M", xloc = xloc.bar_time, style = label.style_label_left, textcolor = i_text_color, size = text_size, color = na)
+        if not i_show_prox_line
+            line.set_color(l_prox, na)
+        if not i_show_dist_line
+            line.set_color(l_dist, na)
+        array.push(m_zone_boxes, b)
+        array.push(m_zone_prox_lines, l_prox)
+        array.push(m_zone_dist_lines, l_dist)
+        array.push(m_zone_labels, lb)
+        array.push(m_zone_tops, z_top)
+        array.push(m_zone_bottoms, z_bot)
+        array.push(m_zone_is_demand, is_demand)
+        array.push(m_zone_test_count, 0)
+        array.push(m_zone_last_test_bar, na)
+        array.push(m_zone_is_exceptional, is_exceptional)
+        array.push(m_zone_origin_enabled, false)
+        array.push(m_zone_bar, m_seq)
+        array.push(m_zone_legout_count, 1)
+
+f_create_monthly_origin_zone(proximal, distal, start_bar, col) =>
+    if barstate.isconfirmed
+        z_top = math.max(proximal, distal)
+        z_bot = math.min(proximal, distal)
+        bg_col = i_only_zone_border ? na : col
+        b_alpha = i_only_zone_border ? 0 : 40
+        b = box.new(start_bar, z_top, bar_index, z_bot, bgcolor = bg_col, border_width = i_border_width, border_color = color.new(col, b_alpha), extend = extend.right)
+        box.set_border_style(b, border_style)
+        l_prox = line.new(start_bar, proximal, bar_index, proximal, color = color.new(col, 0), width = i_zone_line_width, style = monthly_line_style, extend = extend.right)
+        l_dist = line.new(start_bar, distal, bar_index, distal, color = color.new(col, 0), width = i_zone_line_width, style = monthly_line_style, extend = extend.right)
+        lb = label.new(time, proximal, "", xloc = xloc.bar_time, style = label.style_label_left, textcolor = i_text_color, size = text_size, color = na)
+        if not i_show_prox_line
+            line.set_color(l_prox, na)
+        if not i_show_dist_line
+            line.set_color(l_dist, na)
+        array.push(m_origin_boxes, b)
+        array.push(m_origin_prox_lines, l_prox)
+        array.push(m_origin_dist_lines, l_dist)
+        array.push(m_origin_labels, lb)
+        array.push(m_origin_tops, z_top)
+        array.push(m_origin_bottoms, z_bot)
+
+f_update_weekly_zone_visibility(idx) =>
+    is_demand_zone = array.get(w_zone_is_demand, idx)
+    test_count = array.get(w_zone_test_count, idx)
+    is_tested_zone = test_count >= 1
+    is_exceptional_zone = array.get(w_zone_is_exceptional, idx)
+    color col = na
+    if test_count >= 2
+        col := i_tested_weekly_color
+    else if test_count == 1
+        col := i_tested_once_color
+    else if is_exceptional_zone
+        col := is_demand_zone ? i_weekly_exceptional_demand_color : i_weekly_exceptional_supply_color
+    else
+        col := is_demand_zone ? i_weekly_demand_color : i_weekly_supply_color
+    if (is_demand_zone and not i_show_weekly_demand) or (not is_demand_zone and not i_show_weekly_supply)
+        col := na
+    if is_tested_zone and not i_show_tested_weekly
+        col := na
+    if test_count == 1 and not i_show_tested_once
+        col := na
+    b = array.get(w_zone_boxes, idx)
+    l_prox = array.get(w_zone_prox_lines, idx)
+    l_dist = array.get(w_zone_dist_lines, idx)
+    lb = array.get(w_zone_labels, idx)
+    box.set_bgcolor(b, (na(col) or i_only_zone_border) ? na : col)
+    b_alpha = i_only_zone_border ? 0 : 40
+    box.set_border_color(b, na(col) ? na : color.new(col, b_alpha))
+    box.set_border_width(b, i_border_width)
+    box.set_border_style(b, border_style)
+    if not i_show_prox_line or na(col)
+        line.set_color(l_prox, na)
+    else
+        line.set_color(l_prox, color.new(col, 0))
+    line.set_width(l_prox, i_zone_line_width)
+    line.set_style(l_prox, weekly_line_style)
+    if not i_show_dist_line or na(col)
+        line.set_color(l_dist, na)
+    else
+        line.set_color(l_dist, color.new(col, 0))
+    line.set_width(l_dist, i_zone_line_width)
+    line.set_style(l_dist, weekly_line_style)
+    proximal = is_demand_zone ? array.get(w_zone_tops, idx) : array.get(w_zone_bottoms, idx)
+    distal = is_demand_zone ? array.get(w_zone_bottoms, idx) : array.get(w_zone_tops, idx)
+    show_text = i_show_zone_values and not na(col)
+    txt = ""
+    if show_text
+        if i_show_score
+            string pattern = array.get(w_zone_pattern_type, idx)
+            int test_cnt = array.get(w_zone_test_count, idx)
+            int lo_count = array.get(w_zone_legout_count, idx)
+            bool has_gap_flag = array.get(w_zone_has_gap, idx)
+            int base_cnt = array.get(w_zone_base_count, idx)
+            float core_score = f_calc_core_score(test_cnt, lo_count, has_gap_flag, base_cnt)
+            bool strong_close = array.get(w_zone_strong_closing, idx)
+            string close_flag = ""
+            if i_show_closing_flag
+                close_flag := strong_close ? " ✓" : " ✗"
+            string gap_flag = has_gap_flag ? " G" : ""
+            string test_flag = test_cnt > 0 ? " T:" + str.tostring(test_cnt) : ""
+            txt += "W "
+            if i_show_pattern
+                txt += pattern + " "
+            txt += str.tostring(core_score, "#.#") + "/7" + close_flag + gap_flag + test_flag
+        if i_show_prox_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "P: " + str.tostring(proximal, format.mintick)
+        if i_show_dist_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "D: " + str.tostring(distal, format.mintick)
+        if i_show_risk
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "R: " + str.tostring(math.abs(proximal - distal), format.mintick)
+    label.set_y(lb, proximal)
+    label.set_text(lb, na(col) ? "" : txt)
+    label.set_textcolor(lb, show_text ? i_text_color : na)
+    label.set_size(lb, text_size)
+    label.set_color(lb, na)
+
+f_update_weekly_origin_visibility(idx) =>
+    enabled = array.get(w_zone_origin_enabled, idx)
+    is_demand_zone = array.get(w_zone_is_demand, idx)
+    test_count = array.get(w_zone_test_count, idx)
+    is_tested_zone = test_count >= 1
+    is_exceptional_zone = array.get(w_zone_is_exceptional, idx)
+    color col = na
+    if enabled
+        if test_count >= 2
+            col := i_tested_weekly_color
+        else if test_count == 1
+            col := i_tested_once_color
+        else if is_exceptional_zone
+            col := is_demand_zone ? i_weekly_exceptional_demand_color : i_weekly_exceptional_supply_color
+        else
+            col := is_demand_zone ? i_weekly_demand_color : i_weekly_supply_color
+        if (is_demand_zone and not i_show_weekly_demand) or (not is_demand_zone and not i_show_weekly_supply)
+            col := na
+        if is_tested_zone and not i_show_tested_weekly
+            col := na
+        if test_count == 1 and not i_show_tested_once
+            col := na
+    b = array.get(w_origin_boxes, idx)
+    l_prox = array.get(w_origin_prox_lines, idx)
+    l_dist = array.get(w_origin_dist_lines, idx)
+    lb = array.get(w_origin_labels, idx)
+    box.set_bgcolor(b, (na(col) or i_only_zone_border) ? na : col)
+    b_alpha = i_only_zone_border ? 0 : 40
+    box.set_border_color(b, na(col) ? na : color.new(col, b_alpha))
+    box.set_border_width(b, i_border_width)
+    box.set_border_style(b, border_style)
+    if not i_show_prox_line or na(col)
+        line.set_color(l_prox, na)
+    else
+        line.set_color(l_prox, color.new(col, 0))
+    line.set_width(l_prox, i_zone_line_width)
+    line.set_style(l_prox, weekly_line_style)
+    if not i_show_dist_line or na(col)
+        line.set_color(l_dist, na)
+    else
+        line.set_color(l_dist, color.new(col, 0))
+    line.set_width(l_dist, i_zone_line_width)
+    line.set_style(l_dist, weekly_line_style)
+    o_top = array.get(w_origin_tops, idx)
+    o_bot = array.get(w_origin_bottoms, idx)
+    proximal = is_demand_zone ? o_top : o_bot
+    distal = is_demand_zone ? o_bot : o_top
+    show_text = i_show_zone_values and not na(col)
+    txt = ""
+    if show_text
+        if i_show_score
+            string pattern = array.get(w_zone_pattern_type, idx)
+            int test_cnt = array.get(w_zone_test_count, idx)
+            int lo_count = array.get(w_zone_legout_count, idx)
+            bool has_gap_flag = array.get(w_zone_has_gap, idx)
+            int base_cnt = array.get(w_zone_base_count, idx)
+            float core_score = f_calc_core_score(test_cnt, lo_count, has_gap_flag, base_cnt)
+            bool strong_close = array.get(w_zone_strong_closing, idx)
+            string close_flag = ""
+            if i_show_closing_flag
+                close_flag := strong_close ? " ✓" : " ✗"
+            string gap_flag = has_gap_flag ? " G" : ""
+            string test_flag = test_cnt > 0 ? " T:" + str.tostring(test_cnt) : ""
+            txt += "W "
+            if i_show_pattern
+                txt += pattern + " "
+            txt += str.tostring(core_score, "#.#") + "/7" + close_flag + gap_flag + test_flag
+        if i_show_prox_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "P: " + str.tostring(proximal, format.mintick)
+        if i_show_dist_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "D: " + str.tostring(distal, format.mintick)
+        if i_show_risk
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "R: " + str.tostring(math.abs(proximal - distal), format.mintick)
+    label.set_y(lb, proximal)
+    label.set_text(lb, txt)
+    label.set_textcolor(lb, show_text ? i_text_color : na)
+    label.set_size(lb, text_size)
+    label.set_color(lb, na)
+
+f_update_monthly_zone_visibility(idx) =>
+    is_demand_zone = array.get(m_zone_is_demand, idx)
+    test_count = array.get(m_zone_test_count, idx)
+    is_tested_zone = test_count >= 1
+    is_exceptional_zone = array.get(m_zone_is_exceptional, idx)
+    color col = na
+    if test_count >= 2
+        col := i_tested_monthly_color
+    else if test_count == 1
+        col := i_tested_once_color
+    else if is_exceptional_zone
+        col := is_demand_zone ? i_monthly_exceptional_demand_color : i_monthly_exceptional_supply_color
+    else
+        col := is_demand_zone ? i_monthly_demand_color : i_monthly_supply_color
+    if (is_demand_zone and not i_show_monthly_demand) or (not is_demand_zone and not i_show_monthly_supply)
+        col := na
+    if is_tested_zone and not i_show_tested_monthly
+        col := na
+    if test_count == 1 and not i_show_tested_once
+        col := na
+    b = array.get(m_zone_boxes, idx)
+    l_prox = array.get(m_zone_prox_lines, idx)
+    l_dist = array.get(m_zone_dist_lines, idx)
+    lb = array.get(m_zone_labels, idx)
+    box.set_bgcolor(b, (na(col) or i_only_zone_border) ? na : col)
+    b_alpha = i_only_zone_border ? 0 : 40
+    box.set_border_color(b, na(col) ? na : color.new(col, b_alpha))
+    box.set_border_width(b, i_border_width)
+    box.set_border_style(b, border_style)
+    if not i_show_prox_line or na(col)
+        line.set_color(l_prox, na)
+    else
+        line.set_color(l_prox, color.new(col, 0))
+    line.set_width(l_prox, i_zone_line_width)
+    line.set_style(l_prox, monthly_line_style)
+    if not i_show_dist_line or na(col)
+        line.set_color(l_dist, na)
+    else
+        line.set_color(l_dist, color.new(col, 0))
+    line.set_width(l_dist, i_zone_line_width)
+    line.set_style(l_dist, monthly_line_style)
+    proximal = is_demand_zone ? array.get(m_zone_tops, idx) : array.get(m_zone_bottoms, idx)
+    distal = is_demand_zone ? array.get(m_zone_bottoms, idx) : array.get(m_zone_tops, idx)
+    show_text = i_show_zone_values and not na(col)
+    txt = ""
+    if show_text
+        if i_show_score
+            string pattern = array.get(m_zone_pattern_type, idx)
+            int test_cnt = array.get(m_zone_test_count, idx)
+            int lo_count = array.get(m_zone_legout_count, idx)
+            bool has_gap_flag = array.get(m_zone_has_gap, idx)
+            int base_cnt = array.get(m_zone_base_count, idx)
+            float core_score = f_calc_core_score(test_cnt, lo_count, has_gap_flag, base_cnt)
+            bool strong_close = array.get(m_zone_strong_closing, idx)
+            string close_flag = ""
+            if i_show_closing_flag
+                close_flag := strong_close ? " ✓" : " ✗"
+            string gap_flag = has_gap_flag ? " G" : ""
+            string test_flag = test_cnt > 0 ? " T:" + str.tostring(test_cnt) : ""
+            txt += "M "
+            if i_show_pattern
+                txt += pattern + " "
+            txt += str.tostring(core_score, "#.#") + "/7" + close_flag + gap_flag + test_flag
+        if i_show_prox_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "P: " + str.tostring(proximal, format.mintick)
+        if i_show_dist_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "D: " + str.tostring(distal, format.mintick)
+        if i_show_risk
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "R: " + str.tostring(math.abs(proximal - distal), format.mintick)
+    label.set_y(lb, proximal)
+    label.set_text(lb, na(col) ? "" : txt)
+    label.set_textcolor(lb, show_text ? i_text_color : na)
+    label.set_size(lb, text_size)
+    label.set_color(lb, na)
+
+f_update_monthly_origin_visibility(idx) =>
+    enabled = array.get(m_zone_origin_enabled, idx)
+    is_demand_zone = array.get(m_zone_is_demand, idx)
+    test_count = array.get(m_zone_test_count, idx)
+    is_tested_zone = test_count >= 1
+    is_exceptional_zone = array.get(m_zone_is_exceptional, idx)
+    color col = na
+    if enabled
+        if test_count >= 2
+            col := i_tested_monthly_color
+        else if test_count == 1
+            col := i_tested_once_color
+        else if is_exceptional_zone
+            col := is_demand_zone ? i_monthly_exceptional_demand_color : i_monthly_exceptional_supply_color
+        else
+            col := is_demand_zone ? i_monthly_demand_color : i_monthly_supply_color
+        if (is_demand_zone and not i_show_monthly_demand) or (not is_demand_zone and not i_show_monthly_supply)
+            col := na
+        if is_tested_zone and not i_show_tested_monthly
+            col := na
+        if test_count == 1 and not i_show_tested_once
+            col := na
+    b = array.get(m_origin_boxes, idx)
+    l_prox = array.get(m_origin_prox_lines, idx)
+    l_dist = array.get(m_origin_dist_lines, idx)
+    lb = array.get(m_origin_labels, idx)
+    box.set_bgcolor(b, (na(col) or i_only_zone_border) ? na : col)
+    b_alpha = i_only_zone_border ? 0 : 40
+    box.set_border_color(b, na(col) ? na : color.new(col, b_alpha))
+    box.set_border_width(b, i_border_width)
+    box.set_border_style(b, border_style)
+    if not i_show_prox_line or na(col)
+        line.set_color(l_prox, na)
+    else
+        line.set_color(l_prox, color.new(col, 0))
+    line.set_width(l_prox, i_zone_line_width)
+    line.set_style(l_prox, monthly_line_style)
+    if not i_show_dist_line or na(col)
+        line.set_color(l_dist, na)
+    else
+        line.set_color(l_dist, color.new(col, 0))
+    line.set_width(l_dist, i_zone_line_width)
+    line.set_style(l_dist, monthly_line_style)
+    o_top = array.get(m_origin_tops, idx)
+    o_bot = array.get(m_origin_bottoms, idx)
+    proximal = is_demand_zone ? o_top : o_bot
+    distal = is_demand_zone ? o_bot : o_top
+    show_text = i_show_zone_values and not na(col)
+    txt = ""
+    if show_text
+        if i_show_score
+            string pattern = array.get(m_zone_pattern_type, idx)
+            int test_cnt = array.get(m_zone_test_count, idx)
+            int lo_count = array.get(m_zone_legout_count, idx)
+            bool has_gap_flag = array.get(m_zone_has_gap, idx)
+            int base_cnt = array.get(m_zone_base_count, idx)
+            float core_score = f_calc_core_score(test_cnt, lo_count, has_gap_flag, base_cnt)
+            bool strong_close = array.get(m_zone_strong_closing, idx)
+            string close_flag = ""
+            if i_show_closing_flag
+                close_flag := strong_close ? " ✓" : " ✗"
+            string gap_flag = has_gap_flag ? " G" : ""
+            string test_flag = test_cnt > 0 ? " T:" + str.tostring(test_cnt) : ""
+            txt += "M "
+            if i_show_pattern
+                txt += pattern + " "
+            txt += str.tostring(core_score, "#.#") + "/7" + close_flag + gap_flag + test_flag
+        if i_show_prox_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "P: " + str.tostring(proximal, format.mintick)
+        if i_show_dist_value
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "D: " + str.tostring(distal, format.mintick)
+        if i_show_risk
+            if str.length(txt) > 0
+                txt += "\n"
+            txt += "R: " + str.tostring(math.abs(proximal - distal), format.mintick)
+    label.set_y(lb, proximal)
+    label.set_text(lb, txt)
+    label.set_textcolor(lb, show_text ? i_text_color : na)
+    label.set_size(lb, text_size)
+    label.set_color(lb, na)
+
+if barstate.isconfirmed and not in_cluster
+    if is_base
+        start_ok = false
+        leg_dir = ""
+        if not na(last_strong_index) and bar_index - last_strong_index <= 3
+            start_ok := true
+            leg_dir := last_strong_dir
+        else
+            prev_strong_bull = close[1] > open[1] and (prev_body_ratio > i_legout_threshold or close[1] > high[2])
+            prev_strong_bear = close[1] < open[1] and (prev_body_ratio > i_legout_threshold or close[1] < low[2])
+            if prev_strong_bull or prev_strong_bear
+                start_ok := true
+                leg_dir := prev_strong_bull ? "bull" : "bear"
+        if start_ok
+            in_cluster := true
+            cluster_start := bar_index
+            cluster_count := 1
+            cluster_wick_high := high
+            cluster_wick_low := low
+            cluster_body_high := body_high
+            cluster_body_low := body_low
+            cluster_leg_in_dir := leg_dir
+            last_base_body_high := body_high
+            last_base_body_low := body_low
+            last_base_wick_high := high
+            last_base_wick_low := low
+            last_base_bar := bar_index
+            if not na(last_strong_index) and bar_index - last_strong_index <= 3
+                off = int(bar_index - last_strong_index)
+                legin_high := high[off]
+                legin_low := low[off]
+            else
+                legin_high := high[1]
+                legin_low := low[1]
+else if barstate.isconfirmed and in_cluster
+    if f_cluster_can_continue() and cluster_count < i_max_base_candles
+        cluster_wick_high := math.max(cluster_wick_high, high)
+        cluster_wick_low := math.min(cluster_wick_low, low)
+        cluster_body_high := math.max(cluster_body_high, body_high)
+        cluster_body_low := math.min(cluster_body_low, body_low)
+        if is_base
+            cluster_count += 1
+            last_base_body_high := body_high
+            last_base_body_low := body_low
+            last_base_wick_high := high
+            last_base_wick_low := low
+            last_base_bar := bar_index
+    else
+        combined_high = math.max(nz(legin_high, cluster_wick_high), cluster_wick_high)
+        combined_low = math.min(nz(legin_low, cluster_wick_low), cluster_wick_low)
+        is_legout_bull = is_bull and (body_ratio > i_legout_threshold or close > cluster_wick_high)
+        is_legout_bear = is_bear and (body_ratio > i_legout_threshold or close < cluster_wick_low)
+        legout_achieved_bull = close > combined_high
+        legout_achieved_bear = close < combined_low
+        pattern_is_demand = false
+        pattern_is_supply = false
+        is_reversal_pattern = false
+        create_zone = false
+        if cluster_leg_in_dir == "bear" and is_legout_bull
+            pattern_is_demand := true
+            is_reversal_pattern := true
+            if legout_achieved_bull
+                create_zone := true
+        if cluster_leg_in_dir == "bull" and is_legout_bear
+            pattern_is_supply := true
+            is_reversal_pattern := true
+            if legout_achieved_bear
+                create_zone := true
+        if cluster_leg_in_dir == "bull" and is_legout_bull
+            pattern_is_demand := true
+            is_reversal_pattern := false
+            if legout_achieved_bull
+                create_zone := true
+        if cluster_leg_in_dir == "bear" and is_legout_bear
+            pattern_is_supply := true
+            is_reversal_pattern := false
+            if legout_achieved_bear
+                create_zone := true
+        if create_zone
+            legout_high := high
+            legout_low := low
+            proximal = 0.0
+            distal = 0.0
+            is_exceptional = false
+            if i_zone_method == "Body to Wick"
+                if pattern_is_demand
+                    proximal := cluster_body_high
+                    if i_enable_exceptional
+                        if is_reversal_pattern
+                            distal := math.min(nz(legin_low, cluster_wick_low), cluster_wick_low, legout_low)
+                        else
+                            distal := math.min(cluster_wick_low, legout_low)
+                        is_exceptional := distal < cluster_wick_low
+                    else
+                        distal := cluster_wick_low
+                else
+                    proximal := cluster_body_low
+                    if i_enable_exceptional
+                        if is_reversal_pattern
+                            distal := math.max(nz(legin_high, cluster_wick_high), cluster_wick_high, legout_high)
+                        else
+                            distal := math.max(cluster_wick_high, legout_high)
+                        is_exceptional := distal > cluster_wick_high
+                    else
+                        distal := cluster_wick_high
+            else
+                if pattern_is_demand
+                    proximal := cluster_wick_high
+                    if i_enable_exceptional
+                        if is_reversal_pattern
+                            distal := math.min(nz(legin_low, cluster_wick_low), cluster_wick_low, legout_low)
+                        else
+                            distal := math.min(cluster_wick_low, legout_low)
+                        is_exceptional := distal < cluster_wick_low
+                    else
+                        distal := cluster_wick_low
+                else
+                    proximal := cluster_wick_low
+                    if i_enable_exceptional
+                        if is_reversal_pattern
+                            distal := math.max(nz(legin_high, cluster_wick_high), cluster_wick_high, legout_high)
+                        else
+                            distal := math.max(cluster_wick_high, legout_high)
+                        is_exceptional := distal > cluster_wick_high
+                    else
+                        distal := cluster_wick_high
+            zone_size_before = array.size(zone_origin_enabled)
+            bool has_strong_closing = false
+            if pattern_is_demand
+                has_strong_closing := close > nz(legin_high, close)
+            else if pattern_is_supply
+                has_strong_closing := close < nz(legin_low, close)
+            f_create_zone(pattern_is_demand, proximal, distal, cluster_start, is_exceptional)
+            if array.size(zone_origin_enabled) > zone_size_before
+                array.push(zone_strong_closing, has_strong_closing)
+                bool has_gap = false
+                if pattern_is_demand
+                    has_gap := low > cluster_wick_high
+                else if pattern_is_supply
+                    has_gap := high < cluster_wick_low
+                array.push(zone_has_gap, has_gap)
+                string pattern_type = ""
+                if pattern_is_demand and is_reversal_pattern
+                    pattern_type := "DBR"
+                else if pattern_is_demand and not is_reversal_pattern
+                    pattern_type := "RBR"
+                else if pattern_is_supply and is_reversal_pattern
+                    pattern_type := "RBD"
+                else if pattern_is_supply and not is_reversal_pattern
+                    pattern_type := "DBD"
+                array.push(zone_pattern_type, pattern_type)
+                array.push(zone_base_count, cluster_count)
+                origin_enabled = cluster_count > 1
+                origin_proximal = origin_enabled ? (pattern_is_demand ? last_base_body_high : last_base_body_low) : proximal
+                origin_distal = origin_enabled ? (pattern_is_demand ? math.min(last_base_wick_low, legout_low) : math.max(last_base_wick_high, legout_high)) : distal
+                origin_col = is_exceptional ? (pattern_is_demand ? i_exceptional_demand_color : i_exceptional_supply_color) : (pattern_is_demand ? i_demand_color : i_supply_color)
+                f_create_origin_zone(origin_proximal, origin_distal, origin_enabled ? last_base_bar : cluster_start, origin_col)
+                array.set(zone_origin_enabled, array.size(zone_origin_enabled) - 1, origin_enabled)
+        else
+            if pattern_is_demand or pattern_is_supply
+                pending_left := 2
+                pending_is_demand := pattern_is_demand
+                pending_is_reversal := is_reversal_pattern
+                pending_combined_high := combined_high
+                pending_combined_low := combined_low
+                pending_start_bar := cluster_start
+                pending_cluster_wick_high := cluster_wick_high
+                pending_cluster_wick_low := cluster_wick_low
+                pending_cluster_body_high := cluster_body_high
+                pending_cluster_body_low := cluster_body_low
+                pending_legin_high := legin_high
+                pending_legin_low := legin_low
+                pending_legout_high := high
+                pending_legout_low := low
+                pending_last_base_body_high := last_base_body_high
+                pending_last_base_body_low := last_base_body_low
+                pending_last_base_wick_high := last_base_wick_high
+                pending_last_base_wick_low := last_base_wick_low
+                pending_last_base_bar := last_base_bar
+                pending_cluster_count := cluster_count
+        in_cluster := false
+        cluster_start := na
+        cluster_count := 0
+        cluster_wick_high := na
+        cluster_wick_low := na
+        cluster_body_high := na
+        cluster_body_low := na
+        cluster_leg_in_dir := ""
+        legin_high := na
+        legin_low := na
+        legout_high := na
+        legout_low := na
+        last_base_body_high := na
+        last_base_body_low := na
+        last_base_wick_high := na
+        last_base_wick_low := na
+        last_base_bar := na
+
+if pending_left > 0 and barstate.isconfirmed
+    achieved = false
+    if pending_is_demand
+        cont_bull = is_bull and (body_ratio > i_legout_threshold or close > pending_cluster_wick_high)
+        achieved := cont_bull and close > pending_combined_high
+    else
+        cont_bear = is_bear and (body_ratio > i_legout_threshold or close < pending_cluster_wick_low)
+        achieved := cont_bear and close < pending_combined_low
+    if achieved
+        legout_high := math.max(high, nz(pending_legout_high, high))
+        legout_low := math.min(low, nz(pending_legout_low, low))
+        proximal = 0.0
+        distal = 0.0
+        is_exceptional = false
+        if i_zone_method == "Body to Wick"
+            if pending_is_demand
+                proximal := pending_cluster_body_high
+                if i_enable_exceptional
+                    if pending_is_reversal
+                        distal := math.min(nz(pending_legin_low, pending_cluster_wick_low), pending_cluster_wick_low, legout_low)
+                    else
+                        distal := math.min(pending_cluster_wick_low, legout_low)
+                    is_exceptional := distal < pending_cluster_wick_low
+                else
+                    distal := pending_cluster_wick_low
+            else
+                proximal := pending_cluster_body_low
+                if i_enable_exceptional
+                    if pending_is_reversal
+                        distal := math.max(nz(pending_legin_high, pending_cluster_wick_high), pending_cluster_wick_high, legout_high)
+                    else
+                        distal := math.max(pending_cluster_wick_high, legout_high)
+                    is_exceptional := distal > pending_cluster_wick_high
+                else
+                    distal := pending_cluster_wick_high
+        else
+            if pending_is_demand
+                proximal := pending_cluster_wick_high
+                if i_enable_exceptional
+                    if pending_is_reversal
+                        distal := math.min(nz(pending_legin_low, pending_cluster_wick_low), pending_cluster_wick_low, legout_low)
+                    else
+                        distal := math.min(pending_cluster_wick_low, legout_low)
+                    is_exceptional := distal < pending_cluster_wick_low
+                else
+                    distal := pending_cluster_wick_low
+            else
+                proximal := pending_cluster_wick_low
+                if i_enable_exceptional
+                    if pending_is_reversal
+                        distal := math.max(nz(pending_legin_high, pending_cluster_wick_high), pending_cluster_wick_high, legout_high)
+                    else
+                        distal := math.max(pending_cluster_wick_high, legout_high)
+                    is_exceptional := distal > pending_cluster_wick_high
+                else
+                    distal := pending_cluster_wick_high
+        zone_size_before = array.size(zone_origin_enabled)
+        bool has_strong_closing = false
+        if pending_is_demand
+            has_strong_closing := close > nz(pending_legin_high, close)
+        else
+            has_strong_closing := close < nz(pending_legin_low, close)
+        f_create_zone(pending_is_demand, proximal, distal, pending_start_bar, is_exceptional)
+        if array.size(zone_origin_enabled) > zone_size_before
+            array.push(zone_strong_closing, has_strong_closing)
+            bool has_gap = false
+            if pending_is_demand
+                has_gap := nz(pending_legout_low, low) > pending_cluster_wick_high
+            else
+                has_gap := nz(pending_legout_high, high) < pending_cluster_wick_low
+            array.push(zone_has_gap, has_gap)
+            string pattern_type = ""
+            if pending_is_demand and pending_is_reversal
+                pattern_type := "DBR"
+            else if pending_is_demand and not pending_is_reversal
+                pattern_type := "RBR"
+            else if not pending_is_demand and pending_is_reversal
+                pattern_type := "RBD"
+            else if not pending_is_demand and not pending_is_reversal
+                pattern_type := "DBD"
+            array.push(zone_pattern_type, pattern_type)
+            array.push(zone_base_count, pending_cluster_count)
+            origin_enabled = pending_cluster_count > 1
+            origin_proximal = origin_enabled ? (pending_is_demand ? pending_last_base_body_high : pending_last_base_body_low) : proximal
+            origin_distal = origin_enabled ? (pending_is_demand ? math.min(pending_last_base_wick_low, legout_low) : math.max(pending_last_base_wick_high, legout_high)) : distal
+            origin_col = is_exceptional ? (pending_is_demand ? i_exceptional_demand_color : i_exceptional_supply_color) : (pending_is_demand ? i_demand_color : i_supply_color)
+            f_create_origin_zone(origin_proximal, origin_distal, origin_enabled ? pending_last_base_bar : pending_start_bar, origin_col)
+            array.set(zone_origin_enabled, array.size(zone_origin_enabled) - 1, origin_enabled)
+        pending_left := 0
+        pending_is_demand := false
+        pending_is_reversal := false
+        pending_combined_high := na
+        pending_combined_low := na
+        pending_start_bar := na
+        pending_cluster_wick_high := na
+        pending_cluster_wick_low := na
+        pending_cluster_body_high := na
+        pending_cluster_body_low := na
+        pending_legin_high := na
+        pending_legin_low := na
+        pending_legout_high := na
+        pending_legout_low := na
+        pending_last_base_body_high := na
+        pending_last_base_body_low := na
+        pending_last_base_wick_high := na
+        pending_last_base_wick_low := na
+        pending_last_base_bar := na
+        pending_cluster_count := 0
+    else
+        pending_legout_high := math.max(nz(pending_legout_high, high), high)
+        pending_legout_low := math.min(nz(pending_legout_low, low), low)
+        pending_left -= 1
+        if pending_left <= 0
+            pending_is_demand := false
+            pending_is_reversal := false
+            pending_combined_high := na
+            pending_combined_low := na
+            pending_start_bar := na
+            pending_cluster_wick_high := na
+            pending_cluster_wick_low := na
+            pending_cluster_body_high := na
+            pending_cluster_body_low := na
+            pending_legin_high := na
+            pending_legin_low := na
+            pending_legout_high := na
+            pending_legout_low := na
+            pending_last_base_body_high := na
+            pending_last_base_body_low := na
+            pending_last_base_wick_high := na
+            pending_last_base_wick_low := na
+            pending_last_base_bar := na
+            pending_cluster_count := 0
+
+zero_base_bull = is_bull and (body_ratio > i_legout_threshold or close > high[1])
+zero_base_bear = is_bear and (body_ratio > i_legout_threshold or close < low[1])
+prev_zero_bull = close[1] > open[1] and (prev_body_ratio > i_legout_threshold or close[1] > high[2])
+prev_zero_bear = close[1] < open[1] and (prev_body_ratio > i_legout_threshold or close[1] < low[2])
+zero_base_dbr = prev_zero_bear and zero_base_bull and not in_cluster
+zero_base_rbd = prev_zero_bull and zero_base_bear and not in_cluster
+
+if bar_index > 2 and barstate.isconfirmed
+    if zero_base_dbr
+        proximal = 0.0
+        distal = 0.0
+        if i_zone_method == "Body to Wick"
+            proximal := math.max(math.min(open[1], close[1]), math.min(open, close))
+            distal := math.min(low[1], low)
+        else
+            proximal := math.max(high[1], high)
+            distal := math.min(low[1], low)
+        zone_size_before = array.size(zone_origin_enabled)
+        bool has_strong_closing = close > high[1]
+        f_create_zone(true, proximal, distal, bar_index - 1, false)
+        if array.size(zone_origin_enabled) > zone_size_before
+            array.push(zone_strong_closing, has_strong_closing)
+            bool has_gap = low > high[1]
+            array.push(zone_has_gap, has_gap)
+            array.push(zone_pattern_type, "DBR")
+            array.push(zone_base_count, 0)
+            f_create_origin_zone(proximal, distal, bar_index - 1, i_demand_color)
+    if zero_base_rbd
+        proximal = 0.0
+        distal = 0.0
+        if i_zone_method == "Body to Wick"
+            proximal := math.min(math.max(open[1], close[1]), math.max(open, close))
+            distal := math.max(high[1], high)
+        else
+            proximal := math.min(low[1], low)
+            distal := math.max(high[1], high)
+        zone_size_before = array.size(zone_origin_enabled)
+        bool has_strong_closing = close < low[1]
+        f_create_zone(false, proximal, distal, bar_index - 1, false)
+        if array.size(zone_origin_enabled) > zone_size_before
+            array.push(zone_strong_closing, has_strong_closing)
+            bool has_gap = high < low[1]
+            array.push(zone_has_gap, has_gap)
+            array.push(zone_pattern_type, "RBD")
+            array.push(zone_base_count, 0)
+            f_create_origin_zone(proximal, distal, bar_index - 1, i_supply_color)
+
+// Track additional leg-out candles for the latest daily zone (up to 3 bars after creation, capped at 5)
+if array.size(zone_legout_count) > 0 and barstate.isconfirmed
+    int last_idx = array.size(zone_legout_count) - 1
+    int current_count = array.get(zone_legout_count, last_idx)
+    bool is_demand_last = array.get(zone_is_demand, last_idx)
+    int created_bar = array.get(zone_bar, last_idx)
+    int bars_since = bar_index - created_bar
+    if bars_since >= 1 and bars_since <= 3 and current_count < 5
+        if is_demand_last and is_strong_bull
+            array.set(zone_legout_count, last_idx, current_count + 1)
+        else if not is_demand_last and is_strong_bear
+            array.set(zone_legout_count, last_idx, current_count + 1)
+
+if show_weekly_zones and w_bar_change and barstate.isconfirmed
+    w_seq += 1
+    w_body_size = math.abs(w_close1 - w_open1)
+    w_total_range = math.max(w_high1 - w_low1, syminfo.mintick)
+    w_body_ratio = w_body_size / w_total_range
+    w_body_high = math.max(w_open1, w_close1)
+    w_body_low = math.min(w_open1, w_close1)
+    w_is_bull = w_close1 > w_open1
+    w_is_bear = w_close1 < w_open1
+    w_is_strong_bull = w_is_bull and (w_body_ratio > i_legout_threshold or w_close1 > w_high2)
+    w_is_strong_bear = w_is_bear and (w_body_ratio > i_legout_threshold or w_close1 < w_low2)
+    w_is_base = w_body_ratio <= i_base_threshold
+    w_prev_body_size = math.abs(w_close2 - w_open2)
+    w_prev_total_range = math.max(w_high2 - w_low2, syminfo.mintick)
+    w_prev_body_ratio = w_prev_body_size / w_prev_total_range
+
+    if w_is_strong_bull or w_is_strong_bear
+        w_last_strong_seq := w_seq
+        w_last_strong_dir := w_is_strong_bull ? "bull" : "bear"
+        w_last_strong_high := w_high1
+        w_last_strong_low := w_low1
+
+    if w_pending_left > 0
+        achieved = false
+        if w_pending_is_demand
+            cont_bull = w_is_bull and (w_body_ratio > i_legout_threshold or w_close1 > w_pending_cluster_wick_high)
+            achieved := cont_bull and w_close1 > w_pending_combined_high
+        else
+            cont_bear = w_is_bear and (w_body_ratio > i_legout_threshold or w_close1 < w_pending_cluster_wick_low)
+            achieved := cont_bear and w_close1 < w_pending_combined_low
+        if achieved
+            w_legout_high := math.max(w_high1, nz(w_pending_legout_high, w_high1))
+            w_legout_low := math.min(w_low1, nz(w_pending_legout_low, w_low1))
+            proximal = 0.0
+            distal = 0.0
+            is_exceptional = false
+            if i_zone_method == "Body to Wick"
+                if w_pending_is_demand
+                    proximal := w_pending_cluster_body_high
+                    if i_enable_exceptional
+                        if w_pending_is_reversal
+                            distal := math.min(nz(w_pending_legin_low, w_pending_cluster_wick_low), w_pending_cluster_wick_low, w_legout_low)
+                        else
+                            distal := math.min(w_pending_cluster_wick_low, w_legout_low)
+                        is_exceptional := distal < w_pending_cluster_wick_low
+                    else
+                        distal := w_pending_cluster_wick_low
+                else
+                    proximal := w_pending_cluster_body_low
+                    if i_enable_exceptional
+                        if w_pending_is_reversal
+                            distal := math.max(nz(w_pending_legin_high, w_pending_cluster_wick_high), w_pending_cluster_wick_high, w_legout_high)
+                        else
+                            distal := math.max(w_pending_cluster_wick_high, w_legout_high)
+                        is_exceptional := distal > w_pending_cluster_wick_high
+                    else
+                        distal := w_pending_cluster_wick_high
+            else
+                if w_pending_is_demand
+                    proximal := w_pending_cluster_wick_high
+                    if i_enable_exceptional
+                        if w_pending_is_reversal
+                            distal := math.min(nz(w_pending_legin_low, w_pending_cluster_wick_low), w_pending_cluster_wick_low, w_legout_low)
+                        else
+                            distal := math.min(w_pending_cluster_wick_low, w_legout_low)
+                        is_exceptional := distal < w_pending_cluster_wick_low
+                    else
+                        distal := w_pending_cluster_wick_low
+                else
+                    proximal := w_pending_cluster_wick_low
+                    if i_enable_exceptional
+                        if w_pending_is_reversal
+                            distal := math.max(nz(w_pending_legin_high, w_pending_cluster_wick_high), w_pending_cluster_wick_high, w_legout_high)
+                        else
+                            distal := math.max(w_pending_cluster_wick_high, w_legout_high)
+                        is_exceptional := distal > w_pending_cluster_wick_high
+                    else
+                        distal := w_pending_cluster_wick_high
+            w_zone_size_before = array.size(w_zone_origin_enabled)
+            bool w_has_strong_closing = false
+            if w_pending_is_demand
+                w_has_strong_closing := w_close1 > nz(w_pending_legin_high, w_close1)
+            else
+                w_has_strong_closing := w_close1 < nz(w_pending_legin_low, w_close1)
+            f_create_weekly_zone(w_pending_is_demand, proximal, distal, w_pending_start_bar, is_exceptional)
+            if array.size(w_zone_origin_enabled) > w_zone_size_before
+                array.push(w_zone_strong_closing, w_has_strong_closing)
+                bool has_gap = false
+                if w_pending_is_demand
+                    has_gap := nz(w_pending_legout_low, w_low1) > w_pending_cluster_wick_high
+                else
+                    has_gap := nz(w_pending_legout_high, w_high1) < w_pending_cluster_wick_low
+                array.push(w_zone_has_gap, has_gap)
+                string pattern_type = ""
+                if w_pending_is_demand and w_pending_is_reversal
+                    pattern_type := "DBR"
+                else if w_pending_is_demand and not w_pending_is_reversal
+                    pattern_type := "RBR"
+                else if not w_pending_is_demand and w_pending_is_reversal
+                    pattern_type := "RBD"
+                else if not w_pending_is_demand and not w_pending_is_reversal
+                    pattern_type := "DBD"
+                array.push(w_zone_pattern_type, pattern_type)
+                array.push(w_zone_base_count, w_pending_cluster_count)
+                origin_enabled = w_pending_cluster_count > 1
+                origin_proximal = origin_enabled ? (w_pending_is_demand ? w_pending_last_base_body_high : w_pending_last_base_body_low) : proximal
+                origin_distal = origin_enabled ? (w_pending_is_demand ? math.min(w_pending_last_base_wick_low, w_legout_low) : math.max(w_pending_last_base_wick_high, w_legout_high)) : distal
+                origin_col = is_exceptional ? (w_pending_is_demand ? i_weekly_exceptional_demand_color : i_weekly_exceptional_supply_color) : (w_pending_is_demand ? i_weekly_demand_color : i_weekly_supply_color)
+                f_create_weekly_origin_zone(origin_proximal, origin_distal, origin_enabled ? w_pending_last_base_bar : w_pending_start_bar, origin_col)
+                array.set(w_zone_origin_enabled, array.size(w_zone_origin_enabled) - 1, origin_enabled)
+            w_pending_left := 0
+            w_pending_is_demand := false
+            w_pending_is_reversal := false
+            w_pending_combined_high := na
+            w_pending_combined_low := na
+            w_pending_start_bar := na
+            w_pending_cluster_wick_high := na
+            w_pending_cluster_wick_low := na
+            w_pending_cluster_body_high := na
+            w_pending_cluster_body_low := na
+            w_pending_legin_high := na
+            w_pending_legin_low := na
+            w_pending_legout_high := na
+            w_pending_legout_low := na
+            w_pending_last_base_body_high := na
+            w_pending_last_base_body_low := na
+            w_pending_last_base_wick_high := na
+            w_pending_last_base_wick_low := na
+            w_pending_last_base_bar := na
+            w_pending_cluster_count := 0
+        else
+            w_pending_legout_high := math.max(nz(w_pending_legout_high, w_high1), w_high1)
+            w_pending_legout_low := math.min(nz(w_pending_legout_low, w_low1), w_low1)
+            w_pending_left -= 1
+            if w_pending_left <= 0
+                w_pending_is_demand := false
+                w_pending_is_reversal := false
+                w_pending_combined_high := na
+                w_pending_combined_low := na
+                w_pending_start_bar := na
+                w_pending_cluster_wick_high := na
+                w_pending_cluster_wick_low := na
+                w_pending_cluster_body_high := na
+                w_pending_cluster_body_low := na
+                w_pending_legin_high := na
+                w_pending_legin_low := na
+                w_pending_legout_high := na
+                w_pending_legout_low := na
+                w_pending_last_base_body_high := na
+                w_pending_last_base_body_low := na
+                w_pending_last_base_wick_high := na
+                w_pending_last_base_wick_low := na
+                w_pending_last_base_bar := na
+                w_pending_cluster_count := 0
+
+    if w_pending_left == 0
+        if not w_in_cluster
+            if w_is_base
+                start_ok = false
+                leg_dir = ""
+                use_strong = not na(w_last_strong_seq) and w_seq - w_last_strong_seq <= 3
+                if use_strong
+                    start_ok := true
+                    leg_dir := w_last_strong_dir
+                else
+                    prev_strong_bull = w_close2 > w_open2 and (w_prev_body_ratio > i_legout_threshold or w_close2 > w_high3)
+                    prev_strong_bear = w_close2 < w_open2 and (w_prev_body_ratio > i_legout_threshold or w_close2 < w_low3)
+                    if prev_strong_bull or prev_strong_bear
+                        start_ok := true
+                        leg_dir := prev_strong_bull ? "bull" : "bear"
+                if start_ok
+                    w_in_cluster := true
+                    w_cluster_start := bar_index
+                    w_cluster_count := 1
+                    w_cluster_wick_high := w_high1
+                    w_cluster_wick_low := w_low1
+                    w_cluster_body_high := w_body_high
+                    w_cluster_body_low := w_body_low
+                    w_cluster_leg_in_dir := leg_dir
+                    if use_strong
+                        w_legin_high := w_last_strong_high
+                        w_legin_low := w_last_strong_low
+                    else
+                        w_legin_high := w_high2
+                        w_legin_low := w_low2
+                    w_last_base_body_high := w_body_high
+                    w_last_base_body_low := w_body_low
+                    w_last_base_wick_high := w_high1
+                    w_last_base_wick_low := w_low1
+                    w_last_base_bar := bar_index
+        else
+            inside_wick = w_high1 <= w_cluster_wick_high and w_low1 >= w_cluster_wick_low
+            is_transition = inside_wick and w_body_ratio <= i_base_threshold * 1.5
+            w_breaks_out = w_close1 > w_cluster_wick_high or w_close1 < w_cluster_wick_low
+            can_continue = (w_is_base and not w_breaks_out) or is_transition
+            if can_continue and w_cluster_count < i_max_base_candles
+                w_cluster_wick_high := math.max(w_cluster_wick_high, w_high1)
+                w_cluster_wick_low := math.min(w_cluster_wick_low, w_low1)
+                w_cluster_body_high := math.max(w_cluster_body_high, w_body_high)
+                w_cluster_body_low := math.min(w_cluster_body_low, w_body_low)
+                if w_is_base
+                    w_cluster_count += 1
+                    w_last_base_body_high := w_body_high
+                    w_last_base_body_low := w_body_low
+                    w_last_base_wick_high := w_high1
+                    w_last_base_wick_low := w_low1
+                    w_last_base_bar := bar_index
+            else
+                combined_high = math.max(nz(w_legin_high, w_cluster_wick_high), w_cluster_wick_high)
+                combined_low = math.min(nz(w_legin_low, w_cluster_wick_low), w_cluster_wick_low)
+                is_legout_bull = w_is_bull and (w_body_ratio > i_legout_threshold or w_close1 > w_cluster_wick_high)
+                is_legout_bear = w_is_bear and (w_body_ratio > i_legout_threshold or w_close1 < w_cluster_wick_low)
+                legout_achieved_bull = w_close1 > combined_high
+                legout_achieved_bear = w_close1 < combined_low
+                pattern_is_demand = false
+                pattern_is_supply = false
+                is_reversal_pattern = false
+                create_zone = false
+                if w_cluster_leg_in_dir == "bear" and is_legout_bull
+                    pattern_is_demand := true
+                    is_reversal_pattern := true
+                    if legout_achieved_bull
+                        create_zone := true
+                if w_cluster_leg_in_dir == "bull" and is_legout_bear
+                    pattern_is_supply := true
+                    is_reversal_pattern := true
+                    if legout_achieved_bear
+                        create_zone := true
+                if w_cluster_leg_in_dir == "bull" and is_legout_bull
+                    pattern_is_demand := true
+                    is_reversal_pattern := false
+                    if legout_achieved_bull
+                        create_zone := true
+                if w_cluster_leg_in_dir == "bear" and is_legout_bear
+                    pattern_is_supply := true
+                    is_reversal_pattern := false
+                    if legout_achieved_bear
+                        create_zone := true
+                if create_zone
+                    w_legout_high := w_high1
+                    w_legout_low := w_low1
+                    proximal = 0.0
+                    distal = 0.0
+                    is_exceptional = false
+                    if i_zone_method == "Body to Wick"
+                        if pattern_is_demand
+                            proximal := w_cluster_body_high
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.min(nz(w_legin_low, w_cluster_wick_low), w_cluster_wick_low, w_legout_low)
+                                else
+                                    distal := math.min(w_cluster_wick_low, w_legout_low)
+                                is_exceptional := distal < w_cluster_wick_low
+                            else
+                                distal := w_cluster_wick_low
+                        else
+                            proximal := w_cluster_body_low
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.max(nz(w_legin_high, w_cluster_wick_high), w_cluster_wick_high, w_legout_high)
+                                else
+                                    distal := math.max(w_cluster_wick_high, w_legout_high)
+                                is_exceptional := distal > w_cluster_wick_high
+                            else
+                                distal := w_cluster_wick_high
+                    else
+                        if pattern_is_demand
+                            proximal := w_cluster_wick_high
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.min(nz(w_legin_low, w_cluster_wick_low), w_cluster_wick_low, w_legout_low)
+                                else
+                                    distal := math.min(w_cluster_wick_low, w_legout_low)
+                                is_exceptional := distal < w_cluster_wick_low
+                            else
+                                distal := w_cluster_wick_low
+                        else
+                            proximal := w_cluster_wick_low
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.max(nz(w_legin_high, w_cluster_wick_high), w_cluster_wick_high, w_legout_high)
+                                else
+                                    distal := math.max(w_cluster_wick_high, w_legout_high)
+                                is_exceptional := distal > w_cluster_wick_high
+                            else
+                                distal := w_cluster_wick_high
+                    w_zone_size_before = array.size(w_zone_origin_enabled)
+                    bool w_has_strong_closing = false
+                    if pattern_is_demand
+                        w_has_strong_closing := w_close1 > nz(w_legin_high, w_close1)
+                    else if pattern_is_supply
+                        w_has_strong_closing := w_close1 < nz(w_legin_low, w_close1)
+                    f_create_weekly_zone(pattern_is_demand, proximal, distal, w_cluster_start, is_exceptional)
+                    if array.size(w_zone_origin_enabled) > w_zone_size_before
+                        array.push(w_zone_strong_closing, w_has_strong_closing)
+                        bool has_gap = false
+                        if pattern_is_demand
+                            has_gap := w_low1 > w_cluster_wick_high
+                        else if pattern_is_supply
+                            has_gap := w_high1 < w_cluster_wick_low
+                        array.push(w_zone_has_gap, has_gap)
+                        string pattern_type = ""
+                        if pattern_is_demand and is_reversal_pattern
+                            pattern_type := "DBR"
+                        else if pattern_is_demand and not is_reversal_pattern
+                            pattern_type := "RBR"
+                        else if pattern_is_supply and is_reversal_pattern
+                            pattern_type := "RBD"
+                        else if pattern_is_supply and not is_reversal_pattern
+                            pattern_type := "DBD"
+                        array.push(w_zone_pattern_type, pattern_type)
+                        array.push(w_zone_base_count, w_cluster_count)
+                        origin_enabled = w_cluster_count > 1
+                        origin_proximal = origin_enabled ? (pattern_is_demand ? w_last_base_body_high : w_last_base_body_low) : proximal
+                        origin_distal = origin_enabled ? (pattern_is_demand ? math.min(w_last_base_wick_low, w_legout_low) : math.max(w_last_base_wick_high, w_legout_high)) : distal
+                        origin_col = is_exceptional ? (pattern_is_demand ? i_weekly_exceptional_demand_color : i_weekly_exceptional_supply_color) : (pattern_is_demand ? i_weekly_demand_color : i_weekly_supply_color)
+                        f_create_weekly_origin_zone(origin_proximal, origin_distal, origin_enabled ? w_last_base_bar : w_cluster_start, origin_col)
+                        array.set(w_zone_origin_enabled, array.size(w_zone_origin_enabled) - 1, origin_enabled)
+                else
+                    if pattern_is_demand or pattern_is_supply
+                        w_pending_left := 2
+                        w_pending_is_demand := pattern_is_demand
+                        w_pending_is_reversal := is_reversal_pattern
+                        w_pending_combined_high := combined_high
+                        w_pending_combined_low := combined_low
+                        w_pending_start_bar := w_cluster_start
+                        w_pending_cluster_wick_high := w_cluster_wick_high
+                        w_pending_cluster_wick_low := w_cluster_wick_low
+                        w_pending_cluster_body_high := w_cluster_body_high
+                        w_pending_cluster_body_low := w_cluster_body_low
+                        w_pending_legin_high := w_legin_high
+                        w_pending_legin_low := w_legin_low
+                        w_pending_legout_high := w_high1
+                        w_pending_legout_low := w_low1
+                        w_pending_last_base_body_high := w_last_base_body_high
+                        w_pending_last_base_body_low := w_last_base_body_low
+                        w_pending_last_base_wick_high := w_last_base_wick_high
+                        w_pending_last_base_wick_low := w_last_base_wick_low
+                        w_pending_last_base_bar := w_last_base_bar
+                        w_pending_cluster_count := w_cluster_count
+                w_in_cluster := false
+                w_cluster_start := na
+                w_cluster_count := 0
+                w_cluster_wick_high := na
+                w_cluster_wick_low := na
+                w_cluster_body_high := na
+                w_cluster_body_low := na
+                w_cluster_leg_in_dir := ""
+                w_legin_high := na
+                w_legin_low := na
+                w_legout_high := na
+                w_legout_low := na
+                w_last_base_body_high := na
+                w_last_base_body_low := na
+                w_last_base_wick_high := na
+                w_last_base_wick_low := na
+                w_last_base_bar := na
+
+    w_zero_base_bull = w_is_bull and (w_body_ratio > i_legout_threshold or w_close1 > w_high2)
+    w_zero_base_bear = w_is_bear and (w_body_ratio > i_legout_threshold or w_close1 < w_low2)
+    w_prev_zero_bull = w_close2 > w_open2 and (w_prev_body_ratio > i_legout_threshold or w_close2 > w_high3)
+    w_prev_zero_bear = w_close2 < w_open2 and (w_prev_body_ratio > i_legout_threshold or w_close2 < w_low3)
+    if w_prev_zero_bear and w_zero_base_bull and not w_in_cluster and w_pending_left == 0
+        proximal = 0.0
+        distal = 0.0
+        if i_zone_method == "Body to Wick"
+            proximal := math.max(math.min(w_open2, w_close2), math.min(w_open1, w_close1))
+            distal := math.min(w_low2, w_low1)
+        else
+            proximal := math.max(w_high2, w_high1)
+            distal := math.min(w_low2, w_low1)
+        w_zone_size_before = array.size(w_zone_origin_enabled)
+        bool w_has_strong_closing = w_close1 > w_high2
+        f_create_weekly_zone(true, proximal, distal, bar_index, false)
+        if array.size(w_zone_origin_enabled) > w_zone_size_before
+            array.push(w_zone_strong_closing, w_has_strong_closing)
+            bool has_gap = w_low1 > w_high2
+            array.push(w_zone_has_gap, has_gap)
+            array.push(w_zone_pattern_type, "DBR")
+            array.push(w_zone_base_count, 0)
+            f_create_weekly_origin_zone(proximal, distal, bar_index, i_weekly_demand_color)
+    if w_prev_zero_bull and w_zero_base_bear and not w_in_cluster and w_pending_left == 0
+        proximal = 0.0
+        distal = 0.0
+        if i_zone_method == "Body to Wick"
+            proximal := math.min(math.max(w_open2, w_close2), math.max(w_open1, w_close1))
+            distal := math.max(w_high2, w_high1)
+        else
+            proximal := math.min(w_low2, w_low1)
+            distal := math.max(w_high2, w_high1)
+        w_zone_size_before = array.size(w_zone_origin_enabled)
+        bool w_has_strong_closing = w_close1 < w_low2
+        f_create_weekly_zone(false, proximal, distal, bar_index, false)
+        if array.size(w_zone_origin_enabled) > w_zone_size_before
+            array.push(w_zone_strong_closing, w_has_strong_closing)
+            bool has_gap = w_high1 < w_low2
+            array.push(w_zone_has_gap, has_gap)
+            array.push(w_zone_pattern_type, "RBD")
+            array.push(w_zone_base_count, 0)
+            f_create_weekly_origin_zone(proximal, distal, bar_index, i_weekly_supply_color)
+
+    // Track additional leg-out candles for the latest weekly zone (up to 3 bars after creation, capped at 5)
+    if array.size(w_zone_legout_count) > 0
+        int w_last_idx = array.size(w_zone_legout_count) - 1
+        int w_current_count = array.get(w_zone_legout_count, w_last_idx)
+        bool w_is_demand_last = array.get(w_zone_is_demand, w_last_idx)
+        int w_created_bar = array.get(w_zone_bar, w_last_idx)
+        int w_bars_since = w_seq - w_created_bar
+        if w_bars_since >= 1 and w_bars_since <= 3 and w_current_count < 5
+            if w_is_demand_last and w_is_strong_bull
+                array.set(w_zone_legout_count, w_last_idx, w_current_count + 1)
+            else if not w_is_demand_last and w_is_strong_bear
+                array.set(w_zone_legout_count, w_last_idx, w_current_count + 1)
+
+if show_monthly_zones and m_bar_change and barstate.isconfirmed
+    m_seq += 1
+    m_body_size = math.abs(m_close1 - m_open1)
+    m_total_range = math.max(m_high1 - m_low1, syminfo.mintick)
+    m_body_ratio = m_body_size / m_total_range
+    m_body_high = math.max(m_open1, m_close1)
+    m_body_low = math.min(m_open1, m_close1)
+    m_is_bull = m_close1 > m_open1
+    m_is_bear = m_close1 < m_open1
+    m_is_strong_bull = m_is_bull and (m_body_ratio > i_legout_threshold or m_close1 > m_high2)
+    m_is_strong_bear = m_is_bear and (m_body_ratio > i_legout_threshold or m_close1 < m_low2)
+    m_is_base = m_body_ratio <= i_base_threshold
+    m_prev_body_size = math.abs(m_close2 - m_open2)
+    m_prev_total_range = math.max(m_high2 - m_low2, syminfo.mintick)
+    m_prev_body_ratio = m_prev_body_size / m_prev_total_range
+
+    if m_is_strong_bull or m_is_strong_bear
+        m_last_strong_seq := m_seq
+        m_last_strong_dir := m_is_strong_bull ? "bull" : "bear"
+        m_last_strong_high := m_high1
+        m_last_strong_low := m_low1
+
+    if m_pending_left > 0
+        achieved = false
+        if m_pending_is_demand
+            cont_bull = m_is_bull and (m_body_ratio > i_legout_threshold or m_close1 > m_pending_cluster_wick_high)
+            achieved := cont_bull and m_close1 > m_pending_combined_high
+        else
+            cont_bear = m_is_bear and (m_body_ratio > i_legout_threshold or m_close1 < m_pending_cluster_wick_low)
+            achieved := cont_bear and m_close1 < m_pending_combined_low
+        if achieved
+            m_legout_high := math.max(m_high1, nz(m_pending_legout_high, m_high1))
+            m_legout_low := math.min(m_low1, nz(m_pending_legout_low, m_low1))
+            proximal = 0.0
+            distal = 0.0
+            is_exceptional = false
+            if i_zone_method == "Body to Wick"
+                if m_pending_is_demand
+                    proximal := m_pending_cluster_body_high
+                    if i_enable_exceptional
+                        if m_pending_is_reversal
+                            distal := math.min(nz(m_pending_legin_low, m_pending_cluster_wick_low), m_pending_cluster_wick_low, m_legout_low)
+                        else
+                            distal := math.min(m_pending_cluster_wick_low, m_legout_low)
+                        is_exceptional := distal < m_pending_cluster_wick_low
+                    else
+                        distal := m_pending_cluster_wick_low
+                else
+                    proximal := m_pending_cluster_body_low
+                    if i_enable_exceptional
+                        if m_pending_is_reversal
+                            distal := math.max(nz(m_pending_legin_high, m_pending_cluster_wick_high), m_pending_cluster_wick_high, m_legout_high)
+                        else
+                            distal := math.max(m_pending_cluster_wick_high, m_legout_high)
+                        is_exceptional := distal > m_pending_cluster_wick_high
+                    else
+                        distal := m_pending_cluster_wick_high
+            else
+                if m_pending_is_demand
+                    proximal := m_pending_cluster_wick_high
+                    if i_enable_exceptional
+                        if m_pending_is_reversal
+                            distal := math.min(nz(m_pending_legin_low, m_pending_cluster_wick_low), m_pending_cluster_wick_low, m_legout_low)
+                        else
+                            distal := math.min(m_pending_cluster_wick_low, m_legout_low)
+                        is_exceptional := distal < m_pending_cluster_wick_low
+                    else
+                        distal := m_pending_cluster_wick_low
+                else
+                    proximal := m_pending_cluster_wick_low
+                    if i_enable_exceptional
+                        if m_pending_is_reversal
+                            distal := math.max(nz(m_pending_legin_high, m_pending_cluster_wick_high), m_pending_cluster_wick_high, m_legout_high)
+                        else
+                            distal := math.max(m_pending_cluster_wick_high, m_legout_high)
+                        is_exceptional := distal > m_pending_cluster_wick_high
+                    else
+                        distal := m_pending_cluster_wick_high
+            m_zone_size_before = array.size(m_zone_origin_enabled)
+            bool m_has_strong_closing = false
+            if m_pending_is_demand
+                m_has_strong_closing := m_close1 > nz(m_pending_legin_high, m_close1)
+            else
+                m_has_strong_closing := m_close1 < nz(m_pending_legin_low, m_close1)
+            f_create_monthly_zone(m_pending_is_demand, proximal, distal, m_pending_start_bar, is_exceptional)
+            if array.size(m_zone_origin_enabled) > m_zone_size_before
+                array.push(m_zone_strong_closing, m_has_strong_closing)
+                bool has_gap = false
+                if m_pending_is_demand
+                    has_gap := nz(m_pending_legout_low, m_low1) > m_pending_cluster_wick_high
+                else
+                    has_gap := nz(m_pending_legout_high, m_high1) < m_pending_cluster_wick_low
+                array.push(m_zone_has_gap, has_gap)
+                string pattern_type = ""
+                if m_pending_is_demand and m_pending_is_reversal
+                    pattern_type := "DBR"
+                else if m_pending_is_demand and not m_pending_is_reversal
+                    pattern_type := "RBR"
+                else if not m_pending_is_demand and m_pending_is_reversal
+                    pattern_type := "RBD"
+                else if not m_pending_is_demand and not m_pending_is_reversal
+                    pattern_type := "DBD"
+                array.push(m_zone_pattern_type, pattern_type)
+                array.push(m_zone_base_count, m_pending_cluster_count)
+                origin_enabled = m_pending_cluster_count > 1
+                origin_proximal = origin_enabled ? (m_pending_is_demand ? m_pending_last_base_body_high : m_pending_last_base_body_low) : proximal
+                origin_distal = origin_enabled ? (m_pending_is_demand ? math.min(m_pending_last_base_wick_low, m_legout_low) : math.max(m_pending_last_base_wick_high, m_legout_high)) : distal
+                origin_col = is_exceptional ? (m_pending_is_demand ? i_monthly_exceptional_demand_color : i_monthly_exceptional_supply_color) : (m_pending_is_demand ? i_monthly_demand_color : i_monthly_supply_color)
+                f_create_monthly_origin_zone(origin_proximal, origin_distal, origin_enabled ? m_pending_last_base_bar : m_pending_start_bar, origin_col)
+                array.set(m_zone_origin_enabled, array.size(m_zone_origin_enabled) - 1, origin_enabled)
+            m_pending_left := 0
+            m_pending_is_demand := false
+            m_pending_is_reversal := false
+            m_pending_combined_high := na
+            m_pending_combined_low := na
+            m_pending_start_bar := na
+            m_pending_cluster_wick_high := na
+            m_pending_cluster_wick_low := na
+            m_pending_cluster_body_high := na
+            m_pending_cluster_body_low := na
+            m_pending_legin_high := na
+            m_pending_legin_low := na
+            m_pending_legout_high := na
+            m_pending_legout_low := na
+            m_pending_last_base_body_high := na
+            m_pending_last_base_body_low := na
+            m_pending_last_base_wick_high := na
+            m_pending_last_base_wick_low := na
+            m_pending_last_base_bar := na
+            m_pending_cluster_count := 0
+        else
+            m_pending_legout_high := math.max(nz(m_pending_legout_high, m_high1), m_high1)
+            m_pending_legout_low := math.min(nz(m_pending_legout_low, m_low1), m_low1)
+            m_pending_left -= 1
+            if m_pending_left <= 0
+                m_pending_is_demand := false
+                m_pending_is_reversal := false
+                m_pending_combined_high := na
+                m_pending_combined_low := na
+                m_pending_start_bar := na
+                m_pending_cluster_wick_high := na
+                m_pending_cluster_wick_low := na
+                m_pending_cluster_body_high := na
+                m_pending_cluster_body_low := na
+                m_pending_legin_high := na
+                m_pending_legin_low := na
+                m_pending_legout_high := na
+                m_pending_legout_low := na
+                m_pending_last_base_body_high := na
+                m_pending_last_base_body_low := na
+                m_pending_last_base_wick_high := na
+                m_pending_last_base_wick_low := na
+                m_pending_last_base_bar := na
+                m_pending_cluster_count := 0
+
+    if m_pending_left == 0
+        if not m_in_cluster
+            if m_is_base
+                start_ok = false
+                leg_dir = ""
+                use_strong = not na(m_last_strong_seq) and m_seq - m_last_strong_seq <= 3
+                if use_strong
+                    start_ok := true
+                    leg_dir := m_last_strong_dir
+                else
+                    prev_strong_bull = m_close2 > m_open2 and (m_prev_body_ratio > i_legout_threshold or m_close2 > m_high3)
+                    prev_strong_bear = m_close2 < m_open2 and (m_prev_body_ratio > i_legout_threshold or m_close2 < m_low3)
+                    if prev_strong_bull or prev_strong_bear
+                        start_ok := true
+                        leg_dir := prev_strong_bull ? "bull" : "bear"
+                if start_ok
+                    m_in_cluster := true
+                    m_cluster_start := bar_index
+                    m_cluster_count := 1
+                    m_cluster_wick_high := m_high1
+                    m_cluster_wick_low := m_low1
+                    m_cluster_body_high := m_body_high
+                    m_cluster_body_low := m_body_low
+                    m_cluster_leg_in_dir := leg_dir
+                    if use_strong
+                        m_legin_high := m_last_strong_high
+                        m_legin_low := m_last_strong_low
+                    else
+                        m_legin_high := m_high2
+                        m_legin_low := m_low2
+                    m_last_base_body_high := m_body_high
+                    m_last_base_body_low := m_body_low
+                    m_last_base_wick_high := m_high1
+                    m_last_base_wick_low := m_low1
+                    m_last_base_bar := bar_index
+        else
+            inside_wick = m_high1 <= m_cluster_wick_high and m_low1 >= m_cluster_wick_low
+            is_transition = inside_wick and m_body_ratio <= i_base_threshold * 1.5
+            m_breaks_out = m_close1 > m_cluster_wick_high or m_close1 < m_cluster_wick_low
+            can_continue = (m_is_base and not m_breaks_out) or is_transition
+            if can_continue and m_cluster_count < i_max_base_candles
+                m_cluster_wick_high := math.max(m_cluster_wick_high, m_high1)
+                m_cluster_wick_low := math.min(m_cluster_wick_low, m_low1)
+                m_cluster_body_high := math.max(m_cluster_body_high, m_body_high)
+                m_cluster_body_low := math.min(m_cluster_body_low, m_body_low)
+                if m_is_base
+                    m_cluster_count += 1
+                    m_last_base_body_high := m_body_high
+                    m_last_base_body_low := m_body_low
+                    m_last_base_wick_high := m_high1
+                    m_last_base_wick_low := m_low1
+                    m_last_base_bar := bar_index
+            else
+                combined_high = math.max(nz(m_legin_high, m_cluster_wick_high), m_cluster_wick_high)
+                combined_low = math.min(nz(m_legin_low, m_cluster_wick_low), m_cluster_wick_low)
+                is_legout_bull = m_is_bull and (m_body_ratio > i_legout_threshold or m_close1 > m_cluster_wick_high)
+                is_legout_bear = m_is_bear and (m_body_ratio > i_legout_threshold or m_close1 < m_cluster_wick_low)
+                legout_achieved_bull = m_close1 > combined_high
+                legout_achieved_bear = m_close1 < combined_low
+                pattern_is_demand = false
+                pattern_is_supply = false
+                is_reversal_pattern = false
+                create_zone = false
+                if m_cluster_leg_in_dir == "bear" and is_legout_bull
+                    pattern_is_demand := true
+                    is_reversal_pattern := true
+                    if legout_achieved_bull
+                        create_zone := true
+                if m_cluster_leg_in_dir == "bull" and is_legout_bear
+                    pattern_is_supply := true
+                    is_reversal_pattern := true
+                    if legout_achieved_bear
+                        create_zone := true
+                if m_cluster_leg_in_dir == "bull" and is_legout_bull
+                    pattern_is_demand := true
+                    is_reversal_pattern := false
+                    if legout_achieved_bull
+                        create_zone := true
+                if m_cluster_leg_in_dir == "bear" and is_legout_bear
+                    pattern_is_supply := true
+                    is_reversal_pattern := false
+                    if legout_achieved_bear
+                        create_zone := true
+                if create_zone
+                    m_legout_high := m_high1
+                    m_legout_low := m_low1
+                    proximal = 0.0
+                    distal = 0.0
+                    is_exceptional = false
+                    if i_zone_method == "Body to Wick"
+                        if pattern_is_demand
+                            proximal := m_cluster_body_high
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.min(nz(m_legin_low, m_cluster_wick_low), m_cluster_wick_low, m_legout_low)
+                                else
+                                    distal := math.min(m_cluster_wick_low, m_legout_low)
+                                is_exceptional := distal < m_cluster_wick_low
+                            else
+                                distal := m_cluster_wick_low
+                        else
+                            proximal := m_cluster_body_low
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.max(nz(m_legin_high, m_cluster_wick_high), m_cluster_wick_high, m_legout_high)
+                                else
+                                    distal := math.max(m_cluster_wick_high, m_legout_high)
+                                is_exceptional := distal > m_cluster_wick_high
+                            else
+                                distal := m_cluster_wick_high
+                    else
+                        if pattern_is_demand
+                            proximal := m_cluster_wick_high
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.min(nz(m_legin_low, m_cluster_wick_low), m_cluster_wick_low, m_legout_low)
+                                else
+                                    distal := math.min(m_cluster_wick_low, m_legout_low)
+                                is_exceptional := distal < m_cluster_wick_low
+                            else
+                                distal := m_cluster_wick_low
+                        else
+                            proximal := m_cluster_wick_low
+                            if i_enable_exceptional
+                                if is_reversal_pattern
+                                    distal := math.max(nz(m_legin_high, m_cluster_wick_high), m_cluster_wick_high, m_legout_high)
+                                else
+                                    distal := math.max(m_cluster_wick_high, m_legout_high)
+                                is_exceptional := distal > m_cluster_wick_high
+                            else
+                                distal := m_cluster_wick_high
+                    m_zone_size_before = array.size(m_zone_origin_enabled)
+                    bool m_has_strong_closing = false
+                    if pattern_is_demand
+                        m_has_strong_closing := m_close1 > nz(m_legin_high, m_close1)
+                    else if pattern_is_supply
+                        m_has_strong_closing := m_close1 < nz(m_legin_low, m_close1)
+                    f_create_monthly_zone(pattern_is_demand, proximal, distal, m_cluster_start, is_exceptional)
+                    if array.size(m_zone_origin_enabled) > m_zone_size_before
+                        array.push(m_zone_strong_closing, m_has_strong_closing)
+                        bool has_gap = false
+                        if pattern_is_demand
+                            has_gap := m_low1 > m_cluster_wick_high
+                        else if pattern_is_supply
+                            has_gap := m_high1 < m_cluster_wick_low
+                        array.push(m_zone_has_gap, has_gap)
+                        string pattern_type = ""
+                        if pattern_is_demand and is_reversal_pattern
+                            pattern_type := "DBR"
+                        else if pattern_is_demand and not is_reversal_pattern
+                            pattern_type := "RBR"
+                        else if pattern_is_supply and is_reversal_pattern
+                            pattern_type := "RBD"
+                        else if pattern_is_supply and not is_reversal_pattern
+                            pattern_type := "DBD"
+                        array.push(m_zone_pattern_type, pattern_type)
+                        array.push(m_zone_base_count, m_cluster_count)
+                        origin_enabled = m_cluster_count > 1
+                        origin_proximal = origin_enabled ? (pattern_is_demand ? m_last_base_body_high : m_last_base_body_low) : proximal
+                        origin_distal = origin_enabled ? (pattern_is_demand ? math.min(m_last_base_wick_low, m_legout_low) : math.max(m_last_base_wick_high, m_legout_high)) : distal
+                        origin_col = is_exceptional ? (pattern_is_demand ? i_monthly_exceptional_demand_color : i_monthly_exceptional_supply_color) : (pattern_is_demand ? i_monthly_demand_color : i_monthly_supply_color)
+                        f_create_monthly_origin_zone(origin_proximal, origin_distal, origin_enabled ? m_last_base_bar : m_cluster_start, origin_col)
+                        array.set(m_zone_origin_enabled, array.size(m_zone_origin_enabled) - 1, origin_enabled)
+                else
+                    if pattern_is_demand or pattern_is_supply
+                        m_pending_left := 2
+                        m_pending_is_demand := pattern_is_demand
+                        m_pending_is_reversal := is_reversal_pattern
+                        m_pending_combined_high := combined_high
+                        m_pending_combined_low := combined_low
+                        m_pending_start_bar := m_cluster_start
+                        m_pending_cluster_wick_high := m_cluster_wick_high
+                        m_pending_cluster_wick_low := m_cluster_wick_low
+                        m_pending_cluster_body_high := m_cluster_body_high
+                        m_pending_cluster_body_low := m_cluster_body_low
+                        m_pending_legin_high := m_legin_high
+                        m_pending_legin_low := m_legin_low
+                        m_pending_legout_high := m_high1
+                        m_pending_legout_low := m_low1
+                        m_pending_last_base_body_high := m_last_base_body_high
+                        m_pending_last_base_body_low := m_last_base_body_low
+                        m_pending_last_base_wick_high := m_last_base_wick_high
+                        m_pending_last_base_wick_low := m_last_base_wick_low
+                        m_pending_last_base_bar := m_last_base_bar
+                        m_pending_cluster_count := m_cluster_count
+                m_in_cluster := false
+                m_cluster_start := na
+                m_cluster_count := 0
+                m_cluster_wick_high := na
+                m_cluster_wick_low := na
+                m_cluster_body_high := na
+                m_cluster_body_low := na
+                m_cluster_leg_in_dir := ""
+                m_legin_high := na
+                m_legin_low := na
+                m_legout_high := na
+                m_legout_low := na
+                m_last_base_body_high := na
+                m_last_base_body_low := na
+                m_last_base_wick_high := na
+                m_last_base_wick_low := na
+                m_last_base_bar := na
+
+    m_zero_base_bull = m_is_bull and (m_body_ratio > i_legout_threshold or m_close1 > m_high2)
+    m_zero_base_bear = m_is_bear and (m_body_ratio > i_legout_threshold or m_close1 < m_low2)
+    m_prev_zero_bull = m_close2 > m_open2 and (m_prev_body_ratio > i_legout_threshold or m_close2 > m_high3)
+    m_prev_zero_bear = m_close2 < m_open2 and (m_prev_body_ratio > i_legout_threshold or m_close2 < m_low3)
+    if m_prev_zero_bear and m_zero_base_bull and not m_in_cluster and m_pending_left == 0
+        proximal = 0.0
+        distal = 0.0
+        if i_zone_method == "Body to Wick"
+            proximal := math.max(math.min(m_open2, m_close2), math.min(m_open1, m_close1))
+            distal := math.min(m_low2, m_low1)
+        else
+            proximal := math.max(m_high2, m_high1)
+            distal := math.min(m_low2, m_low1)
+        m_zone_size_before = array.size(m_zone_origin_enabled)
+        bool m_has_strong_closing = m_close1 > m_high2
+        f_create_monthly_zone(true, proximal, distal, bar_index, false)
+        if array.size(m_zone_origin_enabled) > m_zone_size_before
+            array.push(m_zone_strong_closing, m_has_strong_closing)
+            bool has_gap = m_low1 > m_high2
+            array.push(m_zone_has_gap, has_gap)
+            array.push(m_zone_pattern_type, "DBR")
+            array.push(m_zone_base_count, 0)
+            f_create_monthly_origin_zone(proximal, distal, bar_index, i_monthly_demand_color)
+    if m_prev_zero_bull and m_zero_base_bear and not m_in_cluster and m_pending_left == 0
+        proximal = 0.0
+        distal = 0.0
+        if i_zone_method == "Body to Wick"
+            proximal := math.min(math.max(m_open2, m_close2), math.max(m_open1, m_close1))
+            distal := math.max(m_high2, m_high1)
+        else
+            proximal := math.min(m_low2, m_low1)
+            distal := math.max(m_high2, m_high1)
+        m_zone_size_before = array.size(m_zone_origin_enabled)
+        bool m_has_strong_closing = m_close1 < m_low2
+        f_create_monthly_zone(false, proximal, distal, bar_index, false)
+        if array.size(m_zone_origin_enabled) > m_zone_size_before
+            array.push(m_zone_strong_closing, m_has_strong_closing)
+            bool has_gap = m_high1 < m_low2
+            array.push(m_zone_has_gap, has_gap)
+            array.push(m_zone_pattern_type, "RBD")
+            array.push(m_zone_base_count, 0)
+            f_create_monthly_origin_zone(proximal, distal, bar_index, i_monthly_supply_color)
+
+    // Track additional leg-out candles for the latest monthly zone (up to 3 bars after creation, capped at 5)
+    if array.size(m_zone_legout_count) > 0
+        int m_last_idx = array.size(m_zone_legout_count) - 1
+        int m_current_count = array.get(m_zone_legout_count, m_last_idx)
+        bool m_is_demand_last = array.get(m_zone_is_demand, m_last_idx)
+        int m_created_bar = array.get(m_zone_bar, m_last_idx)
+        int m_bars_since = m_seq - m_created_bar
+        if m_bars_since >= 1 and m_bars_since <= 3 and m_current_count < 5
+            if m_is_demand_last and m_is_strong_bull
+                array.set(m_zone_legout_count, m_last_idx, m_current_count + 1)
+            else if not m_is_demand_last and m_is_strong_bear
+                array.set(m_zone_legout_count, m_last_idx, m_current_count + 1)
+
+if array.size(zone_boxes) > 0
+    for i = array.size(zone_boxes) - 1 to 0
+        top = array.get(zone_tops, i)
+        bot = array.get(zone_bottoms, i)
+        is_demand_zone = array.get(zone_is_demand, i)
+        test_count = array.get(zone_test_count, i)
+        last_test_bar = array.get(zone_last_test_bar, i)
+        created_bar = array.get(zone_bar, i)
+        invalidate = (is_demand_zone and close < bot) or (not is_demand_zone and close > top)
+        if invalidate
+            box.delete(array.get(zone_boxes, i))
+            line.delete(array.get(zone_prox_lines, i))
+            line.delete(array.get(zone_dist_lines, i))
+            label.delete(array.get(zone_labels, i))
+            box.delete(array.get(origin_boxes, i))
+            line.delete(array.get(origin_prox_lines, i))
+            line.delete(array.get(origin_dist_lines, i))
+            label.delete(array.get(origin_labels, i))
+            array.remove(zone_boxes, i)
+            array.remove(zone_prox_lines, i)
+            array.remove(zone_dist_lines, i)
+            array.remove(zone_labels, i)
+            array.remove(zone_start_time, i)
+            array.remove(zone_tops, i)
+            array.remove(zone_bottoms, i)
+            array.remove(zone_is_demand, i)
+            array.remove(zone_test_count, i)
+            array.remove(zone_last_test_bar, i)
+            array.remove(zone_is_exceptional, i)
+            array.remove(zone_origin_enabled, i)
+            array.remove(zone_strong_closing, i)
+            array.remove(zone_has_gap, i)
+            array.remove(zone_pattern_type, i)
+            array.remove(zone_bar, i)
+            array.remove(zone_legout_count, i)
+            array.remove(zone_base_count, i)
+            array.remove(origin_boxes, i)
+            array.remove(origin_prox_lines, i)
+            array.remove(origin_dist_lines, i)
+            array.remove(origin_labels, i)
+            array.remove(origin_start_time, i)
+            array.remove(origin_tops, i)
+            array.remove(origin_bottoms, i)
+        else
+            if bar_index > created_bar
+                proximal = is_demand_zone ? array.get(zone_tops, i) : array.get(zone_bottoms, i)
+                tested = (is_demand_zone and low <= proximal) or (not is_demand_zone and high >= proximal)
+                if tested and (na(last_test_bar) or bar_index != last_test_bar)
+                    array.set(zone_test_count, i, test_count + 1)
+                    array.set(zone_last_test_bar, i, bar_index)
+            f_update_zone_visibility(i)
+            f_update_origin_visibility(i)
+
+if show_weekly_zones and array.size(w_zone_boxes) > 0
+    for i = array.size(w_zone_boxes) - 1 to 0
+        top = array.get(w_zone_tops, i)
+        bot = array.get(w_zone_bottoms, i)
+        is_demand_zone = array.get(w_zone_is_demand, i)
+        test_count = array.get(w_zone_test_count, i)
+        last_test_bar = array.get(w_zone_last_test_bar, i)
+        created_bar = array.get(w_zone_bar, i)
+        w_invalidate_close = w_bar_change ? w_close1 : na
+        invalidate = w_bar_change and ((is_demand_zone and w_close1 < bot) or (not is_demand_zone and w_close1 > top))
+        if invalidate
+            box.delete(array.get(w_zone_boxes, i))
+            line.delete(array.get(w_zone_prox_lines, i))
+            line.delete(array.get(w_zone_dist_lines, i))
+            label.delete(array.get(w_zone_labels, i))
+            box.delete(array.get(w_origin_boxes, i))
+            line.delete(array.get(w_origin_prox_lines, i))
+            line.delete(array.get(w_origin_dist_lines, i))
+            label.delete(array.get(w_origin_labels, i))
+            array.remove(w_zone_boxes, i)
+            array.remove(w_zone_prox_lines, i)
+            array.remove(w_zone_dist_lines, i)
+            array.remove(w_zone_labels, i)
+            array.remove(w_zone_tops, i)
+            array.remove(w_zone_bottoms, i)
+            array.remove(w_zone_is_demand, i)
+            array.remove(w_zone_test_count, i)
+            array.remove(w_zone_last_test_bar, i)
+            array.remove(w_zone_is_exceptional, i)
+            array.remove(w_zone_origin_enabled, i)
+            array.remove(w_zone_strong_closing, i)
+            array.remove(w_zone_has_gap, i)
+            array.remove(w_zone_pattern_type, i)
+            array.remove(w_zone_bar, i)
+            array.remove(w_zone_legout_count, i)
+            array.remove(w_zone_base_count, i)
+            array.remove(w_origin_boxes, i)
+            array.remove(w_origin_prox_lines, i)
+            array.remove(w_origin_dist_lines, i)
+            array.remove(w_origin_labels, i)
+            array.remove(w_origin_tops, i)
+            array.remove(w_origin_bottoms, i)
+        else
+            if w_bar_change and w_seq > created_bar
+                proximal = is_demand_zone ? array.get(w_zone_tops, i) : array.get(w_zone_bottoms, i)
+                tested = (is_demand_zone and w_low1 <= proximal) or (not is_demand_zone and w_high1 >= proximal)
+                if tested and (na(last_test_bar) or bar_index != last_test_bar)
+                    array.set(w_zone_test_count, i, test_count + 1)
+                    array.set(w_zone_last_test_bar, i, bar_index)
+            f_update_weekly_zone_visibility(i)
+            f_update_weekly_origin_visibility(i)
+
+if show_monthly_zones and array.size(m_zone_boxes) > 0
+    for i = array.size(m_zone_boxes) - 1 to 0
+        top = array.get(m_zone_tops, i)
+        bot = array.get(m_zone_bottoms, i)
+        is_demand_zone = array.get(m_zone_is_demand, i)
+        test_count = array.get(m_zone_test_count, i)
+        last_test_bar = array.get(m_zone_last_test_bar, i)
+        created_bar = array.get(m_zone_bar, i)
+        invalidate = m_bar_change and ((is_demand_zone and m_close1 < bot) or (not is_demand_zone and m_close1 > top))
+        if invalidate
+            box.delete(array.get(m_zone_boxes, i))
+            line.delete(array.get(m_zone_prox_lines, i))
+            line.delete(array.get(m_zone_dist_lines, i))
+            label.delete(array.get(m_zone_labels, i))
+            box.delete(array.get(m_origin_boxes, i))
+            line.delete(array.get(m_origin_prox_lines, i))
+            line.delete(array.get(m_origin_dist_lines, i))
+            label.delete(array.get(m_origin_labels, i))
+            array.remove(m_zone_boxes, i)
+            array.remove(m_zone_prox_lines, i)
+            array.remove(m_zone_dist_lines, i)
+            array.remove(m_zone_labels, i)
+            array.remove(m_zone_tops, i)
+            array.remove(m_zone_bottoms, i)
+            array.remove(m_zone_is_demand, i)
+            array.remove(m_zone_test_count, i)
+            array.remove(m_zone_last_test_bar, i)
+            array.remove(m_zone_is_exceptional, i)
+            array.remove(m_zone_origin_enabled, i)
+            array.remove(m_zone_strong_closing, i)
+            array.remove(m_zone_has_gap, i)
+            array.remove(m_zone_pattern_type, i)
+            array.remove(m_zone_bar, i)
+            array.remove(m_zone_legout_count, i)
+            array.remove(m_zone_base_count, i)
+            array.remove(m_origin_boxes, i)
+            array.remove(m_origin_prox_lines, i)
+            array.remove(m_origin_dist_lines, i)
+            array.remove(m_origin_labels, i)
+            array.remove(m_origin_tops, i)
+            array.remove(m_origin_bottoms, i)
+        else
+            if m_bar_change and m_seq > created_bar
+                proximal = is_demand_zone ? array.get(m_zone_tops, i) : array.get(m_zone_bottoms, i)
+                tested = (is_demand_zone and m_low1 <= proximal) or (not is_demand_zone and m_high1 >= proximal)
+                if tested and (na(last_test_bar) or bar_index != last_test_bar)
+                    array.set(m_zone_test_count, i, test_count + 1)
+                    array.set(m_zone_last_test_bar, i, bar_index)
+            f_update_monthly_zone_visibility(i)
+            f_update_monthly_origin_visibility(i)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 1 — CALCULATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+dash1_position = i_dash1_position == "Top Left" ? position.top_left : i_dash1_position == "Top Right" ? position.top_right : i_dash1_position == "Bottom Left" ? position.bottom_left : position.bottom_right
+
+dash1_bg_final = color.new(i_dash1_bg, i_dash1_transp)
+dash1_border_final = color.new(i_dash1_border, 0)
+dash1_text_size = i_dash1_text_size == "Tiny" ? size.tiny : i_dash1_text_size == "Small" ? size.small : i_dash1_text_size == "Normal" ? size.normal : size.large
+
+dash1_vol_n = math.max(1, i_dash1_vol_lookback)
+dash1_vol_current = volume
+dash1_vol_avg = ta.sma(volume, dash1_vol_n)
+dash1_vol_ratio = dash1_vol_avg != 0 ? dash1_vol_current / dash1_vol_avg : 0.0
+dash1_vol_highest = ta.highest(volume, dash1_vol_n)
+
+dash1_atr_value = ta.atr(i_dash1_atr_period)
+dash1_atr_pct = close != 0 ? (dash1_atr_value / close) * 100 : 0.0
+
+dash1_rsi_value = ta.rsi(close, i_dash1_rsi_period)
+dash1_rsi_state = dash1_rsi_value >= 70 ? "Overbought" : dash1_rsi_value <= 30 ? "Oversold" : "Neutral"
+dash1_rsi_color = dash1_rsi_value >= 70 ? color.new(color.red, 20) : dash1_rsi_value <= 30 ? color.new(color.green, 20) : color.new(color.gray, 40)
+
+f_count_fresh_demand_zones() =>
+    int count = 0
+    int sz = array.size(zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if array.get(zone_is_demand, i) and array.get(zone_test_count, i) == 0
+                count += 1
+    count
+
+f_count_fresh_supply_zones() =>
+    int count = 0
+    int sz = array.size(zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if not array.get(zone_is_demand, i) and array.get(zone_test_count, i) == 0
+                count += 1
+    count
+
+f_count_fresh_weekly_demand_zones() =>
+    int count = 0
+    int sz = array.size(w_zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if array.get(w_zone_is_demand, i) and array.get(w_zone_test_count, i) == 0
+                count += 1
+    count
+
+f_count_fresh_weekly_supply_zones() =>
+    int count = 0
+    int sz = array.size(w_zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if not array.get(w_zone_is_demand, i) and array.get(w_zone_test_count, i) == 0
+                count += 1
+    count
+
+f_count_fresh_monthly_demand_zones() =>
+    int count = 0
+    int sz = array.size(m_zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if array.get(m_zone_is_demand, i) and array.get(m_zone_test_count, i) == 0
+                count += 1
+    count
+
+f_count_fresh_monthly_supply_zones() =>
+    int count = 0
+    int sz = array.size(m_zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if not array.get(m_zone_is_demand, i) and array.get(m_zone_test_count, i) == 0
+                count += 1
+    count
+
+f_nearest_fresh_demand_distance() =>
+    float nearest_dist = na
+    float nearest_proximal = na
+    int sz = array.size(zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if array.get(zone_is_demand, i) and array.get(zone_test_count, i) == 0
+                b = array.get(zone_boxes, i)
+                if not na(b)
+                    proximal = box.get_top(b)
+                    dist = math.abs(close - proximal)
+                    if na(nearest_dist) or dist < nearest_dist
+                        nearest_dist := dist
+                        nearest_proximal := proximal
+    [nearest_dist, nearest_proximal]
+
+f_nearest_fresh_supply_distance() =>
+    float nearest_dist = na
+    float nearest_proximal = na
+    int sz = array.size(zone_boxes)
+    if sz > 0
+        for i = 0 to sz - 1
+            if not array.get(zone_is_demand, i) and array.get(zone_test_count, i) == 0
+                b = array.get(zone_boxes, i)
+                if not na(b)
+                    proximal = box.get_bottom(b)
+                    dist = math.abs(close - proximal)
+                    if na(nearest_dist) or dist < nearest_dist
+                        nearest_dist := dist
+                        nearest_proximal := proximal
+    [nearest_dist, nearest_proximal]
+
+dash1_demand_count = f_count_fresh_demand_zones()
+dash1_supply_count = f_count_fresh_supply_zones()
+dash1_w_demand_count = f_count_fresh_weekly_demand_zones()
+dash1_w_supply_count = f_count_fresh_weekly_supply_zones()
+dash1_m_demand_count = f_count_fresh_monthly_demand_zones()
+dash1_m_supply_count = f_count_fresh_monthly_supply_zones()
+
+[dash1_dem_dist, dash1_dem_prox] = f_nearest_fresh_demand_distance()
+[dash1_sup_dist, dash1_sup_prox] = f_nearest_fresh_supply_distance()
+dash1_dem_dist_pct = not na(dash1_dem_dist) and close != 0 ? (dash1_dem_dist / close) * 100 : na
+dash1_sup_dist_pct = not na(dash1_sup_dist) and close != 0 ? (dash1_sup_dist / close) * 100 : na
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 2 — CALCULATIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+dash2_position = i_dash2_position == "Top Left" ? position.top_left : i_dash2_position == "Top Right" ? position.top_right : i_dash2_position == "Bottom Left" ? position.bottom_left : position.bottom_right
+
+dash2_bg_final = color.new(i_dash2_bg, i_dash2_transp)
+dash2_border_final = color.new(i_dash2_border, 0)
+dash2_text_size = i_dash2_text_size == "Tiny" ? size.tiny : i_dash2_text_size == "Small" ? size.small : i_dash2_text_size == "Normal" ? size.normal : size.large
+
+dash2_daily_trend = dash2_d_is_up ? "Uptrend" : dash2_d_is_down ? "Downtrend" : "Ranging"
+dash2_daily_trend_bg = dash2_d_is_up ? color.new(color.green, 20) : dash2_d_is_down ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+dash2_weekly_trend = dash2_w_is_up ? "Uptrend" : dash2_w_is_down ? "Downtrend" : "Ranging"
+dash2_weekly_trend_bg = dash2_w_is_up ? color.new(color.green, 20) : dash2_w_is_down ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+dash2_monthly_trend = dash2_m_is_up ? "Uptrend" : dash2_m_is_down ? "Downtrend" : "Ranging"
+dash2_monthly_trend_bg = dash2_m_is_up ? color.new(color.green, 20) : dash2_m_is_down ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+dash2_quarterly_trend = dash2_q_is_up ? "Uptrend" : dash2_q_is_down ? "Downtrend" : "Ranging"
+dash2_quarterly_trend_bg = dash2_q_is_up ? color.new(color.green, 20) : dash2_q_is_down ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+dash2_halfyear_trend = dash2_hy_is_up ? "Uptrend" : dash2_hy_is_down ? "Downtrend" : "Ranging"
+dash2_halfyear_trend_bg = dash2_hy_is_up ? color.new(color.green, 20) : dash2_hy_is_down ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+dash2_yearly_trend = dash2_y_is_up ? "Uptrend" : dash2_y_is_down ? "Downtrend" : "Ranging"
+dash2_yearly_trend_bg = dash2_y_is_up ? color.new(color.green, 20) : dash2_y_is_down ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+dash2_on_daily_or_below = current_tf_seconds < weekly_tf_seconds
+dash2_on_weekly = current_tf_seconds >= weekly_tf_seconds and current_tf_seconds < monthly_tf_seconds
+dash2_on_monthly = current_tf_seconds >= monthly_tf_seconds and current_tf_seconds < trend_quarterly_seconds
+dash2_on_quarterly = current_tf_seconds >= trend_quarterly_seconds and current_tf_seconds < trend_halfyear_seconds
+
+dash2_dist_ema20 = math.abs(close - trend_ema20)
+dash2_dist_ema50 = math.abs(close - trend_ema50)
+dash2_dist_ema200 = math.abs(close - trend_ema200)
+dash2_dist_w_ema20 = not na(htf_ema20_weekly) ? math.abs(close - htf_ema20_weekly) : na
+dash2_dist_m_ema20 = not na(htf_ema20_monthly) ? math.abs(close - htf_ema20_monthly) : na
+
+f_get_nearest_ema() =>
+    float min_dist = dash2_dist_ema20
+    string nearest = "EMA 20"
+    float nearest_val = trend_ema20
+    if dash2_dist_ema50 < min_dist
+        min_dist := dash2_dist_ema50
+        nearest := "EMA 50"
+        nearest_val := trend_ema50
+    if dash2_dist_ema200 < min_dist
+        min_dist := dash2_dist_ema200
+        nearest := i_ema200_type + " 200"
+        nearest_val := trend_ema200
+    if not na(dash2_dist_w_ema20) and dash2_dist_w_ema20 < min_dist
+        min_dist := dash2_dist_w_ema20
+        nearest := "W EMA 20"
+        nearest_val := htf_ema20_weekly
+    if not na(dash2_dist_m_ema20) and dash2_dist_m_ema20 < min_dist
+        min_dist := dash2_dist_m_ema20
+        nearest := "M EMA 20"
+        nearest_val := htf_ema20_monthly
+    [nearest, nearest_val, min_dist]
+
+[dash2_nearest_ema, dash2_nearest_val, dash2_nearest_dist] = f_get_nearest_ema()
+
+dash2_price_above_ema = close > nz(dash2_nearest_val, close)
+dash2_ema_msg = "Price → " + dash2_nearest_ema + (dash2_price_above_ema ? " ↓" : " ↑")
+dash2_ema_msg_color = dash2_price_above_ema ? color.new(color.red, 0) : color.new(color.green, 0)
+
+// Nifty 50 trend data
+[nifty_close, nifty_ema20, nifty_sma50] = request.security(i_nifty_symbol, timeframe.period, [close, ta.ema(close, 20), ta.sma(close, 50)], barmerge.gaps_off, barmerge.lookahead_off)
+// Sector index trend data
+[sector_close, sector_ema20, sector_sma50] = request.security(i_sector_symbol, timeframe.period, [close, ta.ema(close, 20), ta.sma(close, 50)], barmerge.gaps_off, barmerge.lookahead_off)
+
+// Nifty bias
+bool nifty_data_ok = not na(nifty_close) and not na(nifty_ema20) and not na(nifty_sma50)
+bool nifty_above_ema20 = nifty_data_ok and nifty_close > nifty_ema20
+bool nifty_above_sma50 = nifty_data_ok and nifty_close > nifty_sma50
+string nifty_status = not nifty_data_ok ? "N/A" : (nifty_above_ema20 and nifty_above_sma50) ? "Bullish" : (not nifty_above_ema20 and not nifty_above_sma50) ? "Bearish" : "Neutral"
+color nifty_status_color = nifty_status == "Bullish" ? color.new(color.green, 20) : nifty_status == "Bearish" ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+// Sector bias
+bool sector_data_ok = not na(sector_close) and not na(sector_ema20) and not na(sector_sma50)
+bool sector_above_ema20 = sector_data_ok and sector_close > sector_ema20
+bool sector_above_sma50 = sector_data_ok and sector_close > sector_sma50
+string sector_status = not sector_data_ok ? "N/A" : (sector_above_ema20 and sector_above_sma50) ? "Bullish" : (not sector_above_ema20 and not sector_above_sma50) ? "Bearish" : "Neutral"
+color sector_status_color = sector_status == "Bullish" ? color.new(color.green, 20) : sector_status == "Bearish" ? color.new(color.red, 20) : color.new(color.gray, 40)
+
+// Overall alignment
+// Both bullish = "Aligned ↑ (+2)", Both bearish = "Aligned ↓ (+2)", Mixed = "Neutral (0)"
+string alignment_status = ""
+color alignment_color = color.gray
+if nifty_status == "Bullish" and sector_status == "Bullish"
+    alignment_status := "Aligned ↑ (+2)"
+    alignment_color := color.new(color.green, 0)
+else if nifty_status == "Bearish" and sector_status == "Bearish"
+    alignment_status := "Aligned ↓ (+2)"
+    alignment_color := color.new(color.red, 0)
+else if nifty_status == "Bullish" or sector_status == "Bullish"
+    alignment_status := "Partial (+1)"
+    alignment_color := color.new(color.yellow, 0)
+else
+    alignment_status := "No Alignment (0)"
+    alignment_color := color.new(color.gray, 0)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 1 — TABLE SETUP
+// ══════════════════════════════════════════════════════════════════════════════
+
+var int DASH1_COLS = 4
+var int DASH1_ROWS = 8
+
+var table tbl_dash1 = table.new(position.top_right, DASH1_COLS, DASH1_ROWS, bgcolor = color.new(#1E1E1E, 10), border_color = color.new(#424242, 0), border_width = 1, frame_width = 2, frame_color = color.new(#424242, 0))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// DASHBOARD 2 — TABLE SETUP
+// ══════════════════════════════════════════════════════════════════════════════
+
+var int DASH2_COLS = 3
+var int DASH2_ROWS = 6
+
+var table tbl_dash2 = table.new(position.bottom_right, DASH2_COLS, DASH2_ROWS, bgcolor = color.new(#1E1E1E, 10), border_color = color.new(#424242, 0), border_width = 1, frame_width = 2, frame_color = color.new(#424242, 0))
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - HTF EMA LEVEL DRAWING (Last Bar Only)
+// ══════════════════════════════════════════════════════════════════════════════
+
+if barstate.islast
+    [new_line_w, new_label_w] = f_manage_htf_ema_level(display_weekly_ema, htf_ema20_weekly, i_weekly_ema20_color, i_weekly_ema20_width, htf_line_weekly, htf_label_weekly, "W")
+    htf_line_weekly := new_line_w
+    htf_label_weekly := new_label_w
+
+    [new_line_m, new_label_m] = f_manage_htf_ema_level(display_monthly_ema, htf_ema20_monthly, i_monthly_ema20_color, i_monthly_ema20_width, htf_line_monthly, htf_label_monthly, "M")
+    htf_line_monthly := new_line_m
+    htf_label_monthly := new_label_m
+
+    [new_line_q, new_label_q] = f_manage_htf_ema_level(display_quarterly_ema, htf_ema20_quarterly, i_quarterly_ema20_color, i_quarterly_ema20_width, htf_line_quarterly, htf_label_quarterly, "Q")
+    htf_line_quarterly := new_line_q
+    htf_label_quarterly := new_label_q
+
+    [new_line_hy, new_label_hy] = f_manage_htf_ema_level(display_halfyear_ema, htf_ema20_halfyear, i_halfyear_ema20_color, i_halfyear_ema20_width, htf_line_halfyear, htf_label_halfyear, "HY")
+    htf_line_halfyear := new_line_hy
+    htf_label_halfyear := new_label_hy
+
+    [new_line_y, new_label_y] = f_manage_htf_ema_level(display_yearly_ema, htf_ema20_yearly, i_yearly_ema20_color, i_yearly_ema20_width, htf_line_yearly, htf_label_yearly, "Y")
+    htf_line_yearly := new_line_y
+    htf_label_yearly := new_label_y
+
+    // ════════════════════════════════════════════════════════════════════════
+    // DASHBOARD 1 — RENDERING
+    // ════════════════════════════════════════════════════════════════════════
+
+    table.set_position(tbl_dash1, dash1_position)
+    table.set_bgcolor(tbl_dash1, i_show_dash1 ? dash1_bg_final : color.new(color.white, 100))
+    table.set_border_color(tbl_dash1, i_show_dash1 ? dash1_border_final : color.new(color.white, 100))
+    table.set_frame_color(tbl_dash1, i_show_dash1 ? dash1_border_final : color.new(color.white, 100))
+
+    if i_show_dash1
+        for row = 0 to DASH1_ROWS - 1
+            for col = 0 to DASH1_COLS - 1
+                table.cell(tbl_dash1, col, row, "", text_color = color.new(color.white, 100), bgcolor = color.new(color.white, 100))
+
+    if i_show_dash1
+        int current_row = 0
+
+        if i_dash1_show_volume
+            table.cell(tbl_dash1, 0, current_row, "Vol: " + str.tostring(dash1_vol_current, format.volume), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 1, current_row, "Avg " + str.tostring(dash1_vol_n) + ": " + str.tostring(dash1_vol_avg, format.volume), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 2, current_row, "Ratio: " + str.tostring(dash1_vol_ratio, "#.##") + "x", text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 3, current_row, "High: " + str.tostring(dash1_vol_highest, format.volume), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            current_row += 1
+
+        if i_dash1_show_atr or i_dash1_show_rsi
+            if i_dash1_show_atr
+                table.cell(tbl_dash1, 0, current_row, "ATR " + str.tostring(i_dash1_atr_period) + ": " + str.tostring(dash1_atr_value, format.mintick), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+                table.cell(tbl_dash1, 1, current_row, "ATR %: " + str.tostring(dash1_atr_pct, "#.##") + "%", text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            if i_dash1_show_rsi
+                int rsi_col = i_dash1_show_atr ? 2 : 0
+                table.cell(tbl_dash1, rsi_col, current_row, "RSI " + str.tostring(i_dash1_rsi_period) + ": " + str.tostring(dash1_rsi_value, "#.#"), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+                table.cell(tbl_dash1, rsi_col + 1, current_row, dash1_rsi_state, text_color = color.white, text_size = dash1_text_size, text_halign = text.align_center, bgcolor = dash1_rsi_color)
+            current_row += 1
+
+        if i_dash1_show_zone_count
+            table.cell(tbl_dash1, 0, current_row, "D Dem: " + str.tostring(dash1_demand_count), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 1, current_row, "D Sup: " + str.tostring(dash1_supply_count), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 2, current_row, "W Dem: " + str.tostring(dash1_w_demand_count), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 3, current_row, "W Sup: " + str.tostring(dash1_w_supply_count), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            current_row += 1
+
+            table.cell(tbl_dash1, 0, current_row, "M Dem: " + str.tostring(dash1_m_demand_count), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 1, current_row, "M Sup: " + str.tostring(dash1_m_supply_count), text_color = i_dash1_text, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            int total_demand = dash1_demand_count + dash1_w_demand_count + dash1_m_demand_count
+            int total_supply = dash1_supply_count + dash1_w_supply_count + dash1_m_supply_count
+            table.cell(tbl_dash1, 2, current_row, "Tot Dem: " + str.tostring(total_demand), text_color = color.new(color.green, 0), text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 3, current_row, "Tot Sup: " + str.tostring(total_supply), text_color = color.new(color.red, 0), text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            current_row += 1
+
+        if i_dash1_show_zone_dist
+            string dem_dist_txt = na(dash1_dem_dist) ? "Near Dem: —" : "Near Dem: " + str.tostring(dash1_dem_dist, format.mintick) + " (" + str.tostring(dash1_dem_dist_pct, "#.##") + "%)"
+            color dem_dist_col = na(dash1_dem_dist) ? color.gray : (close > nz(dash1_dem_prox, close) ? color.green : color.yellow)
+            table.cell(tbl_dash1, 0, current_row, dem_dist_txt, text_color = dem_dist_col, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 1, current_row, "", bgcolor = dash1_bg_final)
+
+            string sup_dist_txt = na(dash1_sup_dist) ? "Near Sup: —" : "Near Sup: " + str.tostring(dash1_sup_dist, format.mintick) + " (" + str.tostring(dash1_sup_dist_pct, "#.##") + "%)"
+            color sup_dist_col = na(dash1_sup_dist) ? color.gray : (close < nz(dash1_sup_prox, close) ? color.red : color.yellow)
+            table.cell(tbl_dash1, 2, current_row, sup_dist_txt, text_color = sup_dist_col, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 3, current_row, "", bgcolor = dash1_bg_final)
+            current_row += 1
+
+        if i_show_conflict
+            int conflict_count = 0
+            string first_conflict = ""
+            if array.size(zone_boxes) > 0
+                for i = 0 to array.size(zone_boxes) - 1
+                    [is_c, c_info] = f_check_zone_conflict(i)
+                    if is_c
+                        conflict_count += 1
+                        if str.length(first_conflict) == 0
+                            first_conflict := c_info
+            if conflict_count > 0
+                string warn_text = "⚠ " + str.tostring(conflict_count) + " HTF CONFLICT" + (conflict_count > 1 ? "S" : "")
+                table.cell(tbl_dash1, 0, current_row, warn_text, text_color = color.white, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = color.new(color.fuchsia, 20))
+                table.cell(tbl_dash1, 1, current_row, first_conflict, text_color = color.white, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = color.new(color.fuchsia, 20))
+            else
+                table.cell(tbl_dash1, 0, current_row, "✓ No HTF Conflict", text_color = color.green, text_size = dash1_text_size, text_halign = text.align_left, bgcolor = dash1_bg_final)
+                table.cell(tbl_dash1, 1, current_row, "", bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 2, current_row, "", bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 3, current_row, "", bgcolor = dash1_bg_final)
+            current_row += 1
+
+        if i_show_sector
+            // Extract just the ticker name from the full symbol for display
+            string nifty_name = str.contains(i_nifty_symbol, ":") ? str.substring(i_nifty_symbol, str.pos(i_nifty_symbol, ":") + 1) : i_nifty_symbol
+            string sector_name = str.contains(i_sector_symbol, ":") ? str.substring(i_sector_symbol, str.pos(i_sector_symbol, ":") + 1) : i_sector_symbol
+            table.cell(tbl_dash1, 0, current_row, nifty_name + ": " + nifty_status, text_color = color.white, text_size = dash1_text_size, text_halign = text.align_center, bgcolor = nifty_status_color)
+            table.cell(tbl_dash1, 1, current_row, sector_name + ": " + sector_status, text_color = color.white, text_size = dash1_text_size, text_halign = text.align_center, bgcolor = sector_status_color)
+            table.cell(tbl_dash1, 2, current_row, alignment_status, text_color = alignment_color, text_size = dash1_text_size, text_halign = text.align_center, bgcolor = dash1_bg_final)
+            table.cell(tbl_dash1, 3, current_row, "", bgcolor = dash1_bg_final)
+            current_row += 1
+
+    // ════════════════════════════════════════════════════════════════════════
+    // DASHBOARD 2 — RENDERING
+    // ════════════════════════════════════════════════════════════════════════
+
+    table.set_position(tbl_dash2, dash2_position)
+    table.set_bgcolor(tbl_dash2, i_show_dash2 ? dash2_bg_final : color.new(color.white, 100))
+    table.set_border_color(tbl_dash2, i_show_dash2 ? dash2_border_final : color.new(color.white, 100))
+    table.set_frame_color(tbl_dash2, i_show_dash2 ? dash2_border_final : color.new(color.white, 100))
+
+    if i_show_dash2
+        for row = 0 to DASH2_ROWS - 1
+            for col = 0 to DASH2_COLS - 1
+                table.cell(tbl_dash2, col, row, "", text_color = color.new(color.white, 100), bgcolor = color.new(color.white, 100))
+
+    if i_show_dash2
+        int current_row2 = 0
+
+        if i_dash2_show_daily_trend or i_dash2_show_weekly_trend or i_dash2_show_monthly_trend
+            int col2 = 0
+            if dash2_on_daily_or_below
+                if i_dash2_show_daily_trend
+                    table.cell(tbl_dash2, col2, current_row2, "D SMA50: " + dash2_daily_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_daily_trend_bg)
+                    col2 += 1
+                if i_dash2_show_weekly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "W SMA50: " + dash2_weekly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_weekly_trend_bg)
+                    col2 += 1
+                if i_dash2_show_monthly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "M SMA50: " + dash2_monthly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_monthly_trend_bg)
+                    col2 += 1
+            else if dash2_on_weekly
+                if i_dash2_show_daily_trend
+                    table.cell(tbl_dash2, col2, current_row2, "W SMA50: " + dash2_weekly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_weekly_trend_bg)
+                    col2 += 1
+                if i_dash2_show_weekly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "M SMA50: " + dash2_monthly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_monthly_trend_bg)
+                    col2 += 1
+                if i_dash2_show_monthly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "Q SMA50: " + dash2_quarterly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_quarterly_trend_bg)
+                    col2 += 1
+            else if dash2_on_monthly
+                if i_dash2_show_daily_trend
+                    table.cell(tbl_dash2, col2, current_row2, "M SMA50: " + dash2_monthly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_monthly_trend_bg)
+                    col2 += 1
+                if i_dash2_show_weekly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "Q SMA50: " + dash2_quarterly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_quarterly_trend_bg)
+                    col2 += 1
+                if i_dash2_show_monthly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "HY SMA50: " + dash2_halfyear_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_halfyear_trend_bg)
+                    col2 += 1
+            else if dash2_on_quarterly
+                if i_dash2_show_daily_trend
+                    table.cell(tbl_dash2, col2, current_row2, "Q SMA50: " + dash2_quarterly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_quarterly_trend_bg)
+                    col2 += 1
+                if i_dash2_show_weekly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "HY SMA50: " + dash2_halfyear_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_halfyear_trend_bg)
+                    col2 += 1
+                if i_dash2_show_monthly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "Y SMA50: " + dash2_yearly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_yearly_trend_bg)
+                    col2 += 1
+            else
+                if i_dash2_show_daily_trend
+                    table.cell(tbl_dash2, col2, current_row2, "HY SMA50: " + dash2_halfyear_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_halfyear_trend_bg)
+                    col2 += 1
+                if i_dash2_show_weekly_trend
+                    table.cell(tbl_dash2, col2, current_row2, "Y SMA50: " + dash2_yearly_trend, text_color = color.white, text_size = dash2_text_size, text_halign = text.align_center, bgcolor = dash2_yearly_trend_bg)
+                    col2 += 1
+            current_row2 += 1
+
+        if i_dash2_show_daily_emas
+            table.cell(tbl_dash2, 0, current_row2, "EMA 20: " + str.tostring(trend_ema20, format.mintick), text_color = i_dash2_text, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            table.cell(tbl_dash2, 1, current_row2, "EMA 50: " + str.tostring(trend_ema50, format.mintick), text_color = i_dash2_text, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            table.cell(tbl_dash2, 2, current_row2, i_ema200_type + " 200: " + str.tostring(trend_ema200, format.mintick), text_color = i_dash2_text, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            current_row2 += 1
+
+        if i_dash2_show_htf_emas
+            string w_ema_txt = not na(htf_ema20_weekly) ? "W EMA 20: " + str.tostring(htf_ema20_weekly, format.mintick) : "W EMA 20: —"
+            string m_ema_txt = not na(htf_ema20_monthly) ? "M EMA 20: " + str.tostring(htf_ema20_monthly, format.mintick) : "M EMA 20: —"
+            color w_ema_col = na(htf_ema20_weekly) ? color.gray : (close > htf_ema20_weekly ? color.green : color.red)
+            color m_ema_col = na(htf_ema20_monthly) ? color.gray : (close > htf_ema20_monthly ? color.green : color.red)
+            table.cell(tbl_dash2, 0, current_row2, w_ema_txt, text_color = w_ema_col, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            table.cell(tbl_dash2, 1, current_row2, m_ema_txt, text_color = m_ema_col, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            string q_ema_txt = not na(htf_ema20_quarterly) ? "Q EMA 20: " + str.tostring(htf_ema20_quarterly, format.mintick) : "Q EMA 20: —"
+            color q_ema_col = na(htf_ema20_quarterly) ? color.gray : (close > htf_ema20_quarterly ? color.green : color.red)
+            table.cell(tbl_dash2, 2, current_row2, q_ema_txt, text_color = q_ema_col, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            current_row2 += 1
+
+        if i_dash2_show_ema_msg
+            float dist_pct = close != 0 ? (dash2_nearest_dist / close) * 100 : 0.0
+            string full_msg = dash2_ema_msg + " (" + str.tostring(dist_pct, "#.##") + "%)"
+            table.cell(tbl_dash2, 0, current_row2, full_msg, text_color = dash2_ema_msg_color, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            table.cell(tbl_dash2, 1, current_row2, "", bgcolor = dash2_bg_final)
+            table.cell(tbl_dash2, 2, current_row2, "", bgcolor = dash2_bg_final)
+            current_row2 += 1
+
+        if i_dash2_show_clock
+            string clock_text = "SMA50: " + clock_emoji + " " + clock_position
+            table.cell(tbl_dash2, 0, current_row2, clock_text, text_color = clock_color, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+
+            string action_text = ""
+            if sma50_change_pct > 0.4
+                action_text := "Look for DEMAND"
+            else if sma50_change_pct > -0.1 and sma50_change_pct <= 0.4
+                action_text := "Mild UP / Caution"
+            else if sma50_change_pct > -0.4 and sma50_change_pct <= 0.1
+                action_text := "SIDEWAYS — Curve only"
+            else if sma50_change_pct <= -0.4
+                action_text := "Look for SUPPLY"
+            else
+                action_text := "Mild DOWN / Caution"
+
+            table.cell(tbl_dash2, 1, current_row2, action_text, text_color = clock_color, text_size = dash2_text_size, text_halign = text.align_left, bgcolor = dash2_bg_final)
+            table.cell(tbl_dash2, 2, current_row2, "", bgcolor = dash2_bg_final)
+            current_row2 += 1
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - CROSS SIGNAL LABELS
+// ══════════════════════════════════════════════════════════════════════════════
+
+if i_show_trend_emas and i_show_major_cross and major_golden_cross and barstate.isconfirmed
+    label.new(bar_index, low, "GC", xloc.bar_index, yloc.price, i_major_gc_color, label.style_label_up, color.white, size.small, text.align_center, tooltip = "Golden Cross: EMA50 crossed above EMA200")
+
+if i_show_trend_emas and i_show_major_cross and major_death_cross and barstate.isconfirmed
+    label.new(bar_index, high, "DC", xloc.bar_index, yloc.price, i_major_dc_color, label.style_label_down, color.white, size.small, text.align_center, tooltip = "Death Cross: EMA50 crossed below EMA200")
+
+if i_show_trend_emas and i_show_minor_cross and minor_golden_cross and barstate.isconfirmed
+    label.new(bar_index, low, "Golden", xloc.bar_index, yloc.price, i_minor_gc_color, label.style_label_up, color.black, size.tiny, text.align_center, tooltip = "Minor Golden: EMA20 crossed above EMA50")
+
+if i_show_trend_emas and i_show_minor_cross and minor_death_cross and barstate.isconfirmed
+    label.new(bar_index, high, "Death", xloc.bar_index, yloc.price, i_minor_dc_color, label.style_label_down, color.white, size.tiny, text.align_center, tooltip = "Minor Death: EMA20 crossed below EMA50")
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - EMA PLOTS
+// ══════════════════════════════════════════════════════════════════════════════
+
+plot(i_show_trend_emas and i_show_ema20 ? trend_ema20 : na, "EMA 20", i_ema20_color, i_ema20_width)
+plot(i_show_trend_emas and i_show_ema50 ? trend_ema50 : na, "EMA 50", i_ema50_color, i_ema50_width)
+plot(i_show_trend_emas and i_show_ema200 ? trend_ema200 : na, "EMA/SMA 200", i_ema200_color, i_ema200_width)
+plot(i_show_trend_emas and i_show_sma50_trend ? trend_sma50 : na, "SMA 50 Trend", trend_sma50_color, i_sma50_width)
+
+plot(display_weekly_ema ? htf_ema20_weekly : na, "Weekly EMA20", color.new(i_weekly_ema20_color, 100), display = display.price_scale + display.status_line)
+plot(display_monthly_ema ? htf_ema20_monthly : na, "Monthly EMA20", color.new(i_monthly_ema20_color, 100), display = display.price_scale + display.status_line)
+plot(display_quarterly_ema ? htf_ema20_quarterly : na, "Quarterly EMA20", color.new(i_quarterly_ema20_color, 100), display = display.price_scale + display.status_line)
+plot(display_halfyear_ema ? htf_ema20_halfyear : na, "Half-Year EMA20", color.new(i_halfyear_ema20_color, 100), display = display.price_scale + display.status_line)
+plot(display_yearly_ema ? htf_ema20_yearly : na, "Yearly EMA20", color.new(i_yearly_ema20_color, 100), display = display.price_scale + display.status_line)
+
+// ══════════════════════════════════════════════════════════════════════════════
+// TREND ENGINE - TREND BACKGROUND
+// ══════════════════════════════════════════════════════════════════════════════
+
+trend_bg_color = trend_state == "UPTREND" ? color.new(color.green, 95) : trend_state == "DOWNTREND" ? color.new(color.red, 95) : color.new(color.gray, 97)
+
+bgcolor(i_show_trend_emas and i_show_trend_bg ? trend_bg_color : na, title = "Trend Background")
