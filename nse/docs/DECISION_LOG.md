@@ -1,7 +1,7 @@
 # Decision Log
 
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
-**Version:** 2.2, dated 2026-10-26. v2.2 adds user-approved decisions D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
+**Version:** 2.3, dated 2026-10-26. v2.3 adds user-approved decisions D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
@@ -389,6 +389,48 @@
 
 ---
 
+## 1C. User-approved decisions added in v2.3 (HTF freshness, B16)
+
+These record the answers to design questions A1-A5 (approved 2026-10-26). They are implemented in `nse/mtf-freshness/mtf_freshness.py`.
+
+### D24. HTF invalidation (A1)
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - A **completed** higher-timeframe candle closing beyond the distal line invalidates the zone permanently (PS 2667, 2718; RB 1627, 1741).
+  - A base-candle close beyond it is evidence only. Status `BASE_CLOSE_BEYOND_DL_PENDING` (manual review, never fresh) until that higher-timeframe period completes.
+  - If the period then closes back inside, the zone is `TESTED`, with `BASE_CLOSE_BEYOND_DL_RESOLVED_NOT_INVALIDATED` kept for review.
+
+### D25. Touch-count granularity (A2)
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - Both counts are kept: `base_touch_count` (one per touching base candle) and `htf_test_count` (the Zone Engine / Pine reference view).
+  - Only fresh vs tested gates eligibility (RB 264, D3).
+  - No new scoring rule.
+
+### D26. Finest reliable base series (A3)
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - Touches come from the finest reliable completed series supplied (`D`, or an intraday interval that divides 375 minutes).
+  - Every event records `source_tf`, candle start and candle end. A daily base gives day-level timing only.
+  - The 75m and 125m execution analyses stay independent.
+
+### D27. Data gaps (A4)
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - A missing or partial session after a zone became knowable, and before any touch, makes the zone `UNKNOWN_DATA_GAP`: not fresh context, requiring repair or manual review.
+  - A known gap inside a period also ends that timeframe's series (`HTF_SERIES_TRUNCATED_AT_GAP`).
+  - Freshness is never inferred from missing candles.
+
+### D28. Calendar fallback (A5)
+- **Status:** `USER_APPROVED` (temporary)
+- **Approved behaviour:** without a validated NSE calendar:
+  - a period is complete only when a later period's data exists;
+  - every missing weekday is an unverified gap;
+  - every snapshot carries `CALENDAR_UNVALIDATED`.
+- **Production readiness:** not production-ready until calendar boundaries and holidays are validated (**B17**).
+
+---
+
 ## 2. Source- and Pine-defined specifications (verified)
 
 | ID | Item | Status | Evidence |
@@ -429,7 +471,7 @@
 | B8 | Q/HY/Y alignment | **Decided by D23** (calendar alignment). **TradingView boundary/value verification still open** |
 | B9 | Deterministic buffers | **Open** (needed only for historical validation) |
 
-The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D23.
+The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D28.
 
 ---
 
