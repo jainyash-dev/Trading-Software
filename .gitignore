@@ -1,0 +1,15 @@
+# NSE raw market data and downloaded exchange documents stay local (D31).
+# Reviewed provenance files (sources.csv, events.csv, manifests) and hand-recorded
+# zone comparisons are committed; raw exports, archives and PDFs are not.
+/nse/data/eod/raw/
+/nse/data/intraday/raw/
+/nse/data/tradingview/**/*.csv
+/nse/data/calendar/circulars/
+/nse/data/corporate_actions/raw/
+/nse/data/**/*.zip
+/nse/data/**/*.pdf
+/nse/data/**/*.xlsx
+
+# credentials, if they ever exist, are never committed (D10)
+.env
+*.env

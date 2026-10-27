@@ -503,6 +503,16 @@ class CompletedCandlesAndLookahead(unittest.TestCase):
         self.assertEqual(d["timeframe"], "D")
         self.assertNotIn("_consecutive_open", d["assessments"][0]["zone"])
 
+    def test_serialised_derived_lists_equal_the_properties(self):
+        # audit L4: the derived lists are part of the serialised result
+        for r in (ze.run_engine(bars(DBR), "D"), ze.run_engine(mirror(bars(DBR)), "D")):
+            d = r.to_dict()["derived"]
+            for name in ("eligible", "manual_review_zones", "context_supply", "fresh_zones"):
+                self.assertEqual(d[name], [a.zone.id for a in getattr(r, name)], name)
+        self.assertEqual(ze.run_engine(bars(DBR), "D").to_dict()["derived"]["eligible"], ["demand-2-3"])
+        self.assertEqual(ze.run_engine(mirror(bars(DBR)), "D").to_dict()["derived"]["context_supply"],
+                         ["supply-2-3"])
+
 
 PEND = Achievement.HEAD      # pending demand: leg-out at bar 3 closes 100.5, below the 112 leg-in high
 LATE = (100.6, 114, 100.4, 113)   # strong bull closing 113 > 112

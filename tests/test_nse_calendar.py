@@ -236,6 +236,22 @@ class OrchestratorIntegration(Base):
         self.assertEqual(s.data_gaps, [])
         self.assertEqual(s.series["W"].candles[-1].known_at, datetime.datetime(2025, 2, 13, 15, 30))
 
+    def test_unresolved_date_is_handled_per_date_by_the_orchestrator(self):
+        # audit L10 option B: ambiguity is per date; missing coverage stays fatal (next test)
+        self.assertEqual(cal_mod.NseCalendar.UNRESOLVED_ERRORS, (cal_mod.CalendarAmbiguityError,))
+        c = (self.f.circular("T/BASE/2025", "BASE", 2025)
+             .event("2025-02-12", "HOLIDAY", "T/BASE/2025", status="UNRESOLVED", note="sources disagree")
+             .load())
+        days = [D(2025, 2, 10) + datetime.timedelta(days=i) for i in range(5)]
+        cs = [mtf.TimedCandle(datetime.datetime.combine(d, datetime.time(9, 15)),
+                              datetime.datetime.combine(d, datetime.time(15, 30)), 100, 101, 99, 100)
+              for d in days]
+        s = mtf.replay(cs, "D", htf=("W",), as_of=datetime.datetime(2025, 2, 14, 15, 30), calendar=c)
+        self.assertEqual([(x.date, x.classification) for x in s.excluded_candles],
+                         [(D(2025, 2, 12), "CALENDAR_UNRESOLVED")])
+        self.assertEqual(s.unresolved_calendar_dates, [D(2025, 2, 12)])
+        self.assertEqual(s.series["W"].truncated_at, "2025-W07")
+
     def test_uncovered_year_stops_the_orchestrator(self):
         c = self.f.circular("T/BASE/2025", "BASE", 2025).load()
         cs = [mtf.TimedCandle(datetime.datetime(2024, 12, 30, 9, 15), datetime.datetime(2024, 12, 30, 15, 30),

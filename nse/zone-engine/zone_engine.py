@@ -289,6 +289,9 @@ class EngineResult:
         out = asdict(self)
         for a in out["assessments"]:
             a["zone"].pop("_consecutive_open", None)
+        # audit L4: the derived lists (zone ids) belong to a complete serialised result
+        out["derived"] = {name: [a.zone.id for a in getattr(self, name)]
+                          for name in ("eligible", "manual_review_zones", "context_supply", "fresh_zones")}
         return out
 
 

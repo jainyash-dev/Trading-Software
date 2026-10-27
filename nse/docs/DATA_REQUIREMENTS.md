@@ -17,7 +17,7 @@ See `nse/data/calendar/README.md` for the exact circulars to download and where 
 
 ---
 
-## 2. Daily end-of-day data (B6)
+## 2. Daily end-of-day data (B18)
 
 ### 2.1 Files
 NSE changed its capital-market bhavcopy format during the window. NSE's report listing says the old file was discontinued with effect from 8 July 2024.
@@ -44,7 +44,7 @@ NSE changed its capital-market bhavcopy format during the window. NSE's report l
 2. After the loader is approved, **every daily file for the window** (about 1,240 trading days).
 3. **Placement:** `nse/data/eod/raw/`, as downloaded (zipped). Record the download date per batch. The loader writes a manifest with each file's SHA-256.
 
-**Decision needed (repository size):** roughly 1,240 zip files. My recommendation is to keep them **out of git** (local only) and commit only the manifest of names and hashes. That needs a `.gitignore` entry, which this repository does not yet have.
+**Repository size (decided 2026-10-27):** roughly 1,240 zip files stay **out of git** (local only); only the manifest of names and hashes is committed. The root `.gitignore` excludes `nse/data/eod/raw/` and every `.zip`, `.pdf` and `.xlsx` under `nse/data/`.
 
 ### 2.4 Known limitation
 Bhavcopy prices are **unadjusted**. They cannot be used for zone detection across a split or bonus until B7 is settled; until then they serve calendar reconciliation and price cross-checks only.

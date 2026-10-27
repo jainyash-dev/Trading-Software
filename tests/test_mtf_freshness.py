@@ -8,6 +8,7 @@ cases. Calendars here are test fixtures, not a validated NSE calendar.
 """
 
 import datetime
+import json
 import os
 import random
 import unittest
@@ -307,8 +308,10 @@ class ReplayProperties(unittest.TestCase):
         for t in cuts:
             full = mtf.replay(cs, "D", htf=("W", "M"), as_of=t, calendar=cal).to_dict()
             prefix = mtf.replay([c for c in cs if c.end <= t], "D", htf=("W", "M"), as_of=t,
-                                calendar=cal).to_dict()
-            self.assertEqual(full, prefix, t)
+                                calendar=cal)
+            self.assertEqual(full, prefix.to_dict(), t)
+            full_json = mtf.replay(cs, "D", htf=("W", "M"), as_of=t, calendar=cal).to_json()
+            self.assertEqual(full_json, prefix.to_json(), t)                # L4: JSON prefix-equal too
 
     def test_replay_is_deterministic(self):
         cs, cal = weekly_case({2: (103, 103.5, 95.0, 100)})
@@ -352,6 +355,139 @@ class ReplayProperties(unittest.TestCase):
                         self.assertTrue(a.zone.is_demand)
                         self.assertEqual(s.zones["%s:%s" % (tf, a.zone.id)].status, mtf.FRESH)
             self.assertTrue(seen_not_fresh)
+
+
+class AmbiguousDate(LookupError):
+    pass
+
+
+class AmbiguousCal(Cal):
+    """A test calendar that cannot classify some dates, like nse_calendar on an UNRESOLVED
+    row; it declares that error as resolvable per date (audit L10)."""
+    UNRESOLVED_ERRORS = (AmbiguousDate,)
+
+    def __init__(self, days, ambiguous):
+        Cal.__init__(self, days)
+        self.ambiguous = set(ambiguous)
+
+    def is_trading_day(self, d):
+        if d in self.ambiguous:
+            raise AmbiguousDate(d)
+        return d in self.days
+
+
+def all_days():
+    return [d for w in FULL_WEEKS for d in w] + [W6_MON]
+
+
+class UnresolvedCalendarDates(unittest.TestCase):
+    """Audit L10 (option B): an ambiguous date is handled per date, never by aborting."""
+
+    def check_weekly(self, s, key):
+        z = s.zones[key]
+        self.assertEqual(z.status, mtf.UNVERIFIED_SESSION)
+        self.assertIn("CALENDAR_UNRESOLVED 2025-02-12", z.reasons)
+        self.assertFalse(z.usable_as_fresh_context)
+        self.assertEqual(s.unresolved_calendar_dates, [W5[2]])
+        self.assertEqual(s.data_gaps, [])                              # no invented gap
+        w = s.series["W"]
+        self.assertEqual(w.truncated_at, "2025-W07")                   # its period is never built
+        self.assertIn(mtf.HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR, w.reasons)
+        self.assertEqual(w.candles[-1].period_key, "2025-W06")
+
+    def test_candle_on_an_ambiguous_date_is_set_aside(self):
+        cal = AmbiguousCal(all_days(), [W5[2]])
+        s = mtf.replay(full_weeks_case(), "D", htf=("W",), as_of=close(W6_MON), calendar=cal)
+        self.assertEqual([(x.date, x.classification) for x in s.excluded_candles],
+                         [(W5[2], "CALENDAR_UNRESOLVED")])
+        self.check_weekly(s, KEY)
+        # touching the PL: neither a test nor a confirmed excluded session (that is D33's
+        # EXCLUDED_SESSION_TOUCH, for Muhurat or shortened sessions only)
+        touch = [day(c.start.date(), 104, 104.5, 95.0, 104) if c.start.date() == W5[2] else c
+                 for c in full_weeks_case()]
+        z = mtf.replay(touch, "D", htf=("W",), as_of=close(W6_MON), calendar=cal).zones[KEY]
+        self.assertEqual((z.status, z.events, z.manual_review), (mtf.UNVERIFIED_SESSION, [], []))
+
+    def test_supply_mirror(self):
+        cal = AmbiguousCal(all_days(), [W5[2]])
+        s = mtf.replay(mirror(full_weeks_case()), "D", htf=("W",), as_of=close(W6_MON), calendar=cal)
+        self.assertEqual([x.classification for x in s.excluded_candles], ["CALENDAR_UNRESOLVED"])
+        self.check_weekly(s, "W:supply-2-3")
+
+    def test_ambiguous_date_without_data_still_blocks_zones(self):
+        cal = AmbiguousCal(all_days(), [W5[2]])
+        s = mtf.replay(full_weeks_case(skip=(W5[2],)), "D", htf=("W",), as_of=close(W6_MON), calendar=cal)
+        self.assertEqual(s.excluded_candles, [])
+        self.check_weekly(s, KEY)
+
+    def test_a_period_that_is_only_an_ambiguous_date_is_not_stitched_over(self):
+        days = DailyZones.DAYS + DailyZones.LATER
+        cal = AmbiguousCal(days, [DailyZones.LATER[1]])                # 14 Jan, no data
+        cs = DailyZones().case(skip=(DailyZones.LATER[1],))
+        s = mtf.replay(cs, "D", htf=("D",), as_of=close(DailyZones.LATER[3]), calendar=cal)
+        d = s.series["D"]
+        self.assertEqual(d.truncated_at, "2025-01-14")
+        self.assertIn(mtf.HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR, d.reasons)
+        self.assertEqual(d.candles[-1].period_key, "2025-01-13")
+        self.assertEqual(s.data_gaps, [])
+        self.assertEqual(s.zones["D:demand-2-3"].status, mtf.UNVERIFIED_SESSION)
+        # the same date after the last candle: the series must say so, not end silently
+        last = mtf.replay([c for c in cs if c.start.date() <= DailyZones.LATER[0]], "D", htf=("D",),
+                          as_of=close(DailyZones.LATER[1]), calendar=cal)
+        self.assertEqual(last.series["D"].truncated_at, "2025-01-14")
+        self.assertIn(mtf.HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR, last.series["D"].reasons)
+
+    def test_other_calendar_errors_still_propagate(self):
+        class Broken(Cal):
+            UNRESOLVED_ERRORS = (AmbiguousDate,)
+
+            def is_trading_day(self, d):
+                raise KeyError(d)                                      # not declared: fatal
+        with self.assertRaises(KeyError):
+            mtf.replay(full_weeks_case(), "D", htf=("W",), calendar=Broken(all_days()))
+
+
+class Serialisation(unittest.TestCase):
+    """Audit L4: snapshots carry their derived views and serialise to JSON."""
+
+    def snapshots(self):
+        fresh, cal = weekly_case()
+        touched, _ = weekly_case({2: (103, 103.5, 95.0, 100)})          # Wednesday touch: blocked
+        yield mtf.replay(fresh, "D", htf=("W", "M"), as_of=close(W5[1]), calendar=cal)
+        yield mtf.replay(touched, "D", htf=("W", "M"), as_of=close(W5[2]), calendar=cal)
+
+    def test_dict_carries_usable_flag_and_overlay_output(self):
+        seen_kept = seen_blocked = False
+        for s in self.snapshots():
+            d = s.to_dict()
+            for key, z in s.zones.items():
+                self.assertEqual(d["zones"][key]["usable_as_fresh_context"], z.usable_as_fresh_context, key)
+            for tf in s.series:
+                kept, blocked = s.eligible_after_overlay(tf)
+                self.assertEqual(d["overlay"][tf]["kept"], [a.zone.id for a in kept], tf)
+                self.assertEqual(d["overlay"][tf]["blocked"],
+                                 [{"zone_id": a.zone.id, "reasons": why} for a, why in blocked], tf)
+                seen_kept = seen_kept or bool(kept)
+                seen_blocked = seen_blocked or bool(blocked)
+        self.assertTrue(seen_kept and seen_blocked)                    # both branches exercised
+
+    def test_json_round_trip_uses_iso_dates_and_is_deterministic(self):
+        for s in self.snapshots():
+            text = s.to_json()
+            self.assertEqual(text, s.to_json())
+            back = json.loads(text)
+            self.assertEqual(back["as_of"], s.as_of.isoformat())
+            self.assertEqual(back["overlay"], json.loads(json.dumps(s.to_dict()["overlay"])))
+            for key, z in s.zones.items():
+                self.assertEqual(back["zones"][key]["status"], z.status)
+                self.assertEqual(back["zones"][key]["creation_period_end"], z.creation_period_end.isoformat())
+        excluded = mtf.replay(full_weeks_case()[:-1] + [day(D(2025, 2, 15), *CALM[0])], "D", htf=("W",))
+        back = json.loads(excluded.to_json())
+        self.assertEqual(back["excluded_candles"][0]["date"], "2025-02-15")
+
+    def test_unknown_types_are_refused_not_stringified(self):
+        with self.assertRaises(TypeError):
+            mtf.json_default(object())
 
 
 class Consistency(unittest.TestCase):

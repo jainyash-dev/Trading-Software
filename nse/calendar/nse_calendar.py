@@ -157,6 +157,11 @@ def sha256_of(path):
 
 
 class NseCalendar(object):
+    # Errors that concern ONE date and that a caller may handle per date (audit L10,
+    # option B): an UNRESOLVED row or an event from an unverified source. A year without
+    # a verified BASE circular (CalendarCoverageError) is a setup error and stays fatal.
+    UNRESOLVED_ERRORS = (CalendarAmbiguityError,)
+
     def __init__(self, sources, events):
         self.sources = {s.source_ref: s for s in sources}
         self.events = sorted(events, key=lambda e: (e.date, e.event))

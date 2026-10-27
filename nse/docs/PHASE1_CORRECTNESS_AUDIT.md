@@ -7,7 +7,9 @@
 - Findings, H1/H2 fixes and the M3 decision (option c) are approved by the user (2026-10-26): D33-D35.
 - The second-pass review (section 4A) found four more counterexamples, fixed as P1-P3. The user approved them on 2026-10-27 as D36-D38, and approved the D30 special-session rule provisionally.
 - The final review (section 4B) found two more gaps and closed them.
-- Nothing is committed.
+- **Committed:** the calendar infrastructure in `d72415f` and the remediation (H1, H2, M3, D36-D38) in `b7a51cc`, both on `nse-phase1` on 2026-10-27. The audit baseline was `16f17af`.
+- L4 and L10 were fixed on 2026-10-27 (section 4C). They are in the working tree and **not committed**.
+- **Project status:** Phase 1 in progress; external validation pending.
 
 All evidence in this report is **synthetic**. Nothing here shows correctness on real NSE data, parity with TradingView, or any trading result.
 
@@ -20,8 +22,9 @@ All evidence in this report is **synthetic**. Nothing here shows correctness on 
 - The audit found two high-severity defects (H1, H2). Each broke an approved decision (D30 and D27, respectively).
 - Both are now fixed in the working tree, with regression tests that fail on the committed code and pass on the fix (section 6).
 - A second review of those fixes (section 4A) found four more ways a zone could be fabricated, or not blocked, despite unresolved data quality. They are fixed the same way and were approved as D36-D38.
-- Once the remediation is committed, the proposed verdict becomes **COMPLETE WITH LIMITATIONS**: synthetically verified and externally unverified.
-- Phase 1 is not declared complete by this report.
+- The remediation is committed (`b7a51cc`).
+- The verdict stays **NOT READY TO DECLARE COMPLETE**, by user decision: Phase 1 is in progress and external validation is pending.
+- Evidence is synthetic only; nothing has been validated on real NSE data or against TradingView.
 
 "Phase 1" covers zone detection, core scoring (/7), freshness, invalidation and eligibility on completed candles, plus the HTF freshness overlay (B16). Scanner-level work is out of scope: confluence /14, MTFA, R:R, sizing, entries and alerts. Those requirements appear in the matrix as NOT IMPLEMENTED (planned).
 
@@ -36,15 +39,19 @@ All evidence in this report is **synthetic**. Nothing here shows correctness on 
 | Tests in the working tree, after H1/H2 remediation | 423 / 423 (adds 5 tests) |
 | Tests in the working tree, after the second pass (section 4A) | 427 / 427 (adds 4 tests; strengthens 3 existing ones; changes 1 committed assertion, see P3) |
 | Tests in the working tree, after the final review (section 4B) | 429 / 429 (adds 2 tests) |
+| Committed | `d72415f` (calendar infrastructure, 418 tests on its own tree), `b7a51cc` (remediation, 429 tests) |
+| Working tree after L4/L10 (section 4C, uncommitted) | 439 / 439 (adds 10 tests; strengthens 1) |
 | Rulebook SHA-256 | `039883be6b97ca39b00e5afe80f219a5d759dae99fa9c4179475f506a275d54b` (unchanged) |
 | Pine Script SHA-256 | `14293fa5d3c8e5ba9309b45804a840bb5d8c43d47c193ebb6bca0480bc0a5519` (unchanged) |
 | Secrets / broker / network scan | nothing found under `nse/` or in the NSE tests |
 
-**Uncommitted work in the tree:**
-- From external-validation Step 1:
+The rows above describe the audit as it ran from baseline `16f17af`.
+
+**Committed since the baseline:**
+- `d72415f`, external-validation Step 1:
   - `nse/calendar/`, `nse/data/calendar/`, `nse/docs/DATA_REQUIREMENTS.md`, `tests/test_nse_calendar.py`;
   - edits to `DECISION_LOG.md` (D29-D32) and `IMPLEMENTATION_BLOCKERS.md`.
-- From this remediation:
+- `b7a51cc`, the remediation:
   - `nse/mtf-freshness/mtf_freshness.py`, `nse/zone-engine/zone_engine.py`;
   - `tests/test_mtf_freshness.py`, `tests/test_zone_engine.py`;
   - this report;
@@ -58,7 +65,7 @@ All evidence in this report is **synthetic**. Nothing here shows correctness on 
 |---|---|
 | SYNTH-TESTED | A test with hand-derived expectations exercises the rule. Synthetic only. |
 | CODE-REVIEW | Verified by reading the code; no dedicated test. |
-| FIXED (pending approval) | Was a defect; fixed in the working tree. |
+| FIXED | Was a defect; fixed, with the commit or working-tree state stated in the row. |
 | MANUAL REVIEW (by design) | The engine flags the case for a human and never decides it. |
 | EXT-UNVERIFIED | Needs real NSE data or TradingView to confirm. |
 | NOT IMPLEMENTED | Planned for a later phase. Not a defect. |
@@ -93,7 +100,7 @@ A passing test is not taken as proof that a requirement is met. It shows only th
 | 21 | HTF invalidation on the zone's own timeframe; base close = manual review | D24 | `_overlay` | SYNTH-TESTED |
 | 22 | Only completed candles drive decisions | RB 771; D12 | engine `_completed`; overlay `_build_series` | SYNTH-TESTED inside the orchestrator; engine trusts the caller (M2) |
 | 23 | HTF zone status updated every session | RB 292, 1508; B16 | orchestrator | SYNTH-TESTED |
-| 24 | Excluded sessions kept out of candle construction | D30, D33 | `_classify`, `_overlay` | **FIXED**; was defect H1 (review pending before commit) |
+| 24 | Excluded sessions kept out of candle construction | D30, D33 | `_classify`, `_overlay` | **FIXED**; was defect H1 (committed in `b7a51cc`) |
 | 25 | Missing data never yields a fresh zone | D27, D34 | `_overlay`, `_build_series` | **FIXED**; was defect H2, plus S1-S3 (P1, P2) in section 4A |
 | 25a | Daily zones get the same data-quality checks | D27, D34, D38 | `replay` D over D | **FIXED**; was S4 |
 | 25b | Special session on regular hours counts as normal only from verified source data | D30 (provisional) | `nse_calendar.session_type` | SYNTH-TESTED (incl. the unverified-source refusal); **EXT-UNVERIFIED**: no circular obtained |
@@ -126,7 +133,7 @@ A passing test is not taken as proof that a requirement is met. It shows only th
 | Section 7 psychology | RB 3025-3437 | N/A (human) |
 | Section 8 development path, journal, watchlist, reviews | RB 3438-4028 | NOT IMPLEMENTED or N/A (human) |
 
-## 4. Confirmed high-severity defects (both fixed, pending approval)
+## 4. Confirmed high-severity defects (both fixed; approved as D33-D34; committed in `b7a51cc`)
 
 ### H1. Candles on excluded or non-trading sessions were used
 
@@ -232,6 +239,38 @@ The review re-read the code paths named in the user's checklist:
 | `FormationGaps.test_a_missing_last_period_is_reported_as_truncation` | A trailing wholly missing expected period is reported as truncation; the zone is not fresh | FAIL (`None != '2025-W08'`) | pass |
 | `Provenance.test_regular_hours_special_session_needs_a_verified_source` (`tests/test_nse_calendar.py`) | A regular-hours special session from an unverified source is refused, never `NORMAL_SPECIAL` | pass (guard: the code was already correct) | pass |
 
+## 4C. L4 and L10 remediation (2026-10-27, uncommitted)
+
+Both were approved by the user on 2026-10-27, L10 as option B. Trading eligibility logic is unchanged.
+
+**L4: the serialisation contract.**
+- `EngineResult.to_dict()` adds `derived`: the zone ids of `eligible`, `manual_review_zones`, `context_supply` and `fresh_zones`.
+- `MtfSnapshot.to_dict()` adds each zone's `usable_as_fresh_context`, and `overlay[tf] = {kept: [ids], blocked: [{zone_id, reasons}]}`, taken from `eligible_after_overlay`.
+- `MtfSnapshot.to_json()` writes dates and datetimes as ISO 8601 with sorted keys. `json_default` refuses any other type rather than stringifying it.
+
+**L10 (option B): per-date ambiguity.**
+- The calendar declares `UNRESOLVED_ERRORS`. `NseCalendar` declares `(CalendarAmbiguityError,)` only, so missing coverage is still fatal and `test_uncovered_year_stops_the_orchestrator` is unchanged.
+- A candle on an ambiguous date is set aside as `CALENDAR_UNRESOLVED`. It is neither a test nor an `EXCLUDED_SESSION_TOUCH`.
+- An ambiguous date is never a gap.
+- Every period containing one is truncated (`HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR`): inside a period with data, between periods, or after the last data.
+- Every zone whose formation-to-as-of span contains one is `UNVERIFIED_SESSION`, with the reason `CALENDAR_UNRESOLVED <date>`.
+- The snapshot lists `unresolved_calendar_dates` and adds the limitation `CALENDAR_UNRESOLVED_DATES`.
+- Any calendar error type that is not declared still stops the replay.
+
+**Applied literally, with noted consequences:**
+- A period is truncated even when its ambiguous date lies **after as_of**, or **before the first candle** of the first period. The calendar is static, published information, so this is not look-ahead, but it can withhold a period earlier than strictly necessary.
+- Truncation is permanent for the series (L9).
+
+**Tests:**
+- L4: `test_serialised_derived_lists_equal_the_properties`, `Serialisation` (3 tests), and the strengthened prefix-equality test (JSON prefix-equal too).
+- L10: `UnresolvedCalendarDates` (5 tests: candle, supply mirror, no data, period of only that date including the trailing case, other errors propagate) and `OrchestratorIntegration.test_unresolved_date_is_handled_per_date_by_the_orchestrator`.
+- At `b7a51cc` sources, 10 of these fail (errors). The propagation guard passes there by design.
+
+**Mutation checks:** 14 single-fix reversions were run against the full suite (5 for L4, 9 for L10), and **all are caught**.
+- The first run left one survivor, L10-i: an ambiguous candle treated as a confirmed exclusion.
+- It survived because no fixture's ambiguous candle touched the zone. The code was correct.
+- A touching case was added to `test_candle_on_an_ambiguous_date_is_set_aside`, and L10-i is now caught.
+
 ## 5. Medium and low findings (status after the second pass)
 
 ### Medium
@@ -251,13 +290,13 @@ The review re-read the code paths named in the user's checklist:
 | L1 | Engine: candles after `as_of` are dropped before validation, so an out-of-order candle beyond as_of is not reported. |
 | L2 | Engine: zero and negative prices are accepted. |
 | L3 | Mixed naive/aware times (or a naive `as_of` with aware candles) raise `TypeError` rather than `ValueError`. |
-| L4 | `EngineResult.to_dict()` omits the derived eligible and context lists. |
+| L4 | `EngineResult.to_dict()` omits the derived eligible and context lists. The snapshot's `to_dict()` also omitted `usable_as_fresh_context` and the overlay result, and was not JSON-serialisable. **Fixed 2026-10-27, uncommitted (section 4C).** |
 | L5 | Engine minimum history is 3 candles; zero-base detection needs 4. |
 | L6 | `Rules` overrides are not validated; the garbage label says "6+" even under a custom base maximum. |
 | L7 | Daily candles are assumed to close at 15:30; the vendor timestamp convention is unknown (B6). |
 | L8 | Supply zones' manual-review flags are hidden because their status is `CONTEXT_ONLY`. |
 | L9 | In calendar mode, one missing session (now also a whole missing period, P2) ends the HTF series for good. Zones formed after the gap are never seen until the data is repaired. Not silent: `truncated_at` and `HTF_SERIES_TRUNCATED_AT_GAP`. Broad, but the alternative (segmenting the series and restarting the engine) is a design change, proposed only. |
-| L10 | A calendar that raises `CalendarCoverageError` or `CalendarAmbiguityError` for any date in the replay range stops the whole replay. Safe (never silent), but coarse. Unchanged. |
+| L10 | A calendar that raises `CalendarCoverageError` or `CalendarAmbiguityError` for any date in the replay range stops the whole replay. Safe (never silent), but coarse. **Fixed 2026-10-27 (option B), uncommitted (section 4C):** ambiguity is handled per date; missing coverage stays fatal. |
 
 ## 6. Invariants and adversarial tests
 
@@ -369,11 +408,13 @@ No class-4 Pine-fidelity defect was found by code reading. H1 and H2 were orches
 | ID | Needs | Blocks |
 |---|---|---|
 | B17 | Official NSE CMTR circulars (PDFs) and transcribed `events.csv` | Any real-data use of the orchestrator (H1/H2 residuals) |
-| B6 | Bhavcopy samples (legacy and UDiFF) to fix the loader format | Daily data |
+| B18 | Bhavcopy samples (legacy and UDiFF) to fix the loader format | Daily data |
+| B6 | Kite Connect capability verification (not needed for local EOD files) | Broker-sourced data, including intraday |
 | B7 | Corporate-action source and adjustment convention | Zone detection across splits/bonuses |
 | B8 / B10 | TradingView exports with the indicator; manual zone records | Period alignment and Pine parity (M6) |
 | B11 | Point-in-time Nifty 100 membership | Universe history |
-| B15 | 75m/125m alignment check on a TradingView sample | Intraday execution timeframes |
+| B12 | User-approved backtest execution assumptions (gap fills, same-bar entry/SL, costs, price bands) | Historical validation (backtesting) only |
+| B15 | Confirmed intraday history depth for WIT validation | WIT (75m/125m) validation |
 
 ## 9. M3: the sixth base candle (unresolved, by user decision)
 
@@ -413,18 +454,18 @@ No class-4 Pine-fidelity defect was found by code reading. H1 and H2 were orches
 
 | Priority | Item | Status |
 |---|---|---|
-| 1 | H1 session classification and exclusion (D33) | Done in the working tree; awaiting review before commit |
-| 2 | H2 formation-period gaps (D34) | Done; awaiting review |
-| 3 | S1-S4 follow-ups: P1 `MANUAL_REVIEW` status, P2 whole-period truncation, P3 D over D | Done; approved 2026-10-27 as D36-D38 (D38 changed one committed assertion) |
-| 4 | M3 manual-review event (D35) | Done; awaiting review |
+| 1 | H1 session classification and exclusion (D33) | Done; committed in `b7a51cc` |
+| 2 | H2 formation-period gaps (D34) | Done; committed in `b7a51cc` |
+| 3 | S1-S4 follow-ups: P1 `MANUAL_REVIEW` status, P2 whole-period truncation, P3 D over D | Done; approved 2026-10-27 as D36-D38; committed in `b7a51cc` (D38 changed one committed assertion) |
+| 4 | M3 manual-review event (D35) | Done; committed in `b7a51cc` |
 | 5 | Decision log (v2.6) and blockers updated | Done |
 | 6 | M4b: intraday identity periods so 75m/125m zones get gap and session checks | **Proposed design change**; needed before WIT execution zones are trusted |
 | 7 | M1 `LEGOUT_WINDOW_OPEN` | Proposed |
-| 8 | Low items L1-L10 as one batch | Proposed |
-| 9 | External validation: B17, then B6, then B7, then B8/B10 | Waiting for the user's files. None of B6, B7, B8, B10, B11, B12, B15 or B17 is resolved. |
+| 8 | Low items | L4 and L10 done 2026-10-27, **uncommitted** (section 4C). L1-L3 and L5-L9 still proposed. |
+| 9 | External validation: B17, then B18, then B7, then B8/B10 | Waiting for the user's files. None of B6, B7, B8, B10, B11, B12, B15, B17 or B18 is resolved. INFY is the provisional control stock, conditional on corporate-action evidence; none is in the repository. |
 
-**Other open user decisions carried over from Step 1:**
-- D30's proposed treatment of regular-hours special sessions;
-- a `.gitignore` for the raw EOD files;
-- the sample stocks;
-- whether and how to commit the Step 1 files and this remediation.
+**Status of the decisions carried over from Step 1 (as of 2026-10-27):**
+- **D30 regular-hours special sessions:** approved provisionally. No session is externally verified.
+- **`.gitignore` for raw data:** approved. Added in the working tree, uncommitted.
+- **Sample stocks:** INFY is approved as the provisional control stock for 2022-2023, conditional on corporate-action evidence. The rest of the sample list is not decided.
+- **Committing Step 1 and the remediation:** done (`d72415f`, `b7a51cc`).

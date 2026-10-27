@@ -44,6 +44,12 @@ Phase 1 correctness audit remediation (H1, H2; nse/docs/PHASE1_CORRECTNESS_AUDIT
       the geometry. With a calendar, a period with no data at all also ends the
       series, as a partly missing one does: candles are never stitched across a gap.
   An untouched zone with any unresolved manual-review flag is MANUAL_REVIEW, never FRESH.
+  L10 A date the calendar cannot classify (it raises one of calendar.UNRESOLVED_ERRORS,
+      e.g. an UNRESOLVED row) is handled per date: its candles are set aside as
+      CALENDAR_UNRESOLVED, it is never a gap, every period containing it ends its series
+      (HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR) and every zone whose formation-to-as_of
+      span contains it is UNVERIFIED_SESSION. Any other calendar error (missing coverage)
+      stops the replay.
   Without a calendar, a weekday Muhurat or shortened session looks like a normal day
   and cannot be detected; only CALENDAR_UNVALIDATED marks that limitation.
 
@@ -68,6 +74,7 @@ datetimes must be in one convention (all naive IST or all timezone-aware).
 
 import datetime
 import importlib.util
+import json
 import math
 import os
 from dataclasses import dataclass, field, asdict
@@ -102,6 +109,8 @@ BASE_CLOSE_BEYOND_DL = "BASE_CLOSE_BEYOND_DL"
 
 CALENDAR_UNVALIDATED = "CALENDAR_UNVALIDATED"                   # A5
 HTF_SERIES_TRUNCATED_AT_GAP = "HTF_SERIES_TRUNCATED_AT_GAP"
+HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR = "HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR"  # L10
+CALENDAR_UNRESOLVED_DATES = "CALENDAR_UNRESOLVED_DATES"         # L10: snapshot limitation
 PARTIAL_FIRST_PERIOD = "PARTIAL_FIRST_PERIOD"                   # D23
 BASE_CLOSE_BEYOND_DL_RESOLVED = "BASE_CLOSE_BEYOND_DL_RESOLVED_NOT_INVALIDATED"
 OVERLAY_NOT_FRESH = "OVERLAY_NOT_FRESH"
@@ -112,6 +121,7 @@ EXCLUDED_SESSION_TOUCH = "EXCLUDED_SESSION_TOUCH"               # H1: manual rev
 CONFIRMED_EXCLUSIONS = ("EXCLUDED_MUHURAT", "EXCLUDED_SHORTENED")
 OUTSIDE_REGULAR_HOURS = "OUTSIDE_REGULAR_HOURS"
 NOT_A_TRADING_DAY = "NOT_A_TRADING_DAY"         # calendar without session_type says closed
+CALENDAR_UNRESOLVED = "CALENDAR_UNRESOLVED"     # L10: the calendar cannot classify the date
 
 
 # --- models ---------------------------------------------------------------------
@@ -216,6 +226,7 @@ class MtfSnapshot:
     ignored_incomplete: List[datetime.datetime]
     data_gaps: List[DataGap]
     excluded_candles: List[ExcludedCandle]
+    unresolved_calendar_dates: List[datetime.date]   # L10, from first candle to as_of
     series: Dict[str, HtfSeries]
     zones: Dict[str, ZoneTouchState]
 
@@ -236,10 +247,32 @@ class MtfSnapshot:
         return kept, blocked
 
     def to_dict(self):
+        """Every field plus the derived views (audit L4): each zone's usable_as_fresh_context
+        and, per timeframe, the eligible_after_overlay result as kept ids and blocked ids
+        with reasons."""
         out = asdict(self)
         for tf, s in self.series.items():
             out["series"][tf]["engine"] = None if s.engine is None else s.engine.to_dict()
+        for key, z in self.zones.items():
+            out["zones"][key]["usable_as_fresh_context"] = z.usable_as_fresh_context
+        out["overlay"] = {}
+        for tf in self.series:
+            kept, blocked = self.eligible_after_overlay(tf)
+            out["overlay"][tf] = {"kept": [a.zone.id for a in kept],
+                                  "blocked": [{"zone_id": a.zone.id, "reasons": why} for a, why in blocked]}
         return out
+
+    def to_json(self, **kw):
+        """to_dict() as JSON: dates and datetimes in ISO 8601, keys sorted (deterministic)."""
+        return json.dumps(self.to_dict(), default=json_default, sort_keys=True, **kw)
+
+
+def json_default(value):
+    """json.dumps hook: dates and datetimes as ISO 8601. Anything else is refused, never
+    stringified, so an unexpected type cannot slip into a validation artifact."""
+    if isinstance(value, (datetime.date, datetime.datetime)):
+        return value.isoformat()
+    raise TypeError("not JSON-serialisable: %s" % type(value).__name__)
 
 
 # --- calendar periods (D23) --------------------------------------------------------
@@ -326,14 +359,38 @@ def _validate(candles, base_tf):
         prev = c
 
 
-def _classify(candles, base_tf, calendar):
-    """Split candles into normal-session ones and ExcludedCandle records (H1)."""
+class _CalendarDays(object):
+    """is_trading_day per date: True, False, or None when the calendar raises one of the
+    errors it declares in UNRESOLVED_ERRORS for that date (L10). Any other error, such as
+    missing coverage, propagates. Without a calendar every weekday is expected (A5)."""
+
+    def __init__(self, calendar):
+        self.calendar = calendar
+        self.errors = tuple(getattr(calendar, "UNRESOLVED_ERRORS", ())) if calendar is not None else ()
+        self.cache = {}
+
+    def trading(self, d):
+        if self.calendar is None:
+            return d.weekday() < 5
+        if d not in self.cache:
+            try:
+                self.cache[d] = bool(self.calendar.is_trading_day(d))
+            except self.errors:
+                self.cache[d] = None
+        return self.cache[d]
+
+
+def _classify(candles, base_tf, calendar, days):
+    """Split candles into normal-session ones and ExcludedCandle records (H1, L10)."""
     kept, excluded = [], []
     for c in candles:
         d = c.start.date()
+        trading = days.trading(d)
         if calendar is None:
-            why = None if d.weekday() < 5 else UNVERIFIED_SESSION
-        elif calendar.is_trading_day(d):
+            why = None if trading else UNVERIFIED_SESSION
+        elif trading is None:
+            why = CALENDAR_UNRESOLVED
+        elif trading:
             why = None
         else:
             session_type = getattr(calendar, "session_type", None)
@@ -364,7 +421,10 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
                   that "D" may repeat a daily base so daily zones get the same session
                   and gap checks as every other timeframe
     as_of         datetime; nothing ending after it is read (default: last candle end)
-    calendar      object with is_trading_day(date) -> bool, or None (A5 fallback)
+    calendar      object with is_trading_day(date) -> bool, or None (A5 fallback).
+                  Optional: session_type(date) -> str names excluded sessions (D33), and
+                  UNRESOLVED_ERRORS, a tuple of exception types that mean "this one date
+                  cannot be classified" (L10); every other exception stops the replay.
     """
     if base_tf not in BASE_TIMEFRAMES:
         raise ValueError("unsupported base timeframe %r; allowed: %s" % (base_tf, ", ".join(BASE_TIMEFRAMES)))
@@ -388,7 +448,8 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
     if any(not c.complete for c in candles[:k]):
         raise ValueError("an incomplete base candle is followed by completed ones")
     ignored = [c.end for c in candles[k:]]
-    candles, excluded = _classify(candles[:k], base_tf, calendar)
+    days = _CalendarDays(calendar)
+    candles, excluded = _classify(candles[:k], base_tf, calendar, days)
     tz = as_of.tzinfo
 
     limitations = []
@@ -415,19 +476,20 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
         first_day = candles[0].start.date()
         last_closed = as_of.date() if _close_of(as_of.date(), tz) <= as_of else as_of.date() - datetime.timedelta(days=1)
         for d in _days(first_day, last_closed):
-            expected = calendar.is_trading_day(d) if calendar is not None else d.weekday() < 5
-            if expected and d not in by_day:
+            if days.trading(d) and d not in by_day:            # an unresolved date is never a gap
                 gaps.append(DataGap(d, calendar is not None, "MISSING_SESSION"))
     gaps.sort(key=lambda g: g.date)
     gap_days = set(g.date for g in gaps)
-
-    def expected_day(d):
-        return calendar.is_trading_day(d) if calendar is not None else d.weekday() < 5
+    seen = [c.start.date() for c in candles] + [x.date for x in excluded]
+    unresolved_dates = [] if calendar is None or not seen else \
+        [d for d in _days(min(seen), as_of.date()) if days.trading(d) is None]
+    if unresolved_dates:
+        limitations.append(CALENDAR_UNRESOLVED_DATES)
 
     series = {}
     zones = {}
     for tf in sorted(htf, key=HTF_ORDER.index):
-        s = _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, as_of, tz)
+        s = _build_series(tf, candles, complete_days, gap_days, days.trading, calendar, as_of, tz)
         if s.candles:
             ec = [ze.Candle(h.end, h.open, h.high, h.low, h.close) for h in s.candles]
             s.engine = ze.run_engine(ec, tf, rules=rules)
@@ -436,13 +498,15 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
             continue
         completed_keys = set(h.period_key for h in s.candles)
         for a in s.engine.assessments:
-            st = _overlay(tf, a, s, candles, excluded, base_tf, completed_keys, gaps, as_of, tz)
+            st = _overlay(tf, a, s, candles, excluded, unresolved_dates, base_tf, completed_keys,
+                          gaps, as_of, tz)
             zones[st.key] = st
 
     return MtfSnapshot(engine_version=ENGINE_VERSION, as_of=as_of, base_tf=base_tf,
                        calendar_validated=calendar is not None, limitations=limitations,
                        base_candles_used=len(candles), ignored_incomplete=ignored,
-                       data_gaps=gaps, excluded_candles=excluded, series=series, zones=zones)
+                       data_gaps=gaps, excluded_candles=excluded,
+                       unresolved_calendar_dates=unresolved_dates, series=series, zones=zones)
 
 
 def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, as_of, tz):
@@ -459,11 +523,17 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
     for n, (key, cs) in enumerate(periods):
         first, last = period_bounds(tf, cs[0].start.date())
         if calendar is not None and prev_last is not None:
-            skipped = [d for d in gap_days if prev_last < d < cs[0].start.date()]
+            between = list(_days(prev_last + datetime.timedelta(days=1),
+                                 cs[0].start.date() - datetime.timedelta(days=1)))
+            skipped = [d for d in between if d in gap_days or expected_day(d) is None]
             if skipped:                                       # a whole period without data
                 truncated = period_key(tf, min(skipped))
-                reasons.append(HTF_SERIES_TRUNCATED_AT_GAP)
+                reasons.append(_truncation_reason(min(skipped), gap_days))
                 break
+        if calendar is not None and any(expected_day(d) is None for d in _days(first, last)):
+            truncated = key                                   # its sessions are unknown (L10)
+            reasons.append(HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR)
+            break
         days_present = sorted(set(c.start.date() for c in cs))
         if any(d not in complete_days for d in days_present if _close_of(d, tz) <= as_of):
             truncated = key                                   # a partial session is a known gap
@@ -495,12 +565,18 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
             sessions_expected=sessions_expected, partial_first_period=partial_first))
         prev_last = cs[-1].start.date()
     else:
-        trailing = [d for d in gap_days if prev_last is not None and d > prev_last]
-        if calendar is not None and trailing:                 # expected periods after the data
+        trailing = [] if calendar is None or prev_last is None else \
+            [d for d in _days(prev_last + datetime.timedelta(days=1), as_of.date())
+             if d in gap_days or expected_day(d) is None]
+        if trailing:                                          # expected periods after the data
             truncated = period_key(tf, min(trailing))
-            reasons.append(HTF_SERIES_TRUNCATED_AT_GAP)
+            reasons.append(_truncation_reason(min(trailing), gap_days))
     return HtfSeries(tf=tf, candles=out, engine=None, in_progress_period=in_progress,
                      truncated_at=truncated, reasons=reasons)
+
+
+def _truncation_reason(d, gap_days):
+    return HTF_SERIES_TRUNCATED_AT_GAP if d in gap_days else HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR
 
 
 def _touches(c, z):
@@ -510,7 +586,8 @@ def _touches(c, z):
     return c.high >= z.proximal, c.high >= z.distal
 
 
-def _overlay(tf, assessment, s, candles, excluded, base_tf, completed_keys, gaps, as_of, tz):
+def _overlay(tf, assessment, s, candles, excluded, unresolved_dates, base_tf, completed_keys,
+             gaps, as_of, tz):
     z = assessment.zone
     h = s.candles
     created = h[z.created_index]
@@ -582,13 +659,16 @@ def _overlay(tf, assessment, s, candles, excluded, base_tf, completed_keys, gaps
         # as_of; the period's own first session may be the one that is missing
         first = z.start_index if z.legin_index is None else min(z.legin_index, z.start_index)
         formation_first_day = period_bounds(tf, h[first].start.date())[0]
-        unresolved = sorted(set(x.date for x in excluded if x.classification not in CONFIRMED_EXCLUSIONS
+        unresolved = sorted(set(x.date for x in excluded
+                                if x.classification not in CONFIRMED_EXCLUSIONS + (CALENDAR_UNRESOLVED,)
                                 and x.date >= formation_first_day))
+        ambiguous = [d for d in unresolved_dates if d >= formation_first_day]
         relevant = [g for g in gaps if g.date >= formation_first_day and _close_of(g.date, tz) <= as_of]
         st.reasons.extend("%s %s" % (UNVERIFIED_SESSION, d.isoformat()) for d in unresolved)
+        st.reasons.extend("%s %s" % (CALENDAR_UNRESOLVED, d.isoformat()) for d in ambiguous)
         st.reasons.extend("%s %s%s" % (g.kind, g.date.isoformat(), "" if g.verified else " (unverified: no calendar)")
                           for g in relevant)
-        if unresolved:
+        if unresolved or ambiguous:
             st.status = UNVERIFIED_SESSION
         elif relevant:
             st.status = UNKNOWN_DATA_GAP

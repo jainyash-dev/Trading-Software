@@ -1,7 +1,7 @@
 # Decision Log
 
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
-**Version:** 2.6, dated 2026-10-27. v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
+**Version:** 2.7, dated 2026-10-27. v2.7 adds D39 (per-date calendar ambiguity, audit L10 option B). v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
@@ -536,6 +536,17 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
   - Without a calendar, the newest daily candle completes only when the next day's candle exists (D28).
   - 75m/125m zones still have no equivalent path (audit M4b).
 
+### D39. Ambiguous calendar dates are handled per date (audit L10, option B)
+- **Status:** `USER_APPROVED`, 2026-10-27
+- **Approved behaviour:**
+  - Missing calendar coverage (no verified BASE circular for a year) stays a fatal setup error.
+  - A date the calendar cannot classify (`NseCalendar.UNRESOLVED_ERRORS`: `CalendarAmbiguityError`, i.e. an `UNRESOLVED` row or an unverified event source) is handled per date. The rest of the replay is not aborted.
+  - Candles on that date are set aside as `CALENDAR_UNRESOLVED`.
+  - The date never creates a gap, but it still blocks affected zones: every zone whose formation-to-as-of span contains it is `UNVERIFIED_SESSION`.
+  - Every higher-timeframe period containing it is truncated (`HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR`).
+- **Nature:** implementation safety. No trading rule changes, and no calendar fact is inferred.
+- **Applied literally:** a period is truncated even when the ambiguous date is after as-of or before the first candle (`PHASE1_CORRECTNESS_AUDIT.md` §4C).
+
 ---
 
 ## 2. Source- and Pine-defined specifications (verified)
@@ -578,7 +589,7 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
 | B8 | Q/HY/Y alignment | **Decided by D23** (calendar alignment). **TradingView boundary/value verification still open** |
 | B9 | Deterministic buffers | **Open** (needed only for historical validation) |
 
-The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D38.
+The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D39.
 
 ---
 

@@ -404,7 +404,7 @@ Synthetic-candle unit tests can be written before any market data exists.
 |---|---|---|---|---|
 | Nifty 100 current constituents | Live universe | NSE Indices official file | Not yet obtained | - |
 | Nifty 100 point-in-time membership | Validation | NSE Indices announcements | **No** | B11 |
-| Daily OHLCV, long history | D/W/M/Q/HY/Y zones; trends | Kite (pending); exchange EOD (to verify) | **No** | B6, B8 |
+| Daily OHLCV, long history | D/W/M/Q/HY/Y zones; trends | Kite (pending); exchange EOD (to verify) | **No** | B6 (Kite), B18 (EOD formats), B8 |
 | **Intraday OHLCV, session-aligned, granularity dividing 75 and 125 min** | WIT execution zones | Kite (pending) | **No** | B6 |
 | Long intraday history | WIT validation | To verify | **No** | B15 |
 | Corporate actions / adjusted prices | Prevent false zones | Vendor-adjusted or exchange feed | **No** | B7 |
@@ -451,10 +451,15 @@ Synthetic-candle unit tests can be written before any market data exists.
 |---|---|
 | User input | B9, B12 (only for historical validation). B13 and B14 are resolved (D21, D22); the B8 approach is decided (D23) |
 | Source ambiguities → manual review per case | PR1, PR3–PR6, PR10, PR11 items; clock bands; RB 1232 "extreme caution" and what counts as "opposing" (D21); WIT cases on MIT-phrased matrix rows (D22); listing-period candles (D23); coinciding tolerance; WIT recency band; 75/125 overlap; sector-dependent rules; explosive relative size; matrix gaps; target quality |
-| External technical checks | B6 Kite (incl. 75/125 construction), B7 corporate actions, **B8 TradingView verification of calendar boundaries and HTF candle values**, B10 TradingView parity references, NSE calendar, constituent file |
+| External technical checks | B6 Kite (incl. 75/125 construction), **B18 NSE CM EOD file formats (legacy and UDiFF)**, B7 corporate actions, **B8 TradingView verification of calendar boundaries and HTF candle values**, B10 TradingView parity references (incl. 75/125-min alignment), **B17 validated NSE calendar** (official circulars), constituent file |
 | Historical data / backtesting | B11 point-in-time universe, B15 intraday depth, B9 buffers, B12 fill/cost assumptions |
 
-**Implementation status (2026-10-26):**
-- **Zone Engine** (`nse/zone-engine/zone_engine.py`, 61 synthetic tests in `tests/test_zone_engine.py`): single-timeframe detection, scoring, freshness, invalidation and zone-level eligibility. All 13 audit mutations and the P12 ambiguity are caught.
-- **HTF freshness orchestrator** (`nse/mtf-freshness/mtf_freshness.py`, 26 synthetic tests in `tests/test_mtf_freshness.py`): implements B16 under D24-D28. It applies completed finer candles to W/M/Q/HY/Y (and D, from an intraday base) zones; it never adds eligibility, only removes it (`eligible_after_overlay`). 18 targeted mutations are caught.
-- Neither component is validated against TradingView (B8, B10), uses real data (B6, B7) or has a validated NSE calendar (B17). Trend, location, conflict, coinciding, R:R and the scanner remain unbuilt.
+**Implementation status (2026-10-27):** Phase 1 in progress; external validation pending.
+- **Zone Engine** (`nse/zone-engine/zone_engine.py`): single-timeframe detection, scoring, freshness, invalidation and zone-level eligibility (D12, D13, D35).
+- **HTF freshness orchestrator** (`nse/mtf-freshness/mtf_freshness.py`): implements B16 under D24-D28, D33-D34 and D36-D39.
+  - It applies completed finer candles to W/M/Q/HY/Y and D zones (D from an intraday base, or from a daily base under D38).
+  - It never adds eligibility, only removes it (`eligible_after_overlay`). Candidates must come from it, never from the engine's `eligible` alone (audit M4).
+- **NSE calendar loader** (`nse/calendar/nse_calendar.py`): built and tested on synthetic data. No official circular has been obtained (B17).
+- **Evidence:** synthetic tests only. Current test counts and mutation results are in `IMPLEMENTATION_BLOCKERS.md` Part 5 and `PHASE1_CORRECTNESS_AUDIT.md`.
+- **Not validated:** neither component is validated against TradingView (B8, B10), uses real data (B6, B18, B7) or has a validated NSE calendar (B17).
+- **Not built:** trend, location, conflict, coinciding, R:R and the scanner.
