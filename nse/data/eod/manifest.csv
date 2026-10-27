@@ -1,0 +1,7 @@
+file_name,kind,parent_archive,trade_date,size_bytes,sha256,source_page,downloaded_on,provenance_status
+cm03JAN2022bhav.csv.zip,ARCHIVE,,2022-01-03,83368,3dd80fd92447a313fc50dec9fac8021013b4037717fdbba8f6c3a4700b2b7e5a,Official NSE website (user-confirmed; exact page not supplied),2026-10-27,USER_CONFIRMED
+cm03JAN2022bhav.csv,ARCHIVE_MEMBER,cm03JAN2022bhav.csv.zip,2022-01-03,207607,733c764ff287409ea4f4c1ecf6d887379def744d51fb6d3a9cb2137edcf2f1f7,Official NSE website (user-confirmed; exact page not supplied),2026-10-27,USER_CONFIRMED_VIA_ARCHIVE
+cm03JAN2022bhav.csv,STANDALONE_COPY,cm03JAN2022bhav.csv.zip,2022-01-03,207607,733c764ff287409ea4f4c1ecf6d887379def744d51fb6d3a9cb2137edcf2f1f7,Extracted/copied from cm03JAN2022bhav.csv.zip (official NSE website; user-confirmed),2026-10-27,USER_CONFIRMED_COPY_OF_ARCHIVE_MEMBER
+cm29DEC2023bhav.csv.zip,ARCHIVE,,2023-12-29,99885,ba5c7e44708ea3df65a022cdf842eb3fd341421bbf4498c0ea06b3843f8a7cc3,Official NSE website (user-confirmed; exact page not supplied),2026-10-27,USER_CONFIRMED
+cm29DEC2023bhav.csv,ARCHIVE_MEMBER,cm29DEC2023bhav.csv.zip,2023-12-29,247868,3508952f8f39599b868befc28977cde1b0e8e6f4b38510d6f1eb0967864f746b,Official NSE website (user-confirmed; exact page not supplied),2026-10-27,USER_CONFIRMED_VIA_ARCHIVE
+cm29DEC2023bhav.csv,STANDALONE_COPY,cm29DEC2023bhav.csv.zip,2023-12-29,247868,3508952f8f39599b868befc28977cde1b0e8e6f4b38510d6f1eb0967864f746b,Extracted/copied from cm29DEC2023bhav.csv.zip (official NSE website; user-confirmed),2026-10-27,USER_CONFIRMED_COPY_OF_ARCHIVE_MEMBER

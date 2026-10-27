@@ -20,14 +20,16 @@ See `nse/data/calendar/README.md` for the exact circulars to download and where 
 ## 2. Daily end-of-day data (B18)
 
 ### 2.1 Files
-NSE changed its capital-market bhavcopy format during the window. NSE's report listing says the old file was discontinued with effect from 8 July 2024.
+NSE's capital-market bhavcopy is reported to have changed format from the legacy file to UDiFF. An NSE report listing, seen in an earlier search but not kept as evidence, gives the switch as 8 July 2024. **That date is unverified**, so the dates each format covers are not known beyond the samples below.
 
-| Period | File (as NSE names it) | Format |
-|---|---|---|
-| 2021-01-01 to the last day before the switch | `cmDDMMMYYYYbhav.csv.zip` (legacy CM bhavcopy) | Legacy CSV |
-| From 2024-07-08 | `BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip` (UDiFF common bhavcopy) | UDiFF CSV |
+| Format | File (as NSE names it) | Dates verified | Status |
+|---|---|---|---|
+| Legacy CM bhavcopy (CSV) | `cmDDMMMYYYYbhav.csv.zip` | **2022-01-03 and 2023-12-29 only** | Verified for those two dates only; provenance user-confirmed, not independently authenticated (B18 open) |
+| UDiFF common bhavcopy (CSV) | `BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip` (unverified) | None | **Not verified**: no sample inspected; reported to start 2024-07-08 (unverified) |
 
-**Column names are not confirmed.** Secondary sources report that the UDiFF file renamed the columns and changed the date format; no reliable source in hand lists them. The loader will be written against the actual header rows of your sample files.
+**Legacy format: verified for two dates (2022-01-03, 2023-12-29).** The header, column order, encoding, line endings, date format (`DD-MMM-YYYY`) and the mapping of every field in §2.2 are recorded in `EOD_FORMAT_EVIDENCE.md`, with hashes in `nse/data/eod/manifest.csv`. Provenance is user-confirmed (official NSE website, downloaded 2026-10-27; exact page not supplied) and the files are not independently authenticated (B18 open).
+
+**UDiFF format: not verified.** No UDiFF sample has been inspected. Secondary sources report that the UDiFF file renamed the columns and changed the date format; no reliable source in hand lists them. The filename above and the 2024-07-08 switch date are also unverified.
 
 ### 2.2 Fields the loader needs (in whichever names each format uses)
 - **Required:**
@@ -40,7 +42,7 @@ NSE changed its capital-market bhavcopy format during the window. NSE's report l
 - **Wanted for cross-checks:** previous close (it reveals unadjusted corporate-action gaps) and number of trades.
 
 ### 2.3 What to provide, in this order
-1. **Two sample files first:** one legacy file from the last week before the switch (e.g. 5 July 2024) and one UDiFF file (e.g. 8 July 2024). Nothing else is built until the headers are seen.
+1. **Sample files first.** For the initial 2022-2023 experiment, two legacy files were supplied, from both ends of the window: 2022-01-03 and 2023-12-29 (see `EOD_FORMAT_EVIDENCE.md`). A 24 Oct 2022 (Muhurat) file was requested but not provided. UDiFF verification is a separate, later task needing one UDiFF sample from on or after the switch; it is not required for 2022-2023. Nothing else is built until the headers are seen and accepted.
 2. After the loader is approved, **every daily file for the window** (about 1,240 trading days).
 3. **Placement:** `nse/data/eod/raw/`, as downloaded (zipped). Record the download date per batch. The loader writes a manifest with each file's SHA-256.
 
