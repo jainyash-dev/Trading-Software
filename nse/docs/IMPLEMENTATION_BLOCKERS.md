@@ -98,7 +98,7 @@ These are not blockers; the scanner flags them per case (D12).
 - **B7:** corporate-action adjustment source.
 - **B8:** TradingView verification of D23 calendar boundaries and HTF candle values (open until comparisons are recorded).
 - **B10:** TradingView parity references, including NSE 75/125-min bar alignment on TradingView.
-- **B17:** NSE trading calendar (holidays, special sessions): not yet obtained. The official Nifty 100 constituent file: not yet obtained.
+- **B17:** NSE trading calendar: **loader built and tested** (`nse/calendar/nse_calendar.py`, synthetic tests). The official circulars are not yet obtained; the list is in `nse/data/calendar/README.md`. The official Nifty 100 constituent file: not yet obtained.
 
 ### 4D. Historical-data and backtesting validation
 - **B11:** point-in-time Nifty 100 membership and delisted/merged history.
@@ -112,7 +112,7 @@ These are not blockers; the scanner flags them per case (D12).
 
 | Area | Status |
 |---|---|
-| Documentation | ✅ Consistent with D1–D17 and D21–D28 |
+| Documentation | ✅ Consistent with D1–D17 and D21–D32 |
 | Scanner implementation | ⛔ **Not ready.** Needs B6 (data source), B7 (adjustment), B8 + B10 (TradingView verification) and B17 (validated NSE calendar) before outputs can be trusted. B16 is implemented. No user decisions remain for the scanner logic itself. |
 | Historical validation | ⛔ **Not ready.** Additionally needs B9, B11, B12, B15. |
 

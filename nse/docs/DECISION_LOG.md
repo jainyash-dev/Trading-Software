@@ -1,7 +1,7 @@
 # Decision Log
 
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
-**Version:** 2.3, dated 2026-10-26. v2.3 adds user-approved decisions D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
+**Version:** 2.4, dated 2026-10-26. v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
@@ -431,6 +431,38 @@ These record the answers to design questions A1-A5 (approved 2026-10-26). They a
 
 ---
 
+## 1D. User-approved decisions added in v2.4 (external-validation phase)
+
+### D29. Validation window
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - The initial window is 2021-01-01 to 2025-12-31.
+  - A test that needs an event outside it is proposed, with a reason, before the window is extended.
+
+### D30. Trading calendar source and special sessions
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - The calendar comes only from official NSE capital-market (CMTR) circulars for each year, plus their amendments, with source reference, circular date, year and any unresolved ambiguity recorded (`nse/calendar/nse_calendar.py`, `nse/data/calendar/`).
+  - Muhurat and shortened sessions are flagged and **excluded from normal candle construction** until a documented rule is approved.
+- **[PROPOSED, awaiting approval]** A special session held on the regular 09:15-15:30 hours (e.g. the 1 Feb 2025 budget Saturday) is treated as a normal trading day and flagged as special. The module implements this so it can be tested; if you reject it, those days become excluded sessions.
+
+### D31. Local files only
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - Daily data comes from local NSE end-of-day files and TradingView exports.
+  - Loaders record provenance, download date and SHA-256.
+  - No network-fetching code.
+  - File formats are reported to the user before any loader is built.
+
+### D32. No broker API for intraday data yet
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - No connection to Kite Connect or any broker API.
+  - Intraday requirements and local-export options are established first (`DATA_REQUIREMENTS.md` §4).
+  - If they are insufficient, a separate recommendation goes to the user for explicit approval.
+
+---
+
 ## 2. Source- and Pine-defined specifications (verified)
 
 | ID | Item | Status | Evidence |
@@ -471,7 +503,7 @@ These record the answers to design questions A1-A5 (approved 2026-10-26). They a
 | B8 | Q/HY/Y alignment | **Decided by D23** (calendar alignment). **TradingView boundary/value verification still open** |
 | B9 | Deterministic buffers | **Open** (needed only for historical validation) |
 
-The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D28.
+The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D32.
 
 ---
 
