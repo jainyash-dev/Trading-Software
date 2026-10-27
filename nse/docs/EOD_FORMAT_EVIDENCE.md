@@ -87,7 +87,7 @@ The trailing comma creates a 14th, unnamed column. It is empty in every row of b
 - No row has a low above its open or close, or a high below them.
 
 **Series values:**
-- **2022-01-03:** 69 distinct, including EQ 1,666, BE 210, SM 73, GB 47, BZ 39 and GS 14.
+- **2022-01-03:** 70 distinct, including EQ 1,666, BE 210, SM 73, GB 47, BZ 39 and GS 14.
 - **2023-12-29:** 81 distinct, including EQ 1,799, BE 300, SM 190, GB 52, GS 36, TB 28, ST 23 and BZ 19.
 - Both dates also contain N*, Y* and Z* codes.
 
