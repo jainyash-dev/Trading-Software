@@ -23,7 +23,7 @@
 | B5 | Trade-type scope | **D16**: MIT + WIT (75/125) |
 | B13 | Role of Monthly trend for MIT | **D21** (Option A): Weekly = gate; Monthly = mandatory context; Weekly opposing Monthly location bias → RB 1232 "extreme caution" → manual review; no new hard rejection |
 | B14 | WIT trend checks | **D22** (Option C): rulebook's generic matrix with WIT roles (RB 1370, 1574, 1668); Daily is the only trend gate; no added gates; underspecified cases → manual. **Finding:** the rulebook has no separate WIT matrix |
-| B16 | HTF freshness from finer candles | **Implemented** (`nse/mtf-freshness/`) under D24-D28. Real-data and TradingView validation are still open (B6-B10, B17) |
+| B16 | HTF freshness from finer candles | **Implemented** (`nse/mtf-freshness/`) under D24-D28, corrected by D33-D34 and D36-D38 after the Phase 1 correctness audit. Real-data and TradingView validation are still open (B6-B10, B17) |
 
 ---
 
@@ -39,7 +39,7 @@
 | **B11** | **Point-in-time Nifty 100 membership; delisted/merged data** | Survivorship bias | D1 | Universe; validation | **Validation** | Dated membership from NSE Indices announcements; history for removed securities |
 | **B12** | **Backtest execution assumptions** | The rulebook is silent on gap fills, same-bar entry/SL, costs, price bands | RB 2141 only | Validation engine | **Validation** | User-approved modelling assumptions; costs sourced from official schedules |
 | **B15** | **Intraday history depth for WIT validation** | Validating WIT needs long 75/125-min history. Vendor intraday depth is unverified. | D16, D17 | WIT validation | **Validation** | Confirm available intraday history; set the validation window accordingly |
-| **B17** | **Validated NSE trading calendar** | Without it, D28 applies: a period completes only when the next period's data arrives (one session late), and every missing weekday is an unverified gap, so zones spanning holidays become UNKNOWN_DATA_GAP. Holiday and special-session handling is unvalidated. | D28 (A5); RB 186, 3323 | Candle construction, period completion, data-gap detection | **Scanner** (production use), **Validation** | Obtain an official NSE holiday/session calendar; validate boundaries and holidays against exchange data and TradingView. Not production-ready until done |
+| **B17** | **Validated NSE trading calendar** | Without it, D28 applies: a period completes only when the next period's data arrives (one session late), and every missing weekday is an unverified gap, so zones spanning holidays become UNKNOWN_DATA_GAP (measured in the Phase 1 audit: no untouched W/M zone stays fresh on synthetic data with ~15 weekday holidays a year). Weekday Muhurat and shortened sessions are undetectable without it (D33). Holiday and special-session handling is unvalidated. | D28 (A5); RB 186, 3323 | Candle construction, period completion, data-gap detection | **Scanner** (production use), **Validation** | Obtain an official NSE holiday/session calendar; validate boundaries and holidays against exchange data and TradingView. Not production-ready until done |
 
 ---
 
@@ -112,11 +112,12 @@ These are not blockers; the scanner flags them per case (D12).
 
 | Area | Status |
 |---|---|
-| Documentation | ✅ Consistent with D1–D17 and D21–D32 |
+| Documentation | ✅ Consistent with D1–D17 and D21–D38 (D30 special-session rule approved provisionally; no session verified) |
 | Scanner implementation | ⛔ **Not ready.** Needs B6 (data source), B7 (adjustment), B8 + B10 (TradingView verification) and B17 (validated NSE calendar) before outputs can be trusted. B16 is implemented. No user decisions remain for the scanner logic itself. |
 | Historical validation | ⛔ **Not ready.** Additionally needs B9, B11, B12, B15. |
 
 **Implementation status (2026-10-26):**
-- **Zone Engine** (`nse/zone-engine/zone_engine.py`, 61 synthetic tests in `tests/test_zone_engine.py`): single-timeframe detection, scoring, freshness, invalidation and zone-level eligibility. All 13 audit mutations and the P12 ambiguity are caught.
-- **HTF freshness orchestrator** (`nse/mtf-freshness/mtf_freshness.py`, 26 synthetic tests in `tests/test_mtf_freshness.py`): implements B16 under D24-D28. It applies completed finer candles to W/M/Q/HY/Y (and D, from an intraday base) zones; it never adds eligibility, only removes it (`eligible_after_overlay`). 18 targeted mutations are caught.
+- **Zone Engine** (`nse/zone-engine/zone_engine.py`, 62 synthetic tests in `tests/test_zone_engine.py`): single-timeframe detection, scoring, freshness, invalidation and zone-level eligibility. All 13 audit mutations and the P12 ambiguity are caught; the M3 ambiguity is recorded for manual review (D35).
+- **HTF freshness orchestrator** (`nse/mtf-freshness/mtf_freshness.py`, 35 synthetic tests in `tests/test_mtf_freshness.py`): implements B16 under D24-D28, D33-D34 and D36-D38. It applies completed finer candles to W/M/Q/HY/Y and D zones (D from an intraday base, or from a daily base under D38); it never adds eligibility, only removes it (`eligible_after_overlay`). 18 original targeted mutations and 15 from the correctness audit are caught.
+- **Phase 1 correctness audit:** `PHASE1_CORRECTNESS_AUDIT.md`. Verdict: NOT READY TO DECLARE COMPLETE. Remediation is implemented and approved but uncommitted, and nothing is validated on real data. Candidates must come from `eligible_after_overlay`, never from the engine's `eligible` alone (audit M4).
 - Neither component is validated against TradingView (B8, B10), uses real data (B6, B7) or has a validated NSE calendar (B17). Trend, location, conflict, coinciding, R:R and the scanner remain unbuilt.

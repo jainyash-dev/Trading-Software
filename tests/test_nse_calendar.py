@@ -103,6 +103,16 @@ class Provenance(Base):
             c.is_trading_day(D(2024, 5, 20))
         self.assertTrue(c.is_trading_day(D(2024, 5, 21)))     # other dates unaffected
 
+    def test_regular_hours_special_session_needs_a_verified_source(self):
+        # D30 (provisional approval, 2026-10-27): NORMAL_SPECIAL only from verified source data
+        c = (self.f.circular("T/BASE/2024", "BASE", 2024)
+             .circular("T/NOTICE/2024", "SESSION_NOTICE", 2024, write=False)
+             .event("2024-01-20", "SPECIAL_SESSION", "T/NOTICE/2024", "09:15", "15:30").load())
+        with self.assertRaises(cal_mod.CalendarAmbiguityError):
+            c.session_type(D(2024, 1, 20))
+        with self.assertRaises(cal_mod.CalendarAmbiguityError):
+            c.is_trading_day(D(2024, 1, 20))
+
 
 class SessionTypes(Base):
     def cal(self):

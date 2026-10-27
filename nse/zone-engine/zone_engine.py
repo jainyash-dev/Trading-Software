@@ -29,7 +29,9 @@ Rulebook-strict choices (D12 per-item table):
     the Pine comparison profile (PR1).
   - Max base candles = 5, a Pine input option (PS 10), because the rulebook scores
     4-5 bases (RB 786). A 6th base candle ends the cluster with no zone: the
-    rulebook's "6+ = garbage area, reject" (RB 787, 800-806).
+    rulebook's "6+ = garbage area, reject" (RB 787, 800-806). A base candle that closes
+    outside a full cluster is neither counted nor dismissed: BASE_CLOSED_OUTSIDE_CLUSTER,
+    manual review, no zone (audit M3).
   - Leg-out count is per zone (RB 728). Pine counts only for the newest zone
     (PS 1764-1775); a difference that changes the score goes to manual review (PR5).
   - Transition candles (inside the cluster wicks, body <= 75%, PS 489) are not
@@ -122,6 +124,9 @@ EV_PENDING_SET = "PENDING_SET"
 EV_PENDING_REPLACED = "PENDING_REPLACED"
 EV_ACHIEVEMENT_NOT_MET = "ACHIEVEMENT_NOT_MET"   # PR3: context-only pattern, manual (RB 1639)
 EV_GARBAGE_AREA = "GARBAGE_AREA_6_PLUS_BASES"    # RB 787, 800-806
+# A further base candle that CLOSES outside a full cluster: a 6th base (RB 787) or not an
+# "overlapping" one (RB 802)? Unresolved by user decision M3: manual review, no zone.
+EV_BASE_CLOSED_OUTSIDE = "BASE_CLOSED_OUTSIDE_CLUSTER"
 EV_LEGOUT_INCREMENT = "LEGOUT_INCREMENT"
 EV_TESTED = "ZONE_TESTED"
 EV_DL_TOUCHED = "ZONE_DL_TOUCHED"                # D15 needs it; not an invalidation
@@ -258,7 +263,11 @@ class EngineResult:
 
     @property
     def eligible(self):
-        """Fresh, valid demand zones that pass every zone-level check."""
+        """Fresh, valid demand zones that pass every zone-level check, as of the close of
+        the last processed candle. Not a candidate list on its own (audit M4): the engine
+        sees no touch inside a candle still forming (a W/M zone touched on Tuesday stays
+        here until the week closes) and has no data-gap or session checks. Candidates
+        come from nse/mtf-freshness MtfSnapshot.eligible_after_overlay."""
         return [a for a in self.assessments if a.status == ELIGIBLE]
 
     @property
@@ -422,6 +431,15 @@ class _Detector(object):
             self.event(EV_GARBAGE_AREA, i, cluster_start=cl["start"], base_count=cl["count"] + 1)
             self.rejected.append({"reason": EV_GARBAGE_AREA, "cluster_start": cl["start"],
                                   "index": i, "source": "RB 787, 800-806"})
+        elif self.is_base(i) and breaks and cl["count"] >= self.r.max_base_candles:
+            self.event(EV_BASE_CLOSED_OUTSIDE, i, cluster_start=cl["start"], base_count=cl["count"])
+            self.rejected.append({
+                "reason": EV_BASE_CLOSED_OUTSIDE, "disposition": MANUAL_REVIEW,
+                "cluster_start": cl["start"], "index": i, "base_count": cl["count"],
+                "cluster_high": cl["wh"], "cluster_low": cl["wl"], "close": c.close,
+                "note": "6th base (RB 787) or not overlapping (RB 802)? Unresolved (audit M3)",
+                "source": "RB 787, 800-806, 814",
+            })
         self.legout_eval(i)
         self.in_cluster = False
         self.cl = None
@@ -763,7 +781,11 @@ def _assess(z, pine_zone, timeframe, rules):
 def run_engine(candles, timeframe, as_of=None, rules=None):
     """Detect, score and assess zones on one timeframe.
 
-    candles   sequence of Candle, oldest first, one timeframe only
+    candles   sequence of Candle, oldest first, one timeframe only. The engine has no
+              clock (audit M2): time must be the candle's CLOSE time, so as_of drops a
+              candle that has not closed yet, and complete must be False for any candle
+              still forming. A vendor bar stamped with its OPEN time and marked complete
+              would be used early. The orchestrator builds candles that satisfy this.
     timeframe one of Y, HY, Q, M, W, D, 125m, 75m (60m/120m are refused, D16)
     as_of     optional time; candles after it are dropped before anything runs
     """

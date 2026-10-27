@@ -1,7 +1,7 @@
 # Decision Log
 
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
-**Version:** 2.4, dated 2026-10-26. v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
+**Version:** 2.6, dated 2026-10-27. v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
@@ -420,6 +420,7 @@ These record the answers to design questions A1-A5 (approved 2026-10-26). They a
   - A missing or partial session after a zone became knowable, and before any touch, makes the zone `UNKNOWN_DATA_GAP`: not fresh context, requiring repair or manual review.
   - A known gap inside a period also ends that timeframe's series (`HTF_SERIES_TRUNCATED_AT_GAP`).
   - Freshness is never inferred from missing candles.
+- **Amended by D34:** gaps count from the zone's first formation period, not only after it became knowable.
 
 ### D28. Calendar fallback (A5)
 - **Status:** `USER_APPROVED` (temporary)
@@ -444,7 +445,18 @@ These record the answers to design questions A1-A5 (approved 2026-10-26). They a
 - **Approved behaviour:**
   - The calendar comes only from official NSE capital-market (CMTR) circulars for each year, plus their amendments, with source reference, circular date, year and any unresolved ambiguity recorded (`nse/calendar/nse_calendar.py`, `nse/data/calendar/`).
   - Muhurat and shortened sessions are flagged and **excluded from normal candle construction** until a documented rule is approved.
-- **[PROPOSED, awaiting approval]** A special session held on the regular 09:15-15:30 hours (e.g. the 1 Feb 2025 budget Saturday) is treated as a normal trading day and flagged as special. The module implements this so it can be tested; if you reject it, those days become excluded sessions.
+- **Orchestrator behaviour:** D33.
+- **Special sessions on regular hours: `USER_APPROVED` (provisional), 2026-10-27.**
+  - A special session may be classified `NORMAL_SPECIAL` (a normal trading day, flagged as special) **only** when official source data verifies that it is a genuine trading session with regular 09:15-15:30 hours.
+  - In code (`nse_calendar.py` `session_type`), this requires a `CONFIRMED` `SPECIAL_SESSION` row whose source circular is present and hash-verified, with exactly 09:15-15:30.
+  - An unverified source or an `UNRESOLVED` row raises `CalendarAmbiguityError`; it is never guessed. Any other hours give `EXCLUDED_SHORTENED`.
+  - "Flagged as special" lives in the calendar (`flagged_dates()`); the orchestrator's snapshot does not carry it.
+- **Provisional approval is not external verification.** No special session has been verified. For the 1 Feb 2025 budget session, all of these are outstanding (B6, B8, B17):
+  - the official circular (number unconfirmed);
+  - its exact hours;
+  - the `events.csv` row;
+  - end-of-day data availability;
+  - TradingView's candle treatment.
 
 ### D31. Local files only
 - **Status:** `USER_APPROVED`
@@ -460,6 +472,69 @@ These record the answers to design questions A1-A5 (approved 2026-10-26). They a
   - No connection to Kite Connect or any broker API.
   - Intraday requirements and local-export options are established first (`DATA_REQUIREMENTS.md` §4).
   - If they are insufficient, a separate recommendation goes to the user for explicit approval.
+
+---
+
+## 1E. Decisions from the Phase 1 correctness audit (v2.5)
+
+### D33. Excluded and unclassifiable sessions (audit H1)
+- **Status:** `USER_APPROVED`
+- **Approved behaviour** (`mtf_freshness.py` `_classify`, `_overlay`):
+  - Session classification runs before gap detection, aggregation and freshness.
+  - Every set-aside candle is listed in `excluded_candles` with its classification. Nothing is dropped silently.
+  - A candle on a calendar-excluded session (`EXCLUDED_MUHURAT`, `EXCLUDED_SHORTENED`) never enters an HTF candle or the touch count.
+  - If such a candle reaches a zone's proximal or distal line after creation, the zone needs manual review (`EXCLUDED_SESSION_TOUCH`) and is not usable as fresh.
+  - A candle whose session cannot be classified is also kept out. That covers:
+    - a weekend date without a calendar (`UNVERIFIED_SESSION`);
+    - an intraday candle outside 09:15-15:30 (`UNVERIFIED_SESSION`, or `OUTSIDE_REGULAR_HOURS` with a calendar);
+    - a candle on a day the calendar says is closed.
+  - Every zone whose span from formation to as-of contains such a date gets status `UNVERIFIED_SESSION` (never fresh).
+  - An intraday candle wholly outside the session is classified, not a crash. One straddling 09:15 or 15:30 is still rejected as malformed.
+- **Known limit:** without a calendar, a weekday Muhurat or shortened session with regular timestamps is undetectable. Only `CALENDAR_UNVALIDATED` marks it (B17).
+
+### D34. Data gaps from formation (audit H2)
+- **Status:** `USER_APPROVED`
+- **Approved behaviour:**
+  - Gaps count from the first day of the zone's first formation period (leg-in, else base) through as-of, in both calendar and no-calendar modes.
+  - Any such gap makes an untouched zone `UNKNOWN_DATA_GAP`.
+  - Missing periods are never silently bridged.
+- **Measured consequence:** without a calendar, synthetic data with about 15 weekday holidays a year left no untouched W/M zone fresh, before or after this change. B17 is effectively mandatory for real data.
+
+### D35. Base candle closing outside a full cluster (audit M3)
+- **Status:** `USER_APPROVED` (option c)
+- **Approved behaviour:**
+  - When a cluster already holds the maximum 5 bases, a further base candle (body ≤ 50%) that closes outside the cluster is **not** classified as a 6th base (garbage area) and not dismissed.
+  - The engine records the event `BASE_CLOSED_OUTSIDE_CLUSTER` and a `rejected_patterns` entry with disposition `MANUAL_REVIEW`. The entry carries the cluster start, the candle index, the base count, the cluster high/low and the close.
+  - No zone is created from that cluster.
+  - The Rulebook question stays open: RB 787 (6+ base candles) vs RB 802 (6+ *overlapping* base candles).
+
+These three were proposed as P1-P3 after the second-pass review of D33 and D34. Each closes a counterexample documented and tested in `PHASE1_CORRECTNESS_AUDIT.md` §4A.
+
+### D36. Unresolved flags are never reported FRESH (was P1)
+- **Status:** `USER_APPROVED`, 2026-10-27
+- **Approved behaviour:**
+  - An untouched zone with any unresolved manual-review flag reports `MANUAL_REVIEW`, not `FRESH`. Today those flags are `EXCLUDED_SESSION_TOUCH` and `PARTIAL_FIRST_PERIOD`.
+  - Status precedence: INVALIDATED > BASE_CLOSE_BEYOND_DL_PENDING > TESTED > UNVERIFIED_SESSION > UNKNOWN_DATA_GAP > MANUAL_REVIEW > FRESH.
+- **Nature:** implementation safety and reporting. Eligibility was already blocked; no trading rule changes.
+
+### D37. No stitching across a wholly missing period (was P2)
+- **Status:** `USER_APPROVED`, 2026-10-27
+- **Approved behaviour:**
+  - In calendar mode, a wholly missing expected trading period truncates the affected higher-timeframe series (`HTF_SERIES_TRUNCATED_AT_GAP`, `truncated_at`), as a partly missing one already does under D27. Candles are never stitched across a missing period.
+  - This includes missing periods after the last period with data. Before the fix found on 2026-10-27, that case reported no truncation, though the zone was still `UNKNOWN_DATA_GAP` under D34.
+  - Without a calendar (D28), missing weekdays are unverified. The series is not truncated, but D34 keeps every affected zone from being fresh.
+- **Nature:** implementation safety, extending D27 consistently.
+
+### D38. Daily zones over a daily base (was P3)
+- **Status:** `USER_APPROVED`, 2026-10-27
+- **Approved behaviour:**
+  - `replay(..., base_tf="D", htf=("D",))` is permitted. Daily zones then receive session validation (D33), data-gap checks (D34, D37) and the freshness overlay (`eligible_after_overlay`).
+  - This replaces the original replay contract that each timeframe must be coarser than the base. One committed test assertion was changed accordingly.
+- **Nature:** an interface change for implementation safety; no trading rule changes.
+- **Limits:**
+  - A daily base gives no earlier touch timing than the engine itself.
+  - Without a calendar, the newest daily candle completes only when the next day's candle exists (D28).
+  - 75m/125m zones still have no equivalent path (audit M4b).
 
 ---
 
@@ -503,7 +578,7 @@ These record the answers to design questions A1-A5 (approved 2026-10-26). They a
 | B8 | Q/HY/Y alignment | **Decided by D23** (calendar alignment). **TradingView boundary/value verification still open** |
 | B9 | Deterministic buffers | **Open** (needed only for historical validation) |
 
-The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D32.
+The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D38.
 
 ---
 

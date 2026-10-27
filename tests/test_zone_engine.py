@@ -170,6 +170,33 @@ class BaseCount(unittest.TestCase):
         self.assertEqual(r.rejected_patterns[0]["cluster_start"], 2)
 
 
+    def test_base_closing_outside_a_full_cluster_needs_manual_review(self):
+        # M3 (user decision 2026-10-26): five bases inside 94.5-96, then a base candle
+        # (body 0.9 / 2.4) closing above the cluster. Not counted as a 6th base, not
+        # dismissed: recorded for manual review, and no zone is created.
+        weak_break = (95.3, 97, 94.6, 96.2)
+        rows = [F, (100, 100.5, 94, 95), (95, 96, 94.5, 95.2)] + [(95.2, 95.8, 94.7, 95.1)] * 4
+        rows += [weak_break, (96.2, 102, 96.1, 101.5)]
+        for side, candles in (("demand", bars(rows)), ("supply", mirror(bars(rows)))):
+            with self.subTest(side):
+                r = ze.run_engine(candles, "D")
+                self.assertEqual(r.assessments, [])
+                found = [p for p in r.rejected_patterns if p["reason"] == "BASE_CLOSED_OUTSIDE_CLUSTER"]
+                self.assertEqual(len(found), 1)
+                p = found[0]
+                self.assertEqual((p["index"], p["cluster_start"], p["base_count"], p["disposition"]),
+                                 (7, 2, 5, ze.MANUAL_REVIEW))
+                hi, lo = (96, 94.5) if side == "demand" else (105.5, 104)
+                self.assertEqual((p["cluster_high"], p["cluster_low"]), (hi, lo))
+                self.assertNotIn(ze.EV_GARBAGE_AREA, [x["reason"] for x in r.rejected_patterns])
+                self.assertIn("BASE_CLOSED_OUTSIDE_CLUSTER", [e["event"] for e in r.events])
+        # with room left in the cluster the same candle simply ends it: nothing ambiguous
+        short = [F, (100, 100.5, 94, 95), (95, 96, 94.5, 95.2), (95.2, 95.8, 94.7, 95.1),
+                 weak_break, (96.2, 102, 96.1, 101.5)]
+        r = ze.run_engine(bars(short), "D")
+        self.assertEqual([p["reason"] for p in r.rejected_patterns], [])
+
+
 class StrongCandles(unittest.TestCase):
     def rows(self, legin_open):
         return [F,

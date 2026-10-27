@@ -29,8 +29,27 @@ Approved decisions (nse/docs/DECISION_LOG.md, design approval of 2026-10-26):
       a later period exists (one session late, never early), every missing weekday
       is an unverified gap, and the snapshot carries CALENDAR_UNVALIDATED.
 
+Phase 1 correctness audit remediation (H1, H2; nse/docs/PHASE1_CORRECTNESS_AUDIT.md):
+  H1  Session classification runs before aggregation. A candle on a calendar-excluded
+      session (Muhurat, shortened; D30) never enters an HTF candle or the touch count;
+      if it reaches a zone's proximal or distal line after creation the zone needs
+      manual review (EXCLUDED_SESSION_TOUCH), because no rule says what such a touch
+      means. A candle whose session cannot be classified (a weekend date without a
+      calendar, an intraday candle outside 09:15-15:30, a candle on a day the calendar
+      says is closed) is also kept out, and every zone whose formation-to-as_of span
+      contains it is UNVERIFIED_SESSION. Every kept-out candle is listed in
+      excluded_candles; none is dropped silently.
+  H2  Data gaps count from the first day of the first formation period (leg-in, else
+      base) through as_of, not only after creation: missing data could have changed
+      the geometry. With a calendar, a period with no data at all also ends the
+      series, as a partly missing one does: candles are never stitched across a gap.
+  An untouched zone with any unresolved manual-review flag is MANUAL_REVIEW, never FRESH.
+  Without a calendar, a weekday Muhurat or shortened session looks like a normal day
+  and cannot be detected; only CALENDAR_UNVALIDATED marks that limitation.
+
 Order of work for one replay (the as-of time cuts the input first):
-  1. Keep completed base candles whose END is at or before as_of.
+  1. Keep completed base candles whose END is at or before as_of; set aside, with a
+     classification, every candle not from a normal session (H1).
   2. Build completed higher-timeframe candles (calendar periods, D23). The period in
      progress is never used. A period with a known missing session ends the series.
   3. Run the Zone Engine on each completed series (candle time = period end).
@@ -38,7 +57,8 @@ Order of work for one replay (the as-of time cuts the input first):
      period (RB 682: after the leg-out closed), up to the end of its invalidating
      period, if any.
   5. Derive the status: INVALIDATED > BASE_CLOSE_BEYOND_DL_PENDING > TESTED >
-     UNKNOWN_DATA_GAP > FRESH.
+     UNVERIFIED_SESSION > UNKNOWN_DATA_GAP > MANUAL_REVIEW > FRESH. An untouched zone
+     keeps every session and gap reason, whichever of the last four wins.
 Tested and invalidated are permanent as as_of moves forward; replay is a pure function
 of its inputs.
 
@@ -73,6 +93,8 @@ TESTED = "TESTED"
 BASE_CLOSE_BEYOND_DL_PENDING = "BASE_CLOSE_BEYOND_DL_PENDING"   # A1: manual review
 INVALIDATED = "INVALIDATED"
 UNKNOWN_DATA_GAP = "UNKNOWN_DATA_GAP"                           # A4
+UNVERIFIED_SESSION = "UNVERIFIED_SESSION"                       # H1: session not classifiable
+MANUAL_REVIEW = "MANUAL_REVIEW"                                 # untouched, but a flag is unresolved
 
 PL_TOUCH = "PL_TOUCH"
 DL_TOUCH = "DL_TOUCH"
@@ -83,6 +105,13 @@ HTF_SERIES_TRUNCATED_AT_GAP = "HTF_SERIES_TRUNCATED_AT_GAP"
 PARTIAL_FIRST_PERIOD = "PARTIAL_FIRST_PERIOD"                   # D23
 BASE_CLOSE_BEYOND_DL_RESOLVED = "BASE_CLOSE_BEYOND_DL_RESOLVED_NOT_INVALIDATED"
 OVERLAY_NOT_FRESH = "OVERLAY_NOT_FRESH"
+EXCLUDED_SESSION_TOUCH = "EXCLUDED_SESSION_TOUCH"               # H1: manual review
+
+# candle classifications for excluded_candles (H1); the first two come from the
+# calendar (nse_calendar.session_type) and are excluded by D30
+CONFIRMED_EXCLUSIONS = ("EXCLUDED_MUHURAT", "EXCLUDED_SHORTENED")
+OUTSIDE_REGULAR_HOURS = "OUTSIDE_REGULAR_HOURS"
+NOT_A_TRADING_DAY = "NOT_A_TRADING_DAY"         # calendar without session_type says closed
 
 
 # --- models ---------------------------------------------------------------------
@@ -129,6 +158,13 @@ class DataGap:
     date: datetime.date
     verified: bool                    # True with a calendar or for a partial intraday session
     kind: str                         # MISSING_SESSION or PARTIAL_SESSION
+
+
+@dataclass
+class ExcludedCandle:
+    date: datetime.date
+    classification: str               # a CONFIRMED_EXCLUSIONS value, or why it is unresolved
+    candle: TimedCandle
 
 
 @dataclass
@@ -179,6 +215,7 @@ class MtfSnapshot:
     base_candles_used: int
     ignored_incomplete: List[datetime.datetime]
     data_gaps: List[DataGap]
+    excluded_candles: List[ExcludedCandle]
     series: Dict[str, HtfSeries]
     zones: Dict[str, ZoneTouchState]
 
@@ -278,14 +315,37 @@ def _validate(candles, base_tf):
         if base_tf in INTRADAY_MINUTES:
             if c.end - c.start != datetime.timedelta(minutes=INTRADAY_MINUTES[base_tf]):
                 raise ValueError("base candle %d is not a %s candle" % (i, base_tf))
-            if c.start.time() < SESSION_OPEN or c.end.time() > SESSION_CLOSE:
-                raise ValueError("base candle %d lies outside 09:15-15:30" % i)
+            # wholly outside the session is classified later (H1); straddling is malformed
+            if c.start.time() < SESSION_OPEN < c.end.time() or c.start.time() < SESSION_CLOSE < c.end.time():
+                raise ValueError("base candle %d straddles the 09:15-15:30 session boundary" % i)
         if prev is not None:
             if base_tf == "D" and c.start.date() <= prev.start.date():
                 raise ValueError("daily base candles must be one per date, in order (index %d)" % i)
             if c.start < prev.end:
                 raise ValueError("base candles overlap or are out of order (index %d)" % i)
         prev = c
+
+
+def _classify(candles, base_tf, calendar):
+    """Split candles into normal-session ones and ExcludedCandle records (H1)."""
+    kept, excluded = [], []
+    for c in candles:
+        d = c.start.date()
+        if calendar is None:
+            why = None if d.weekday() < 5 else UNVERIFIED_SESSION
+        elif calendar.is_trading_day(d):
+            why = None
+        else:
+            session_type = getattr(calendar, "session_type", None)
+            why = session_type(d) if session_type is not None else NOT_A_TRADING_DAY
+        if why is None and base_tf in INTRADAY_MINUTES and (
+                c.start.time() < SESSION_OPEN or c.end.time() > SESSION_CLOSE):
+            why = OUTSIDE_REGULAR_HOURS if calendar is not None else UNVERIFIED_SESSION
+        if why is None:
+            kept.append(c)
+        else:
+            excluded.append(ExcludedCandle(d, why, c))
+    return kept, excluded
 
 
 def _close_of(d, tzinfo):
@@ -300,7 +360,9 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
 
     base_candles  TimedCandle sequence, oldest first: the finest reliable series (A3)
     base_tf       "D" or an intraday interval that divides 375 minutes
-    htf           higher timeframes to track; each must be coarser than base_tf
+    htf           higher timeframes to track; each must be coarser than base_tf, except
+                  that "D" may repeat a daily base so daily zones get the same session
+                  and gap checks as every other timeframe
     as_of         datetime; nothing ending after it is read (default: last candle end)
     calendar      object with is_trading_day(date) -> bool, or None (A5 fallback)
     """
@@ -308,7 +370,7 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
         raise ValueError("unsupported base timeframe %r; allowed: %s" % (base_tf, ", ".join(BASE_TIMEFRAMES)))
     htf = list(htf)
     for tf in htf:
-        if tf not in HTF_ORDER or (base_tf == "D" and tf == "D"):
+        if tf not in HTF_ORDER:
             raise ValueError("timeframe %r is not above base %r" % (tf, base_tf))
     if len(set(htf)) != len(htf):
         raise ValueError("duplicate timeframe in htf")
@@ -326,7 +388,7 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
     if any(not c.complete for c in candles[:k]):
         raise ValueError("an incomplete base candle is followed by completed ones")
     ignored = [c.end for c in candles[k:]]
-    candles = candles[:k]
+    candles, excluded = _classify(candles[:k], base_tf, calendar)
     tz = as_of.tzinfo
 
     limitations = []
@@ -374,13 +436,13 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
             continue
         completed_keys = set(h.period_key for h in s.candles)
         for a in s.engine.assessments:
-            st = _overlay(tf, a, s, candles, base_tf, completed_keys, gaps, as_of, tz)
+            st = _overlay(tf, a, s, candles, excluded, base_tf, completed_keys, gaps, as_of, tz)
             zones[st.key] = st
 
     return MtfSnapshot(engine_version=ENGINE_VERSION, as_of=as_of, base_tf=base_tf,
                        calendar_validated=calendar is not None, limitations=limitations,
                        base_candles_used=len(candles), ignored_incomplete=ignored,
-                       data_gaps=gaps, series=series, zones=zones)
+                       data_gaps=gaps, excluded_candles=excluded, series=series, zones=zones)
 
 
 def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, as_of, tz):
@@ -393,8 +455,15 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
     out, reasons = [], []
     in_progress, truncated = None, None
     series_first_day = candles[0].start.date() if candles else None
+    prev_last = None
     for n, (key, cs) in enumerate(periods):
         first, last = period_bounds(tf, cs[0].start.date())
+        if calendar is not None and prev_last is not None:
+            skipped = [d for d in gap_days if prev_last < d < cs[0].start.date()]
+            if skipped:                                       # a whole period without data
+                truncated = period_key(tf, min(skipped))
+                reasons.append(HTF_SERIES_TRUNCATED_AT_GAP)
+                break
         days_present = sorted(set(c.start.date() for c in cs))
         if any(d not in complete_days for d in days_present if _close_of(d, tz) <= as_of):
             truncated = key                                   # a partial session is a known gap
@@ -424,11 +493,24 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
             open=cs[0].open, high=max(c.high for c in cs), low=min(c.low for c in cs),
             close=cs[-1].close, sessions_present=len(days_present),
             sessions_expected=sessions_expected, partial_first_period=partial_first))
+        prev_last = cs[-1].start.date()
+    else:
+        trailing = [d for d in gap_days if prev_last is not None and d > prev_last]
+        if calendar is not None and trailing:                 # expected periods after the data
+            truncated = period_key(tf, min(trailing))
+            reasons.append(HTF_SERIES_TRUNCATED_AT_GAP)
     return HtfSeries(tf=tf, candles=out, engine=None, in_progress_period=in_progress,
                      truncated_at=truncated, reasons=reasons)
 
 
-def _overlay(tf, assessment, s, candles, base_tf, completed_keys, gaps, as_of, tz):
+def _touches(c, z):
+    """(proximal touched, distal touched) by candle c for zone z."""
+    if z.is_demand:
+        return c.low <= z.proximal, c.low <= z.distal
+    return c.high >= z.proximal, c.high >= z.distal
+
+
+def _overlay(tf, assessment, s, candles, excluded, base_tf, completed_keys, gaps, as_of, tz):
     z = assessment.zone
     h = s.candles
     created = h[z.created_index]
@@ -470,6 +552,17 @@ def _overlay(tf, assessment, s, candles, base_tf, completed_keys, gaps, as_of, t
             raise RuntimeError("inconsistent data: engine test in %s without a base touch (%s)"
                                % (h[t].period_key, st.key))
 
+    # H1: excluded sessions never test the zone, but a touch there is not ignored either
+    for x in excluded:
+        if x.classification not in CONFIRMED_EXCLUSIONS or x.candle.start < created.end:
+            continue
+        if stop is not None and x.candle.start >= stop:
+            continue
+        if any(_touches(x.candle, z)):
+            if EXCLUDED_SESSION_TOUCH not in st.manual_review:
+                st.manual_review.append(EXCLUDED_SESSION_TOUCH)
+            st.reasons.append("%s %s %s" % (EXCLUDED_SESSION_TOUCH, x.date.isoformat(), x.classification))
+
     if z.start_index == 0 or z.legin_index == 0 or z.created_index == 0:
         if h[0].partial_first_period:
             st.manual_review.append(PARTIAL_FIRST_PERIOD)
@@ -485,12 +578,22 @@ def _overlay(tf, assessment, s, candles, base_tf, completed_keys, gaps, as_of, t
         if beyond:
             st.manual_review.append(BASE_CLOSE_BEYOND_DL_RESOLVED)
     else:
-        created_last_day = created.end.date()
-        relevant = [g for g in gaps if g.date > created_last_day and _close_of(g.date, tz) <= as_of]
-        if relevant:
+        # H2: from the first day of the first formation period (leg-in, else base) through
+        # as_of; the period's own first session may be the one that is missing
+        first = z.start_index if z.legin_index is None else min(z.legin_index, z.start_index)
+        formation_first_day = period_bounds(tf, h[first].start.date())[0]
+        unresolved = sorted(set(x.date for x in excluded if x.classification not in CONFIRMED_EXCLUSIONS
+                                and x.date >= formation_first_day))
+        relevant = [g for g in gaps if g.date >= formation_first_day and _close_of(g.date, tz) <= as_of]
+        st.reasons.extend("%s %s" % (UNVERIFIED_SESSION, d.isoformat()) for d in unresolved)
+        st.reasons.extend("%s %s%s" % (g.kind, g.date.isoformat(), "" if g.verified else " (unverified: no calendar)")
+                          for g in relevant)
+        if unresolved:
+            st.status = UNVERIFIED_SESSION
+        elif relevant:
             st.status = UNKNOWN_DATA_GAP
-            st.reasons.extend("%s %s%s" % (g.kind, g.date.isoformat(), "" if g.verified else " (unverified: no calendar)")
-                              for g in relevant)
+        elif st.manual_review:
+            st.status = MANUAL_REVIEW
         else:
             st.status = FRESH
     return st

@@ -234,6 +234,7 @@ class DataGaps(unittest.TestCase):
         z = s.zones["W:demand-1-2"]
         self.assertIn(mtf.PARTIAL_FIRST_PERIOD, z.manual_review)
         self.assertFalse(z.usable_as_fresh_context)
+        self.assertNotEqual(z.status, mtf.FRESH)                       # (3 Feb is also a gap here)
 
 
 class SupplyMirror(unittest.TestCase):
@@ -344,7 +345,11 @@ class ReplayProperties(unittest.TestCase):
                         seen_invalid.add(key)
                 for tf in ("W", "M"):
                     kept, _ = s.eligible_after_overlay(tf)
+                    eng = s.series[tf].engine
+                    engine_ids = set(a.zone.id for a in eng.eligible) if eng is not None else set()
+                    self.assertLessEqual(set(a.zone.id for a in kept), engine_ids)   # only removes
                     for a in kept:
+                        self.assertTrue(a.zone.is_demand)
                         self.assertEqual(s.zones["%s:%s" % (tf, a.zone.id)].status, mtf.FRESH)
             self.assertTrue(seen_not_fresh)
 
@@ -373,7 +378,8 @@ class InputValidation(unittest.TestCase):
         with self.assertRaises(ValueError):
             mtf.replay(cs, "60m", htf=("D",))                           # does not tile 375 minutes
         with self.assertRaises(ValueError):
-            mtf.replay(cs, "D", htf=("D",))                             # not above the base
+            mtf.replay(cs, "D", htf=("4H",))                            # unknown timeframe (D over D is
+                                                                        # allowed since the audit, DailyZones)
         aware = TC(DT(2025, 3, 3, 9, 15, tzinfo=datetime.timezone.utc),
                    DT(2025, 3, 3, 15, 30, tzinfo=datetime.timezone.utc), 1, 2, 0.5, 1.5)
         with self.assertRaises((ValueError, TypeError)):
@@ -390,6 +396,205 @@ class InputValidation(unittest.TestCase):
         s = mtf.replay(cs, "D", htf=("W",), as_of=close(W5[2]), calendar=cal)
         self.assertEqual(s.ignored_incomplete, [close(W5[2])])
         self.assertEqual(s.zones[KEY].status, mtf.UNKNOWN_DATA_GAP)    # Wednesday has no completed data
+
+
+class SessionCal(Cal):
+    """A test calendar that also names excluded sessions, like nse_calendar.session_type."""
+
+    def __init__(self, days, excluded):
+        Cal.__init__(self, days)
+        self.excluded = dict(excluded)
+
+    def session_type(self, d):
+        if d in self.excluded:
+            return self.excluded[d]
+        return "NORMAL" if d in self.days else ("WEEKEND" if d.weekday() >= 5 else "HOLIDAY")
+
+
+FULL_WEEKS = [[D(2025, 1, 6) + datetime.timedelta(weeks=w, days=k) for k in range(5)] for w in range(6)]
+
+
+def full_weeks_case(skip=()):
+    """Six Mon-Fri weeks (identical days, so each weekly candle is the DBR row) plus the
+    next Monday, for the no-calendar mode where every missing weekday is a gap."""
+    rows = DBR_WEEKS + [CALM[0]]
+    cs = [day(d, *r) for w, r in zip(FULL_WEEKS, rows) for d in w if d not in skip]
+    return cs + [day(W6_MON, *CALM[0])]
+
+
+class ExcludedSessions(unittest.TestCase):
+    """H1 (Phase 1 audit): calendar-excluded or unclassifiable sessions never enter
+    aggregation or the touch count, are recorded, and block fresh use where relevant."""
+
+    def test_calendar_excluded_session_is_not_aggregated_or_counted(self):
+        cs, _ = weekly_case({4: (103, 103.5, 95.0, 100)})              # Friday low 95.0 <= PL 95.2
+        cal = SessionCal(MONDAYS + W5[:4], {W5[4]: "EXCLUDED_MUHURAT"})
+        for side, data, key in (("demand", cs, KEY), ("supply", mirror(cs), "W:supply-2-3")):
+            with self.subTest(side):
+                s = mtf.replay(data, "D", htf=("W",), as_of=close(W5[4]), calendar=cal)
+                z = s.zones[key]
+                self.assertEqual([e.kind for e in z.events], [])
+                self.assertEqual(s.series["W"].candles[-1].sessions_present, 4)
+                self.assertEqual(z.status, "MANUAL_REVIEW")                # never reported FRESH
+                self.assertIn("EXCLUDED_SESSION_TOUCH", z.manual_review)
+                self.assertFalse(z.usable_as_fresh_context)
+                self.assertEqual([(x.date, x.classification) for x in s.excluded_candles],
+                                 [(W5[4], "EXCLUDED_MUHURAT")])
+                self.assertEqual(s.data_gaps, [])
+
+    def test_evening_intraday_candle_is_excluded_not_a_crash(self):
+        sun = D(2025, 1, 12)                                            # a Sunday Muhurat-style session
+        cs = []
+        for d, r in zip(WitIntraday.DAYS, DBR_WEEKS):
+            cs += split_day(d, *r)
+        cs.append(TC(DT(2025, 1, 12, 18, 0), DT(2025, 1, 12, 19, 15), 104, 104.5, 95.0, 104))
+        cs += split_day(WitIntraday.NEXT_MON, *CALM[0])
+        as_of = close(WitIntraday.NEXT_MON)
+        cal = SessionCal(WitIntraday.DAYS + [WitIntraday.NEXT_MON], {sun: "EXCLUDED_MUHURAT"})
+        with_cal = mtf.replay(cs, "75m", htf=("D",), as_of=as_of, calendar=cal)
+        z = with_cal.zones["D:demand-2-3"]
+        self.assertEqual((z.status, z.events), ("MANUAL_REVIEW", []))
+        self.assertIn("EXCLUDED_SESSION_TOUCH", z.manual_review)
+        self.assertEqual([(x.date, x.classification) for x in with_cal.excluded_candles],
+                         [(sun, "EXCLUDED_MUHURAT")])
+        no_cal = mtf.replay(cs, "75m", htf=("D",), as_of=as_of)
+        z = no_cal.zones["D:demand-2-3"]
+        self.assertEqual(z.status, "UNVERIFIED_SESSION")
+        self.assertFalse(z.usable_as_fresh_context)
+        self.assertEqual([x.classification for x in no_cal.excluded_candles], ["UNVERIFIED_SESSION"])
+        # a weekday evening candle (as on Friday 1 Nov 2024) is caught by its hours, not its date
+        weekday = [c for c in cs if c.start.date() != sun]
+        weekday.append(TC(DT(2025, 1, 13, 18, 0), DT(2025, 1, 13, 19, 15), 104, 104.5, 95.0, 104))
+        late = DT(2025, 1, 13, 19, 15)
+        for calendar, why in ((None, "UNVERIFIED_SESSION"), (cal, "OUTSIDE_REGULAR_HOURS")):
+            s = mtf.replay(weekday, "75m", htf=("D",), as_of=late, calendar=calendar)
+            self.assertEqual(s.zones["D:demand-2-3"].status, "UNVERIFIED_SESSION")
+            self.assertEqual([x.classification for x in s.excluded_candles], [why])
+
+    def test_weekend_candle_without_a_calendar_is_unverified(self):
+        sat = D(2025, 2, 15)
+        cs = full_weeks_case()
+        cs.insert(len(cs) - 1, day(sat, *CALM[0]))                    # does not touch the zone
+        s = mtf.replay(cs, "D", htf=("W",), as_of=close(W6_MON))
+        z = s.zones[KEY]
+        self.assertFalse(z.usable_as_fresh_context)
+        self.assertEqual(z.status, "UNVERIFIED_SESSION")
+        self.assertIn("UNVERIFIED_SESSION 2025-02-15", z.reasons)
+        self.assertEqual(s.series["W"].candles[-1].sessions_present, 5)
+        self.assertEqual([(x.date, x.classification) for x in s.excluded_candles],
+                         [(sat, "UNVERIFIED_SESSION")])
+        clean = mtf.replay(full_weeks_case(), "D", htf=("W",), as_of=close(W6_MON))
+        self.assertEqual(clean.zones[KEY].status, mtf.FRESH)          # the same data minus Saturday
+
+
+class FormationGaps(unittest.TestCase):
+    """H2 (Phase 1 audit): a gap in the leg-in, base or leg-out period blocks fresh use."""
+
+    def test_gap_inside_a_formation_week_is_never_fresh(self):
+        cal = Cal([d for w in FULL_WEEKS for d in w] + [W6_MON])
+        for week, name in ((1, "leg-in"), (2, "base"), (3, "leg-out")):
+            for missing in FULL_WEEKS[week]:                           # Monday is the period's first day
+                with self.subTest(name, day=missing):
+                    cs = full_weeks_case(skip=(missing,))
+                    z = mtf.replay(cs, "D", htf=("W",), as_of=close(W6_MON)).zones[KEY]
+                    self.assertEqual(z.status, mtf.UNKNOWN_DATA_GAP)
+                    self.assertFalse(z.usable_as_fresh_context)
+                    self.assertIn("MISSING_SESSION %s (unverified: no calendar)" % missing.isoformat(), z.reasons)
+                    s = mtf.replay(cs, "D", htf=("W",), as_of=close(W6_MON), calendar=cal)
+                    self.assertNotIn(KEY, s.zones)                     # calendar mode: series ends at the gap
+                    self.assertEqual(s.series["W"].truncated_at, mtf.period_key("W", missing))
+
+    def test_a_whole_missing_period_ends_the_series(self):
+        # The leg-in week is followed by a strong up week, then the base and leg-out weeks.
+        # If the up week (2025-W03) has no data, joining W02 to W04 fabricates a DBR that
+        # never existed (demand-1-2). With a calendar the series must end at the gap.
+        rows = [(100, 100.5, 94, 95), (95, 99, 94.8, 98.8)] + DBR_WEEKS[2:] + [CALM[0]]
+        cal = Cal([d for w in FULL_WEEKS for d in w] + [W6_MON])
+
+        def replay(skip, calendar):
+            cs = [day(d, *r) for w, r in zip(FULL_WEEKS, rows) for d in w if d not in skip]
+            return mtf.replay(cs + [day(W6_MON, *CALM[0])], "D", htf=("W",), as_of=close(W6_MON),
+                              calendar=calendar)
+        self.assertEqual(list(replay((), cal).zones), ["W:demand-2-3"])        # the real zone
+        s = replay(FULL_WEEKS[1], cal)
+        self.assertEqual(s.series["W"].truncated_at, "2025-W03")
+        self.assertEqual([h.period_key for h in s.series["W"].candles], ["2025-W02"])
+        self.assertEqual(s.zones, {})
+        no_cal = replay(FULL_WEEKS[1], None).zones                           # A5: no truncation,
+        self.assertEqual({k: z.status for k, z in no_cal.items()},           # but never fresh
+                         {"W:demand-1-2": mtf.UNKNOWN_DATA_GAP})
+
+
+    def test_a_missing_last_period_is_reported_as_truncation(self):
+        # calendar mode: data ends Friday 14 Feb, but the week of 17 Feb is expected and
+        # wholly missing. The series must say so, not look complete up to as_of.
+        nxt = [W6_MON + datetime.timedelta(days=i) for i in range(5)]
+        cal = Cal([d for w in FULL_WEEKS for d in w] + nxt)
+        s = mtf.replay(full_weeks_case()[:-1], "D", htf=("W",), as_of=close(nxt[4]), calendar=cal)
+        self.assertEqual(s.series["W"].truncated_at, "2025-W08")
+        self.assertIn(mtf.HTF_SERIES_TRUNCATED_AT_GAP, s.series["W"].reasons)
+        self.assertEqual(s.zones[KEY].status, mtf.UNKNOWN_DATA_GAP)
+
+
+class DailyZones(unittest.TestCase):
+    """Daily zones get the same session and gap checks when replayed over a daily base."""
+    DAYS = [D(2025, 1, 6) + datetime.timedelta(days=i) for i in range(5)]
+    LATER = [D(2025, 1, 13), D(2025, 1, 14), D(2025, 1, 15), D(2025, 1, 16)]
+
+    def case(self, skip=()):
+        cs = [day(d, *r) for d, r in zip(self.DAYS, DBR_WEEKS)]
+        return cs + [day(d, *CALM[0]) for d in self.LATER if d not in skip]
+
+    def test_missing_day_after_creation_blocks_a_daily_zone(self):
+        cs = self.case(skip=(self.LATER[1],))
+        engine_alone = mtf.ze.run_engine([mtf.ze.Candle(c.end, c.open, c.high, c.low, c.close) for c in cs], "D")
+        self.assertEqual([a.zone.id for a in engine_alone.eligible], ["demand-2-3"])   # sees no gap
+        as_of = close(self.LATER[3])
+        s = mtf.replay(cs, "D", htf=("D",), as_of=as_of)
+        z = s.zones["D:demand-2-3"]
+        self.assertEqual(z.status, mtf.UNKNOWN_DATA_GAP)
+        self.assertIn("MISSING_SESSION 2025-01-14 (unverified: no calendar)", z.reasons)
+        self.assertEqual(s.eligible_after_overlay("D")[0], [])
+        cal = Cal(self.DAYS + self.LATER)
+        s = mtf.replay(cs, "D", htf=("D",), as_of=as_of, calendar=cal)
+        self.assertEqual(s.series["D"].truncated_at, "2025-01-14")
+        self.assertEqual(s.zones["D:demand-2-3"].status, mtf.UNKNOWN_DATA_GAP)
+        clean = mtf.replay(self.case(), "D", htf=("D",), as_of=as_of, calendar=cal)
+        self.assertEqual([a.zone.id for a in clean.eligible_after_overlay("D")[0]], ["demand-2-3"])
+
+
+class StatusPrecedence(unittest.TestCase):
+    def test_several_issues_give_one_status_and_keep_every_reason(self):
+        sat = D(2025, 2, 15)
+        cs = full_weeks_case(skip=(W5[2],))
+        cs.insert(len(cs) - 1, day(sat, *CALM[0]))
+        z = mtf.replay(cs, "D", htf=("W",), as_of=close(W6_MON)).zones[KEY]
+        self.assertEqual(z.status, mtf.UNVERIFIED_SESSION)              # outranks the data gap
+        self.assertIn("UNVERIFIED_SESSION 2025-02-15", z.reasons)
+        self.assertIn("MISSING_SESSION 2025-02-12 (unverified: no calendar)", z.reasons)
+        cs = full_weeks_case()
+        cs.insert(len(cs) - 1, day(sat, 104, 104.5, 95.0, 104))          # touches PL 95.2
+        z = mtf.replay(cs, "D", htf=("W",), as_of=close(W6_MON)).zones[KEY]
+        self.assertEqual(z.status, mtf.UNVERIFIED_SESSION)              # the touch is not trusted either
+        self.assertEqual(z.events, [])
+
+
+class PeriodBoundaries(unittest.TestCase):
+    def test_year_end_week_month_and_year_split(self):
+        wk = [D(2024, 12, 30) + datetime.timedelta(days=k) for k in range(5)]   # ISO 2025-W01
+        nxt = D(2025, 1, 6)
+        cs = [day(d, 100 + k, 101 + k, 99 + k, 100.5 + k) for k, d in enumerate(wk)] + [day(nxt, 105, 106, 104, 105)]
+        weekdays = [wk[0] + datetime.timedelta(days=i) for i in range(400)]
+        cal = Cal([d for d in weekdays if d.weekday() < 5])
+        s = mtf.replay(cs, "D", htf=("W", "M", "Q", "HY", "Y"), as_of=close(nxt), calendar=cal)
+        w = s.series["W"].candles
+        self.assertEqual([(h.period_key, h.start.date(), h.end.date(), h.low, h.high) for h in w],
+                         [("2025-W01", wk[0], wk[4], 99, 105)])
+        for tf, key in (("M", "2024-12"), ("Q", "2024-Q4"), ("HY", "2024-H2"), ("Y", "2024")):
+            got = [(h.period_key, h.end.date(), h.close) for h in s.series[tf].candles]
+            self.assertEqual(got[0], (key, wk[1], 101.5), tf)
+        self.assertEqual([h.period_key for h in s.series["M"].candles], ["2024-12"])
+        self.assertEqual(s.series["M"].in_progress_period, "2025-01")
 
 
 if __name__ == "__main__":
