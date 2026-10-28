@@ -16,7 +16,8 @@ sources.csv   one row per circular
     title            subject line of the circular
     file_name        the PDF, relative to the circulars/ folder
     sha256           hash of that file
-    downloaded_on    YYYY-MM-DD
+    downloaded_on    YYYY-MM-DD, or UNKNOWN when the download date was not recorded
+                     (never inferred from a file's modification time)
     url              where it was downloaded from (provenance only; never fetched)
 
 events.csv    one row per dated event
@@ -25,7 +26,9 @@ events.csv    one row per dated event
     description      as printed in the circular
     session_start    HH:MM, required for session events
     session_end      HH:MM, required for session events
-    source_ref       must exist in sources.csv
+    source_ref       must exist in sources.csv. Only an UNRESOLVED row may leave it
+                     empty: a date blocked on evidence that is not yet a registered
+                     circular (the note says what that evidence is)
     status           CONFIRMED | UNRESOLVED
     note             free text (e.g. why a row is UNRESOLVED)
 
@@ -68,6 +71,8 @@ NORMAL_SPECIAL = "NORMAL_SPECIAL"             # special day on regular hours
 EXCLUDED_MUHURAT = "EXCLUDED_MUHURAT"
 EXCLUDED_SHORTENED = "EXCLUDED_SHORTENED"
 
+DOWNLOAD_DATE_UNKNOWN = "UNKNOWN"             # sources.csv downloaded_on, as in the EOD manifest
+
 VERIFIED = "VERIFIED"
 MISSING_FILE = "MISSING_FILE"
 HASH_MISMATCH = "HASH_MISMATCH"
@@ -94,7 +99,7 @@ class Source:
     title: str
     file_name: str
     sha256: str
-    downloaded_on: datetime.date
+    downloaded_on: Optional[datetime.date]     # None when recorded as UNKNOWN
     url: str
     file_status: str
 
@@ -192,11 +197,12 @@ class NseCalendar(object):
                 status = HASH_MISMATCH
             else:
                 status = VERIFIED
+            downloaded = (None if r["downloaded_on"].strip() == DOWNLOAD_DATE_UNKNOWN
+                          else _date(r["downloaded_on"], "sources.csv line %d downloaded_on" % i))
             sources.append(Source(ref, r["kind"], int(r["applicable_year"]),
                                   _date(r["doc_date"], "sources.csv line %d doc_date" % i),
                                   r["title"], r["file_name"], r["sha256"].strip().lower(),
-                                  _date(r["downloaded_on"], "sources.csv line %d downloaded_on" % i),
-                                  r["url"], status))
+                                  downloaded, r["url"], status))
         events = []
         for i, r in enumerate(_rows(os.path.join(folder, "events.csv"), EVENT_COLUMNS), 2):
             where = "events.csv line %d" % i
@@ -205,8 +211,9 @@ class NseCalendar(object):
                 raise CalendarError("%s: event must be one of %s" % (where, ", ".join(EVENTS)))
             if r["status"] not in STATUSES:
                 raise CalendarError("%s: status must be CONFIRMED or UNRESOLVED" % where)
-            if r["source_ref"] not in seen:
-                raise CalendarError("%s: source_ref %r is not in sources.csv" % (where, r["source_ref"]))
+            if r["source_ref"] not in seen and not (r["source_ref"] == "" and r["status"] == "UNRESOLVED"):
+                raise CalendarError("%s: source_ref %r is not in sources.csv (only an UNRESOLVED row may "
+                                    "leave it empty)" % (where, r["source_ref"]))
             start, end = r["session_start"].strip(), r["session_end"].strip()
             if r["event"] == "HOLIDAY":
                 if start or end:
@@ -234,7 +241,8 @@ class NseCalendar(object):
         if any(e.status == "UNRESOLVED" for e in evs):
             raise CalendarAmbiguityError("%s: unresolved calendar event (%s)"
                                          % (d, "; ".join(e.note for e in evs if e.status == "UNRESOLVED")))
-        unverified = [e.source_ref for e in evs if self.sources[e.source_ref].file_status != VERIFIED]
+        unverified = [e.source_ref for e in evs
+                      if e.source_ref and self.sources[e.source_ref].file_status != VERIFIED]
         if unverified:
             raise CalendarAmbiguityError("%s: event source not verified (%s)" % (d, ", ".join(unverified)))
         kinds = set(e.event for e in evs)

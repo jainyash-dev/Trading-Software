@@ -1,7 +1,7 @@
 # Decision Log
 
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
-**Version:** 2.7, dated 2026-10-27. v2.7 adds D39 (per-date calendar ambiguity, audit L10 option B). v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
+**Version:** 2.8, dated 2026-10-28. v2.8 adds D40 (first official calendar tables, B17; `PROPOSED`, pending review). v2.7 added D39 (per-date calendar ambiguity, audit L10 option B). v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
@@ -547,6 +547,35 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
 - **Nature:** implementation safety. No trading rule changes, and no calendar fact is inferred.
 - **Applied literally:** a period is truncated even when the ambiguous date is after as-of or before the first candle (`PHASE1_CORRECTNESS_AUDIT.md` §4C).
 
+### D40. First official calendar tables; Muhurat notices recorded but excluded (B17)
+- **Status:** `PROPOSED`, 2026-10-28. **Pending the user's review of this wording.** The user approved the underlying decisions on 2026-10-28:
+  - keep the supplied 2022 file name;
+  - record the archive URL with a byte-identity note, and `downloaded_on=UNKNOWN`;
+  - register the 2022 Muhurat notice as confirmed, keeping D30's exclusion;
+  - use NSE/CMTR/41180 provisionally for normal hours;
+  - register the 2023 circulars without confirming the revised Bakri Id date;
+  - keep the PDFs local.
+
+  The implementation choices marked *proposed* below were not part of those decisions.
+- **Proposed behaviour** (`nse/data/calendar/sources.csv`, `events.csv`):
+  - 2022 and 2023 holidays are transcribed from the base circulars NSE/CMTR/50560 and NSE/CMTR/54757. Both files are held locally and match their recorded SHA-256. Claude checked the rows against the extracted text and the rendered pages on 2026-10-28; the user has not checked them independently.
+  - The Muhurat sessions of 24 Oct 2022 (NSE/CMTR/54023) and 12 Nov 2023 (NSE/CMTR/59124) are `CONFIRMED` `MUHURAT_SESSION` rows. Each carries the circular's Normal Market times, 18:15-19:15; the other printed sessions are listed in the note.
+  - **D30 is unchanged.** Recording a Muhurat session is not using it. These dates are `EXCLUDED_MUHURAT`, and their candles never enter HTF construction or touch counts (D33). No rule for using Muhurat data is approved.
+  - **Bakri Id 2023 is unresolved on both dates.**
+    - 54757 prints Wednesday 28 June. Web search results (an NSE post on X and press reports, 2023-06-27) say NSE moved the holiday to Thursday 29 June. The amending circular has not been obtained or verified.
+    - 28 June is an `UNRESOLVED` row citing 54757, where it is printed. 29 June is an `UNRESOLVED` row with **no** `source_ref`, because no circular held prints it.
+    - Both dates raise `CalendarAmbiguityError`. They are handled per date (D39) and are never classified as normal sessions.
+  - The supplied 2022 copy keeps its file name `NSE_CMTR_50560_2022_trading_holidays.pdf.pdf` with `downloaded_on=UNKNOWN`, never inferred from file times. Its archive URL is recorded because the copy Claude retrieved there on 2026-10-28 is byte-identical (`nse/data/calendar/README.md` §1, §4). This shows the content is identical; it doesn't show where or when the original copy was downloaded.
+  - Normal hours of 09:15-15:30 (`REGULAR_OPEN`/`REGULAR_CLOSE`, `mtf_freshness.SESSION_OPEN`/`SESSION_CLOSE`) are **provisionally** evidenced by NSE/CMTR/41180 (31 May 2019, effective 3 Jun 2019). It is registered as a `SESSION_NOTICE` with `applicable_year` 2019 and has no events. Later amendments up to 2023 have not been checked, so this aspect is **not validated**.
+- **Proposed schema changes** (`nse_calendar.py`; tested):
+  - `sources.csv` `downloaded_on` may be `UNKNOWN`, as in the EOD manifest.
+  - An `events.csv` row may leave `source_ref` empty **only** when its status is `UNRESOLVED`, and it still needs a note. A `CONFIRMED` row must cite a registered source.
+- **Not complete:** B17 stays open and Phase 1 is not complete. Outstanding:
+  - TradingView holiday and boundary validation;
+  - review of normal-hours amendments after 41180;
+  - the 2023 Bakri Id amending circular;
+  - every year in the D29 window other than 2022-2023.
+
 ---
 
 ## 2. Source- and Pine-defined specifications (verified)
@@ -589,7 +618,7 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
 | B8 | Q/HY/Y alignment | **Decided by D23** (calendar alignment). **TradingView boundary/value verification still open** |
 | B9 | Deterministic buffers | **Open** (needed only for historical validation) |
 
-The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D39.
+The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D39 (D40 is proposed, pending review).
 
 ---
 

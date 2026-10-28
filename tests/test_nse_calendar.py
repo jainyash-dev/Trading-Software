@@ -94,6 +94,20 @@ class Provenance(Base):
         with self.assertRaises(cal_mod.CalendarCoverageError):
             c.is_trading_day(D(2025, 3, 4))
 
+    def test_unknown_download_date_is_recorded_not_inferred(self):
+        self.f.circular("T/BASE/2024", "BASE", 2024).sources[0]["downloaded_on"] = "UNKNOWN"
+        c = self.f.load()
+        self.assertIsNone(c.sources["T/BASE/2024"].downloaded_on)
+        self.assertEqual(c.covered_years, [2024])          # the hash, not the date, verifies the file
+        for bad in ("", "unknown", "2026-13-01"):
+            f = Fixture()
+            try:
+                f.circular("T/BASE/2024", "BASE", 2024).sources[0]["downloaded_on"] = bad
+                with self.assertRaises(cal_mod.CalendarError, msg=bad):
+                    f.load()
+            finally:
+                f.close()
+
     def test_event_from_an_unverified_amendment_is_not_trusted(self):
         c = (self.f.circular("T/BASE/2024", "BASE", 2024)
              .circular("T/AMEND/2024", "AMENDMENT", 2024, write=False)
@@ -156,6 +170,8 @@ class Validation(Base):
             lambda f: f.event("2024-13-01", "HOLIDAY", "T/BASE/2024"),
             lambda f: f.event("2024-03-25", "CLOSED", "T/BASE/2024"),
             lambda f: f.event("2024-03-25", "HOLIDAY", "T/NOPE/2024"),
+            lambda f: f.event("2024-03-25", "HOLIDAY", ""),                         # CONFIRMED needs a source
+            lambda f: f.event("2024-03-25", "HOLIDAY", "", status="UNRESOLVED"),    # ...and still a note
             lambda f: f.event("2024-03-25", "HOLIDAY", "T/BASE/2024", "09:15", "15:30"),
             lambda f: f.event("2024-01-20", "SPECIAL_SESSION", "T/BASE/2024", "15:30", "09:15"),
             lambda f: f.event("2024-01-20", "SPECIAL_SESSION", "T/BASE/2024", "9am", "3pm"),
@@ -180,6 +196,21 @@ class Validation(Base):
             fh.write("date,event\n2024-03-25,HOLIDAY\n")
         with self.assertRaises(cal_mod.CalendarError):
             cal_mod.NseCalendar.load(self.f.dir)
+
+    def test_unresolved_row_without_a_registered_source_blocks_its_date(self):
+        # e.g. a holiday reported moved by an amendment not yet obtained: never a normal session
+        c = (self.f.circular("T/BASE/2024", "BASE", 2024)
+             .event("2024-06-12", "HOLIDAY", "", status="UNRESOLVED", note="reported moved here; amendment not held")
+             .load())
+        self.assertEqual(c.by_date[D(2024, 6, 12)][0].source_ref, "")
+        with self.assertRaises(cal_mod.CalendarAmbiguityError):
+            c.session_type(D(2024, 6, 12))
+        with self.assertRaises(cal_mod.CalendarAmbiguityError):
+            c.is_trading_day(D(2024, 6, 12))
+        for eod in (set(), {D(2024, 6, 12)}):
+            r = cal_mod.reconcile(c, eod, D(2024, 6, 12), D(2024, 6, 12))
+            self.assertEqual(r.unresolved, [D(2024, 6, 12)])
+            self.assertFalse(r.clean)
 
     def test_conflict_is_allowed_once_marked_unresolved(self):
         c = (self.f.circular("T/BASE/2024", "BASE", 2024)

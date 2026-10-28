@@ -5,8 +5,20 @@ This folder holds the official NSE circulars and the calendar tables built from 
 
 ## 1. What to download and where to put it
 
-Save each PDF into `nse/data/calendar/circulars/`, keeping the file name exactly as NSE
-serves it (for example `CMTR59722.pdf`).
+Save each PDF into `nse/data/calendar/circulars/`. Two names are involved:
+
+- **Source file name:** the name NSE serves, at the end of the official URL (for example
+  `CMTR59722.pdf`). It is recorded only through the `url` column of `sources.csv`.
+- **Local file name:** the name of the file in `circulars/`, recorded in the `file_name`
+  column. The file is identified by its SHA-256, not by its name.
+
+New downloads keep the source file name as their local file name. A file supplied under
+another name keeps that name; it is not renamed. The only such file is
+`NSE_CMTR_50560_2022_trading_holidays.pdf.pdf` (source file name `CMTR50560.pdf`). It is
+byte-identical (same SHA-256 and size) to the copy retrieved from
+https://archives.nseindia.com/content/circulars/CMTR50560.pdf on 2026-10-28. Its own
+download date is not known, so `downloaded_on` is `UNKNOWN`; the retrieval date of the
+identical archive copy is not used as its download date (§4).
 
 ### Base holiday circulars, capital market segment (required, one per year)
 
@@ -57,3 +69,21 @@ discrepancy rather than a silent error.
 
 See the module docstring in `nse/calendar/nse_calendar.py` for the exact columns of
 `sources.csv` and `events.csv` and the rules applied to them.
+
+## 4. Recorded provenance (2026-10-28, D40)
+
+`sources.csv` has no note column, so the provenance notes for each file are kept here.
+
+| Source | File in `circulars/` | Downloaded | Provenance |
+|---|---|---|---|
+| NSE/CMTR/50560 | `NSE_CMTR_50560_2022_trading_holidays.pdf.pdf` | UNKNOWN | Supplied by the user. Its original download date is not known and is not inferred from file times. The copy retrieved from the recorded archive URL on 2026-10-28 is byte-identical (same SHA-256 and size), so the URL is recorded. The file keeps its supplied name. |
+| NSE/CMTR/54023 | `CMTR54023.pdf` | 2026-10-28 | Retrieved from the recorded URL. |
+| NSE/CMTR/54757 | `CMTR54757.pdf` | 2026-10-28 | Retrieved from the recorded URL; identical copy on `nsearchives.nseindia.com`. |
+| NSE/CMTR/59124 | `CMTR59124.pdf` | 2026-10-28 | Retrieved from the recorded URL; identical copy on `nsearchives.nseindia.com`. |
+| NSE/CMTR/41180 | `CMTR41180.pdf` | 2026-10-28 | Retrieved from the recorded URL. Provisional evidence for normal hours of 09:15-15:30 (effective 3 Jun 2019). Later amendments are not yet checked. |
+
+Every row was checked against the circular's extracted text and its rendered page.
+
+Open items:
+- Bakri Id 2023 is printed as 28 June in 54757 and reportedly moved to 29 June. No amending circular is held, so both dates are `UNRESOLVED`.
+- No TradingView comparison has been made yet (B17 stays open).

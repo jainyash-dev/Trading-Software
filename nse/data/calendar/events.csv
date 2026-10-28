@@ -1,0 +1,41 @@
+date,event,description,session_start,session_end,source_ref,status,note
+2022-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2022-03-01,HOLIDAY,Mahashivratri,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2022-03-18,HOLIDAY,Holi,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2022-04-10,HOLIDAY,Ram Navami,,,NSE/CMTR/50560,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 1
+2022-04-14,HOLIDAY,Dr. Baba Saheb Ambedkar Jayanti/Mahavir Jayanti,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2022-04-15,HOLIDAY,Good Friday,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 5
+2022-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/50560,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 2
+2022-05-03,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2022-07-10,HOLIDAY,Bakri Id,,,NSE/CMTR/50560,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 3
+2022-08-09,HOLIDAY,Moharram,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2022-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 8
+2022-08-31,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2022-10-02,HOLIDAY,Mahatma Gandhi Jayanti,,,NSE/CMTR/50560,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 4
+2022-10-05,HOLIDAY,Dussehra,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2022-10-24,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 11; the regular session is closed. Footnote *: Muhurat trading this day (times in NSE/CMTR/54023)
+2022-10-24,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market,18:15,19:15,NSE/CMTR/54023,CONFIRMED,Normal Market row of the schedule. Also printed: block deal 17:45-18:00; pre-open 18:00-18:08; call auction illiquid 18:20-19:05; closing session 19:25-19:35; trade modification cut-off 18:15-19:45. Excluded from candle construction (D30; D40)
+2022-10-26,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 12
+2022-11-08,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/50560,CONFIRMED,p.1 trading-holidays table Sr. No. 13 (text extraction scrambles this row; the rendered page was checked on 2026-10-28)
+2022-12-25,HOLIDAY,Christmas,,,NSE/CMTR/50560,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 5
+2023-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2023-02-18,HOLIDAY,Mahashivratri,,,NSE/CMTR/54757,CONFIRMED,p.2 Saturday/Sunday table Sr. No. 1
+2023-03-07,HOLIDAY,Holi,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2023-03-30,HOLIDAY,Ram Navami,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2023-04-04,HOLIDAY,Mahavir Jayanti,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2023-04-07,HOLIDAY,Good Friday,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 5
+2023-04-14,HOLIDAY,Dr. Baba Saheb Ambedkar Jayanti,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2023-04-22,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/54757,CONFIRMED,p.2 Saturday/Sunday table Sr. No. 2
+2023-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2023-06-28,HOLIDAY,Bakri Id,,,NSE/CMTR/54757,UNRESOLVED,p.1 trading-holidays table Sr. No. 8. Unresolved: web search results (an NSE post on X and press reports; 2023-06-27) say NSE moved this holiday to Thursday 2023-06-29. The amending circular has not been obtained or verified; it may have made 28 June a trading day
+2023-06-29,HOLIDAY,Bakri Id (reported rescheduled date; no circular held),,,,UNRESOLVED,No registered source: this date is not printed in any circular held. Web search results (an NSE post on X and press reports; 2023-06-27) say the Bakri Id holiday moved here from 2023-06-28. Recorded UNRESOLVED only so the date is never treated as a normal trading session until the amending circular is obtained and verified
+2023-07-29,HOLIDAY,Moharram,,,NSE/CMTR/54757,CONFIRMED,p.2 Saturday/Sunday table Sr. No. 3
+2023-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2023-09-19,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2023-10-02,HOLIDAY,Mahatma Gandhi Jayanti,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 11
+2023-10-24,HOLIDAY,Dussehra,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 12
+2023-11-12,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/54757,CONFIRMED,p.2 Saturday/Sunday table Sr. No. 4. Footnote *: Muhurat trading this day (times in NSE/CMTR/59124)
+2023-11-12,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market,18:15,19:15,NSE/CMTR/59124,CONFIRMED,Normal Market row of the schedule. Also printed: block deal 17:45-18:00; pre-open 18:00-18:08; call auction illiquid 18:20-19:05; closing session 19:25-19:35; trade modification cut-off 18:15-19:45. Excluded from candle construction (D30; D40)
+2023-11-14,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 13
+2023-11-27,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 14
+2023-12-25,HOLIDAY,Christmas,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 15

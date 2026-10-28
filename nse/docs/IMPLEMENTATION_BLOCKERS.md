@@ -100,7 +100,15 @@ These are not blockers; the scanner flags them per case (D12).
 - **B8:** TradingView verification of D23 calendar boundaries and HTF candle values (open until comparisons are recorded).
 - **B10:** TradingView parity references, including NSE 75/125-min bar alignment on TradingView.
 - **B18:** NSE CM EOD file formats (legacy and UDiFF): legacy-format evidence recorded for two dates (`EOD_FORMAT_EVIDENCE.md`); provenance of the two original ZIP archives is user-confirmed (official NSE website, downloaded 2026-10-27), not independently authenticated; the user accepted this two-sample evidence with limitations (2026-10-27). **Still open:** format continuity across 2022-2023 is not proven by two samples; UDiFF and its switch date are unverified; no Muhurat sample; no independent cross-check (B8, B10); prices unadjusted (B7). UDiFF: no sample inspected. Separate from B6, which covers Kite Connect capabilities only.
-- **B17:** NSE trading calendar: **loader built and tested** (`nse/calendar/nse_calendar.py`, synthetic tests). The official circulars are not yet obtained; the list is in `nse/data/calendar/README.md`. The official Nifty 100 constituent file: not yet obtained.
+- **B17:** NSE trading calendar: **loader built and tested** (`nse/calendar/nse_calendar.py`). **2022 and 2023 transcribed** from official CMTR circulars (D40, proposed wording pending review). They are in `nse/data/calendar/sources.csv` and `events.csv`; the PDFs are local only and hash-verified. Tests: `tests/test_nse_calendar_data.py`.
+  - 2022: base circular 50560 (18 holidays) and Muhurat notice 54023. Q1 2022 reconciles cleanly with the EOD files.
+  - 2023: base circular 54757 (19 holidays) and Muhurat notice 59124.
+  - **Still open:**
+    - TradingView boundary and holiday validation.
+    - Review of amendments to normal hours after NSE/CMTR/41180 (2019; provisional evidence only).
+    - The 2023 Bakri Id amendment circular. 28 June (printed in 54757) and 29 June (reported new date; no source held) stay `UNRESOLVED`.
+    - Years other than 2022-2023, including 2021, 2024 and 2025 in the D29 window.
+  - The official Nifty 100 constituent file: not yet obtained.
 
 ### 4D. Historical-data and backtesting validation
 - **B11:** point-in-time Nifty 100 membership and delisted/merged history.
@@ -114,7 +122,7 @@ These are not blockers; the scanner flags them per case (D12).
 
 | Area | Status |
 |---|---|
-| Documentation | ✅ Consistent with D1–D17 and D21–D39 (D30 special-session rule approved provisionally; no session verified) |
+| Documentation | ✅ Consistent with D1–D17 and D21–D39; D40 proposed, pending review (D30 special-session rule approved provisionally; no session verified) |
 | Scanner implementation | ⛔ **Not ready.** Needs B6 (data source), B18 (EOD file formats), B7 (adjustment), B8 + B10 (TradingView verification) and B17 (validated NSE calendar) before outputs can be trusted. B16 is implemented. No user decisions remain for the scanner logic itself. |
 | Historical validation | ⛔ **Not ready.** Additionally needs B9, B11, B12, B15. |
 
