@@ -129,3 +129,31 @@ Corporate-action work starts only after the data source and an adjustment conven
 - ITC (ITC Hotels demerger, January 2025);
 - HDFC Bank (HDFC Ltd merger, July 2023);
 - Eternal, formerly Zomato (symbol change).
+
+## 7. Acquisition specification for a full MIT scan (added 2026-10-29)
+
+The executable plan, with measured counts, the procedure and acceptance checks, is
+`REAL_DATA_ACQUISITION_PLAN.md`; this section keeps the requirements.
+
+Measured with `python3 -m nse.research.cli inventory --as-of <date>` on the files held today (62 legacy bhavcopies: 2022-01-03 to 2022-03-31, and 2023-12-29). Raw availability says nothing about adjusted-price correctness (B7).
+
+**History a scan at as_of needs.** The period in progress never counts (D23), and the whole range must be unbroken, because one missing session ends a series (D37):
+
+| Timeframe | Needed | Purpose |
+|---|---|---|
+| Y, HY, Q | 3 completed periods | HTF conflict (G5), TDA (Essential Check 1) |
+| M | 3 completed months (55 for Monthly trend context, reported only) | Curve (G3), coinciding (G6) |
+| W | 55 completed weeks | MIT trend gate (G4) |
+| D | 3 completed sessions | Execution zones |
+
+**Example: a scan as of 2024-01-31** needs every session from 2021-01-01 to 2024-01-31. 699 sessions are missing. The calendar covers 2021-2025, so no calendar work is needed for that range. A scan as of 2022-03-31 would also need 2019-2020 calendar circulars.
+
+**Format.** Legacy `cmDDMMMYYYYbhav.csv.zip` up to the legacy-to-UDiFF switch. The switch date is reported as 2024-07-08 but is unverified. A UDiFF sample must be documented, and a loader added, before later dates can be used (B18).
+
+**Acceptance.** All four must hold:
+- every archive and member is recorded in `nse/data/eod/manifest.csv` with its size and SHA-256;
+- the strict loader accepts every file;
+- reconciliation finds no missing session and no file on a closed day;
+- `python3 -m nse.validation.run_all --acceptance` passes.
+
+**Corporate actions.** Records in the `nse/research/corporate_actions.py` format, covering the same range for every scanned symbol, from an approved source (B7).

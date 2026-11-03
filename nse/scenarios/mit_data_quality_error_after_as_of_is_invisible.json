@@ -1,0 +1,34 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_dq_error_after.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history plus 2024-02-05 with its high below its close, scanned at 2024-02-02.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    },
+    "status": "ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING"
+   }
+  ],
+  "same_decisions_as": "mit_fresh_7of7_actionable",
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "A finding about a later trade date says nothing about data available at as_of; showing it would leak the future into the earlier scan (spec 9). The decisions must equal the reference scan.",
+ "id": "mit_data_quality_error_after_as_of_is_invisible",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "spec 9",
+  "D23",
+  "spec 8 G0"
+ ],
+ "title": "A data-quality ERROR dated after as-of does not change the earlier scan",
+ "trade_type": "MIT"
+}

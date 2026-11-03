@@ -308,11 +308,21 @@ def _validate(candles):
         for v in (c.open, c.high, c.low, c.close):
             if not isinstance(v, (int, float)) or isinstance(v, bool) or not math.isfinite(v):
                 raise ValueError("candle %d has a non-numeric price" % i)
+            if v <= 0:
+                raise ValueError("candle %d has a non-positive price" % i)          # audit L2
         if c.low > min(c.open, c.close) or c.high < max(c.open, c.close) or c.high < c.low:
             raise ValueError("candle %d has inconsistent OHLC" % i)
-        if prev is not None and not c.time > prev:
+        if prev is not None and not _later(c.time, prev, "candle %d time" % i):
             raise ValueError("candle times must strictly increase (index %d)" % i)
         prev = c.time
+
+
+def _later(t, ref, what):
+    """t > ref, with incomparable times (mixed types, naive vs aware) as ValueError (audit L3)."""
+    try:
+        return t > ref
+    except TypeError:
+        raise ValueError("%s cannot be compared with %r (mixed time types or naive/aware datetimes)" % (what, ref))
 
 
 def _completed(candles):
@@ -798,9 +808,9 @@ def run_engine(candles, timeframe, as_of=None, rules=None):
     rules = rules or Rules()
     variant = TIMEFRAME_VARIANT[timeframe]
     candles = list(candles)
+    _validate(candles)                       # the whole input, including candles after as_of (audit L1)
     if as_of is not None:
-        candles = [c for c in candles if c.time <= as_of]
-    _validate(candles)
+        candles = [c for c in candles if not _later(c.time, as_of, "candle time vs as_of")]
     done, ignored = _completed(candles)
     received = len(candles)
     base = dict(engine_version=ENGINE_VERSION, timeframe=timeframe, variant=variant,

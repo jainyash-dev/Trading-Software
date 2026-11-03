@@ -17,7 +17,7 @@ import unittest
 import zipfile
 from decimal import Decimal
 
-from _load import ROOT, load
+from _load import ROOT, load, require_local
 
 bc = load(os.path.join("nse", "eod"), "nse_bhavcopy")
 D = datetime.date
@@ -278,14 +278,17 @@ class Provenance(Tmp):
 RAW = os.path.join(ROOT, "nse", "data", "eod", "raw")
 MANIFEST = os.path.join(ROOT, "nse", "data", "eod", "manifest.csv")
 SAMPLES = ("cm03JAN2022bhav.csv.zip", "cm03JAN2022bhav.csv", "cm29DEC2023bhav.csv.zip", "cm29DEC2023bhav.csv")
-HAVE_SAMPLES = all(os.path.isfile(os.path.join(RAW, s)) for s in SAMPLES)
 
 
-@unittest.skipUnless(HAVE_SAMPLES, "real NSE samples are local only (nse/data/eod/raw/ is git-ignored)")
 class RealSamples(unittest.TestCase):
     """Expected values come from nse/docs/EOD_FORMAT_EVIDENCE.md, not from this loader. (Its
     2022-01-03 count of 70 distinct series was corrected from 69 after an independent awk
     count.)"""
+
+    @classmethod
+    def setUpClass(cls):
+        missing = [s for s in SAMPLES if not os.path.isfile(os.path.join(RAW, s))]
+        require_local(not missing, "real NSE samples in nse/data/eod/raw/ (git-ignored): %s" % ", ".join(missing))
     EXPECT = {
         "cm03JAN2022bhav": (D(2022, 1, 3), 2227, 1666, 70, 210,
                             ("1887.75", "1914.05", "1887.75", "1898.45", "1899", "1887.75", 3329616, "6342326137.5", 128107)),

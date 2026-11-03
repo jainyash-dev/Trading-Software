@@ -6,9 +6,16 @@
 /nse/data/tradingview/**/*.csv
 /nse/data/calendar/circulars/
 /nse/data/corporate_actions/raw/
+/nse/data/screenshots/
 /nse/data/**/*.zip
 /nse/data/**/*.pdf
 /nse/data/**/*.xlsx
+
+# generated scan and validation reports (python3 -m nse.research.cli / nse.validation.run_all)
+/nse/output/
+
+# Python bytecode caches from test and tool runs
+__pycache__/
 
 # credentials, if they ever exist, are never committed (D10)
 .env

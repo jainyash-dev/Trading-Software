@@ -1,0 +1,27 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "The reference daily history scanned with trade type WIT-125.",
+ "expected": {
+  "candidate_count": 0,
+  "fresh_zone_count": 0,
+  "symbol_reason_contains": [
+   "INTRADAY_DESIGN_NOT_APPROVED"
+  ],
+  "symbol_status": "BLOCKED"
+ },
+ "explanation": "The 75/125-minute session and gap design (audit M4b) is not approved, so every WIT scan is BLOCKED with no candidate and no zone output, whatever the data shows (the same history is ACTIONABLE as MIT).",
+ "id": "wit125_blocked",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "audit M4b",
+  "D16",
+  "spec 9.3"
+ ],
+ "title": "WIT-125 is BLOCKED: no intraday output",
+ "trade_type": "WIT-125"
+}

@@ -1,0 +1,47 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history and as-of without a risk-per-trade amount.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G0": "PASS",
+     "G1": "PASS",
+     "G2": "PASS",
+     "G3": "PASS",
+     "G4": "PASS",
+     "G5": "PASS",
+     "G6": "PASS",
+     "G7": "PASS",
+     "G8": "MANUAL"
+    },
+    "manual_review_contains": [
+     "G8:EC7_POSITION_SIZE"
+    ],
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    },
+    "status": "MANUAL_REVIEW"
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "Quantity = RPT / (entry - SL) (RB 42, 2162). Without RPT the position-size essential check cannot be completed, so it is MANUAL (P-G8-1) and the otherwise actionable zone is MANUAL_REVIEW; unknown is never PASS.",
+ "id": "mit_no_risk_per_trade_needs_review",
+ "risk_per_trade": null,
+ "rule_refs": [
+  "RB 42",
+  "RB 2162",
+  "P-G8-1"
+ ],
+ "title": "No risk per trade: position size unknown, G8 MANUAL",
+ "trade_type": "MIT"
+}

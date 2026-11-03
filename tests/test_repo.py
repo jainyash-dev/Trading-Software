@@ -15,6 +15,8 @@ ABOUT = ("11 Claude skills for day trading: scan thousands of charts, track brea
 ORDER_PATH = ["trader-scanner", "trader-entry", "trader-exit", "trader-timemachine", "trader-budget",
               "trader-pelosi", "trader-risk", "trader-broker", "trader-alerts"]
 V1_ONLY = ["trader-copycat", "trader-screener", "trader-tax", "trader-rebalance"]
+RULEBOOK_PDF = "340fe490-8783-4eea-8cbd-e834449e9a42_Trading_Rulebook.pdf"
+RULEBOOK_PDF_SHA256 = "e41cd0e7893513a492a39095c0f771ec67b320f1b51bc356da7c6a2c2946c2fc"
 
 
 def frontmatter(path):
@@ -39,8 +41,19 @@ class Repo(unittest.TestCase):
         self.assertEqual(found, sorted(SKILLS))
 
     def test_root_matches_the_reel(self):
+        # CLAUDE.md (the user's project instructions), .claude/ (project skills, agents and
+        # hooks, which Claude Code reads only from the root), and the owner's two root
+        # documents (the product status register and the Trading Rulebook PDF, an
+        # authoritative reference kept exactly as supplied) are the only additions
         root = sorted(d for d in os.listdir(ROOT) if not d.startswith(".git"))
-        self.assertEqual(root, sorted([".claude-plugin", "LICENSE", "README.md", "nse", "tests"] + SKILLS))
+        self.assertEqual(root, sorted([".claude", ".claude-plugin", "CLAUDE.md", "LICENSE", "README.md", "nse",
+                                       "tests", "PRODUCT_MASTER_STATUS.md", RULEBOOK_PDF] + SKILLS))
+
+    def test_owner_rulebook_pdf_is_kept_verbatim(self):
+        # the PDF is an authoritative owner reference (never edited); pin it like nse/sources
+        import hashlib
+        with open(os.path.join(ROOT, RULEBOOK_PDF), "rb") as fh:
+            self.assertEqual(hashlib.sha256(fh.read()).hexdigest(), RULEBOOK_PDF_SHA256)
 
     def test_frontmatter_name_and_description(self):
         for s in SKILLS:
@@ -86,8 +99,10 @@ class Repo(unittest.TestCase):
             with open(path, encoding="utf-8", errors="replace") as fh:
                 text = fh.read()
             rel = os.path.relpath(path, ROOT)
-            # fixtures are real data, and nse/sources holds the user's reference documents; both kept as published
-            if not rel.startswith((os.path.join("tests", "fixtures"), os.path.join("nse", "sources"))):
+            # fixtures are real data, nse/sources holds the user's reference documents and CLAUDE.md
+            # is the user's own instruction file; all kept exactly as written
+            if not rel.startswith((os.path.join("tests", "fixtures"), os.path.join("nse", "sources"))) \
+                    and rel != "CLAUDE.md":
                 self.assertNotIn("\u2014", text, rel)
             self.assertNotIn("jakeschincariol" + "@" + "gmail.com", text, rel)  # built, so this file passes too
 
@@ -105,6 +120,26 @@ class Repo(unittest.TestCase):
         for name, digest in pinned.items():
             with open(os.path.join(folder, name), "rb") as fh:
                 self.assertEqual(hashlib.sha256(fh.read()).hexdigest(), digest, name)
+
+    def test_nse_code_keeps_the_phase1_safety_boundaries(self):
+        # Candidates may come only from MtfSnapshot.eligible_after_overlay (audit M4), never
+        # from the engine's own eligible list; and nothing under nse/ may reach a network,
+        # a broker or an order endpoint (D10, D17, D31, D32).
+        raw_eligible = re.compile(r"\.eligible\b(?!_after_overlay)")
+        forbidden = re.compile(r"^\s*(import|from)\s+(urllib|requests|http|socket|ssl|kiteconnect|websocket)\b"
+                               r"|place_order|modify_order|cancel_order", re.M)
+        owners = (os.path.join("nse", "zone-engine"), os.path.join("nse", "mtf-freshness"))
+        for folder, _, files in os.walk(os.path.join(ROOT, "nse")):
+            for name in files:
+                if not name.endswith(".py"):
+                    continue
+                path = os.path.join(folder, name)
+                rel = os.path.relpath(path, ROOT)
+                with open(path, encoding="utf-8") as fh:
+                    text = fh.read()
+                self.assertIsNone(forbidden.search(text), rel)
+                if not rel.startswith(owners):
+                    self.assertIsNone(raw_eligible.search(text), rel)
 
     def test_no_v1_only_skill_is_left_behind(self):
         for path in every_text_file():

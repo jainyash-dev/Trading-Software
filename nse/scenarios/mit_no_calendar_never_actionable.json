@@ -1,0 +1,47 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "NONE",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history and as-of, scanned without any trading calendar.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G0": "MANUAL",
+     "G1": "PASS",
+     "G2": "PASS",
+     "G3": "PASS",
+     "G4": "PASS",
+     "G5": "PASS",
+     "G6": "PASS",
+     "G7": "PASS",
+     "G8": "PASS"
+    },
+    "manual_review_contains": [
+     "G0:CALENDAR_UNVALIDATED"
+    ],
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    },
+    "status": "MANUAL_REVIEW"
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "Without an official calendar, missing weekdays are unverified gaps and special sessions cannot be detected (D28). P-CAL-1 makes G0 MANUAL with CALENDAR_UNVALIDATED, and the most restrictive outcome wins (spec 8), so the zone that is ACTIONABLE with a calendar can only be MANUAL_REVIEW without one.",
+ "id": "mit_no_calendar_never_actionable",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "P-CAL-1",
+  "D28",
+  "spec 8 G0"
+ ],
+ "title": "No calendar: the same fresh zone is MANUAL_REVIEW, never ACTIONABLE",
+ "trade_type": "MIT"
+}

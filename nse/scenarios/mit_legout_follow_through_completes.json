@@ -1,0 +1,37 @@
+{
+ "as_of": "2024-01-17",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history scanned at the close of 2024-01-17, the day after the leg-out.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G1": "PASS",
+     "G2": "PASS"
+    },
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    }
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "A second explosive leg-out candle (RB 728) completes the strength points, so the completed candles at this close give 7/7 (RB 661, 829) and the untouched zone passes G1 and G2. Later gates are not asserted here: this scenario is about when the zone becomes a candidate.",
+ "id": "mit_legout_follow_through_completes",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "RB 728",
+  "RB 661",
+  "RB 829",
+  "D23"
+ ],
+ "title": "The follow-through candle completes 7/7: one candidate",
+ "trade_type": "MIT"
+}

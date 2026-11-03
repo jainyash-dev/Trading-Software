@@ -1,0 +1,46 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_k175.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "The reference history with the Daily DBR scaled by 1.75 (PL 166.6), wholly above the tested Monthly demand range.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G0": "PASS",
+     "G1": "PASS",
+     "G2": "PASS",
+     "G3": "PASS",
+     "G4": "PASS",
+     "G5": "PASS",
+     "G6": "MANUAL",
+     "G7": "PASS",
+     "G8": "PASS"
+    },
+    "manual_review_contains": [
+     "G6:AGGRESSIVE_ENTRY_REVIEW"
+    ],
+    "match": {
+     "proximal": 166.6
+    },
+    "status": "MANUAL_REVIEW"
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "R3: Coinciding means actual price-range overlap; a zone merely above the HTF demand is not Coinciding, and Aggressive stays a separate class (RB 1826-1856). An aggressive entry needs a person, so G6 is MANUAL and the status is MANUAL_REVIEW, while every other gate is unchanged from the reference.",
+ "id": "mit_aggressive_zone_above_monthly_demand",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "R3",
+  "D15",
+  "RB 1826-1856",
+  "spec 7.5"
+ ],
+ "title": "Execution zone wholly above the Monthly demand: Aggressive, MANUAL",
+ "trade_type": "MIT"
+}

@@ -1,0 +1,95 @@
+{
+ "data_kind": "SYNTHETIC",
+ "files": {
+  "long_mit.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-02",
+   "recipe": "long_mit_rows(): the reference history; D DBR PL 159.94 DL 157.92 formed 2024-01-16, last day 2024-02-02",
+   "rows": 1265,
+   "sha256": "3466f472f586d5cfd19f09bd6440207e6da5d92fbe96a919edc0958cfa1b4441"
+  },
+  "long_mit_dq_error_2020.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-02",
+   "recipe": "long_mit.csv with 2020-03-02 high set below its close (OHLC_INCONSISTENT)",
+   "rows": 1265,
+   "sha256": "44ac9cd91cdfe075d4c737e1f952fcbd3b5c1ef0ff9d58fed60fa19f889d831a"
+  },
+  "long_mit_dq_error_after.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-05",
+   "recipe": "long_mit.csv + 2024-02-05 with its high below its close (OHLC_INCONSISTENT after 2024-02-02)",
+   "rows": 1266,
+   "sha256": "77aa36acd905b3663afe27d822663f4804e56d378ad8c3ec3634c4aade9e4112"
+  },
+  "long_mit_from_2023_02.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2023-02-01",
+   "last_date": "2024-02-02",
+   "recipe": "long_mit_rows(start=2023-02-01): history too short for Half-yearly and Yearly",
+   "rows": 263,
+   "sha256": "327ec9071396fa597fcd274a14866ae47676cb035d2525c0af824e78306648ef"
+  },
+  "long_mit_hoc_uptrend.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-07-03",
+   "recipe": "long_mit_rows(tail_step=1.006, tail_days=120): price climbs to 359.91 by the last day (2024-07-03)",
+   "rows": 1373,
+   "sha256": "fafb02b126e5c9218bc7ad03261e0bf4248a2f6baf8c4c1dd1a3bbcb8c43cf20"
+  },
+  "long_mit_invalidated.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-19",
+   "recipe": "long_mit.csv + 2024-02-05 close 151.0 (< DL 157.92) + 10 calm days at 151",
+   "rows": 1276,
+   "sha256": "99a7448a03addf1de29de2c9ab4356b533dc1be36172b223847ba8142fc56627"
+  },
+  "long_mit_k175.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-02",
+   "recipe": "long_mit_rows(k=1.75): D DBR PL 166.6 lies wholly above the Monthly demand range",
+   "rows": 1265,
+   "sha256": "1ec9f9180bcff1756c53d3596a866863a0b3491d45506ebd53d6889186841e17"
+  },
+  "long_mit_k179_flat.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-02",
+   "recipe": "long_mit_rows(k=1.79, tail_step=1.0, tail_wick=.002): D DBR PL 170.41, close under the Weekly supply",
+   "rows": 1265,
+   "sha256": "772e22022dab002cee6810c36540d88960e94b6c7201316fd1bdb8e747243488"
+  },
+  "long_mit_missing_session.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-02",
+   "recipe": "long_mit.csv without its third-last row (2024-01-31), a weekday after the zone formed",
+   "rows": 1264,
+   "sha256": "6e3dcdf64c840b621340f9deb81343814bc07ddb90ed1a52e3118ad2ef09bd67"
+  },
+  "long_mit_touched.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-06",
+   "recipe": "long_mit.csv + 2024-02-05 low 159.5 (<= PL 159.94, > DL 157.92) + 2024-02-06 calm",
+   "rows": 1267,
+   "sha256": "ee20e7e40356a7b991a36eb0e375234f622df28817d6680fa9afe15ca363ee76"
+  },
+  "long_mit_wick_below_dl.csv": {
+   "data_kind": "SYNTHETIC",
+   "first_date": "2019-04-01",
+   "last_date": "2024-02-06",
+   "recipe": "long_mit.csv + 2024-02-05 low 157.0 (< DL 157.92) close 170.0 (> DL) + 2024-02-06 calm",
+   "rows": 1267,
+   "sha256": "f0bbca42eeeb3b79264b8a2c95df9f73550f71ed013dfef2d196b5969d6e9fb4"
+  }
+ },
+ "generator": "python3 -m nse.scenarios.generate",
+ "note": "Invented prices written by nse/scenarios/generate.py; not market data, never external validation."
+}

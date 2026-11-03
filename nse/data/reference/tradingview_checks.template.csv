@@ -1,0 +1,13 @@
+check_id,symbol,timeframe,date,expectation,expectation_source,observed,result,chart_timezone,adjust_dividends,adjust_splits,screenshot_file,screenshot_sha256,recorded_on,recorded_by,notes
+TV-CAL-01,INFY,D,2022-01-26,No daily bar (holiday),events.csv NSE/CMTR/50560,,,,,,,,,,
+TV-CAL-02,INFY,D,2022-03-01,No daily bar (holiday),events.csv NSE/CMTR/50560,,,,,,,,,,
+TV-CAL-03,INFY,D,2022-03-18,No daily bar (holiday),events.csv NSE/CMTR/50560,,,,,,,,,,
+TV-CAL-04,INFY,D,2022-03-31,Bar present; March and Q1 close on it,calendar NORMAL,,,,,,,,,,
+TV-CAL-05,INFY,D,2022-10-24,Muhurat session: record whether a bar exists and its OHLC (excluded here; D30),events.csv NSE/CMTR/54023,,,,,,,,,,
+TV-CAL-06,INFY,D,2022-10-26,No daily bar (holiday); week 24-28 Oct built from 25 27 28 Oct only,events.csv NSE/CMTR/50560,,,,,,,,,,
+TV-CAL-07,INFY,D,2023-06-28,Bar present (Bakri Id moved),events.csv NSE/CMTR/57285,,,,,,,,,,
+TV-CAL-08,INFY,D,2023-06-29,No daily bar (holiday),events.csv NSE/CMTR/57285,,,,,,,,,,
+TV-CAL-09,INFY,D,2024-01-20,Saturday bar present (regular hours inferred from NSE/CMTR/41180; D40),events.csv NSE/MSD/60340,,,,,,,,,,
+TV-CAL-10,INFY,D,2025-02-01,Saturday bar present (budget session),events.csv NSE/CMTR/65729,,,,,,,,,,
+TV-CAL-11,INFY,D,2024-03-02,DR session: record whether a bar exists (excluded here; D30),events.csv NSE/MSD/60677,,,,,,,,,,
+TV-CAL-12,INFY,D,2024-05-18,DR session: record whether a bar exists (excluded here; D30),events.csv NSE/MSD/61893,,,,,,,,,,

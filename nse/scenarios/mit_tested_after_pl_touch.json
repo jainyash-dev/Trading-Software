@@ -1,0 +1,39 @@
+{
+ "as_of": "2024-02-06",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_touched.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history plus 2024-02-05 with low 159.5 (at or below PL 159.94, above DL 157.92) and one calm day.",
+ "expected": {
+  "candidate_count": 0,
+  "fresh_zones_absent": [
+   {
+    "proximal": 159.94,
+    "tf": "D"
+   }
+  ],
+  "overlay_zone_states": [
+   {
+    "match": {
+     "proximal": 159.94,
+     "tf": "D"
+    },
+    "overlay_status": "TESTED"
+   }
+  ],
+  "symbol_status": "NO_FRESH_EXECUTION_ZONE"
+ },
+ "explanation": "Any PL touch after the leg-out makes the zone tested (RB 264, 683-697). D3: a tested zone is never an entry zone and never appears in the candidate list or the fresh-zone report. The overlay must record TESTED and the scanner must list no candidate.",
+ "id": "mit_tested_after_pl_touch",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "RB 264",
+  "RB 683-697",
+  "D3",
+  "audit M4"
+ ],
+ "title": "The same zone after a later PL touch is TESTED: no candidate",
+ "trade_type": "MIT"
+}

@@ -1,0 +1,33 @@
+{
+ "as_of": "2024-01-16",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history scanned at the close of the leg-out day, 2024-01-16.",
+ "expected": {
+  "candidate_count": 0,
+  "fresh_zones_present": [
+   {
+    "match": {
+     "proximal": 159.94,
+     "tf": "D"
+    },
+    "zone_level_contains": "LEGOUT_WINDOW_OPEN"
+   }
+  ],
+  "symbol_status": "NO_FRESH_EXECUTION_ZONE"
+ },
+ "explanation": "On the leg-out day only one explosive leg-out candle exists, so strength is not yet 2 and the core score is below 7/7 (RB 661, 728): no candidate. The fresh-zone report still lists the fresh zone and says the leg-out window is open (audit M1, report only).",
+ "id": "mit_legout_window_open",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "RB 728",
+  "RB 661",
+  "audit M1",
+  "D23"
+ ],
+ "title": "Leg-out day: the zone exists at 6/7 and is not a candidate",
+ "trade_type": "MIT"
+}

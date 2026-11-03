@@ -1,0 +1,39 @@
+{
+ "as_of": "2024-02-06",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_wick_below_dl.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history plus 2024-02-05 with low 157.0 (below DL 157.92) but close 170.0 (above DL), then a calm day.",
+ "expected": {
+  "candidate_count": 0,
+  "fresh_zones_absent": [
+   {
+    "proximal": 159.94,
+    "tf": "D"
+   }
+  ],
+  "overlay_zone_states": [
+   {
+    "match": {
+     "proximal": 159.94,
+     "tf": "D"
+    },
+    "overlay_status": "TESTED"
+   }
+  ],
+  "symbol_status": "NO_FRESH_EXECUTION_ZONE"
+ },
+ "explanation": "R4: a wick or temporary breach alone is not invalidation; only a completed close beyond DL is (D24). So the overlay status must be TESTED, not INVALIDATED. A wick below DL necessarily passes through PL, which is a test (RB 683-697), so under D3 the zone is still no entry: the scenario pins the distinction between the two exclusion reasons, not a candidate.",
+ "id": "mit_wick_below_dl_without_close",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "R4",
+  "D24",
+  "RB 683-697",
+  "D3"
+ ],
+ "title": "A wick below DL without a close below it: TESTED, not INVALIDATED",
+ "trade_type": "MIT"
+}

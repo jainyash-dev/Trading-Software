@@ -1,0 +1,59 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "The reference SYNTHETIC history: one Daily DBR demand zone (PL 159.94, DL 157.92) formed 2024-01-16 and untouched to 2024-02-02, inside a tested Monthly demand (coinciding), price LOC on the Monthly curve, Weekly at 12 o'clock, Weekly supply as target.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G0": "PASS",
+     "G1": "PASS",
+     "G2": "PASS",
+     "G3": "PASS",
+     "G4": "PASS",
+     "G5": "PASS",
+     "G6": "PASS",
+     "G7": "PASS",
+     "G8": "PASS"
+    },
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    },
+    "status": "ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING"
+   }
+  ],
+  "fresh_zones_present": [
+   {
+    "match": {
+     "proximal": 159.94,
+     "side": "demand",
+     "tf": "D"
+    }
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "A fresh (no PL touch, RB 683-697, D3) demand zone with core 7/7 (RB 661, 829) that the MTF overlay keeps (audit M4) is the only execution zone. CMP is LOC on the Monthly curve (R1), the Weekly trend reads 12 o'clock = STRONG_UP (R2), the zone overlaps a DL-intact tested Monthly demand (Coinciding, R3), no fresh supply sits within 10% overhead and the Weekly supply gives R:R >= 2. Every automated gate therefore passes, and spec 8 caps the status at ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING: the manual checklist stays pending and nothing approves a trade.",
+ "id": "mit_fresh_7of7_actionable",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "RB 661",
+  "RB 829",
+  "RB 683-697",
+  "D3",
+  "R1",
+  "R2",
+  "R3",
+  "spec 8",
+  "audit M4"
+ ],
+ "title": "Fresh 7/7 Daily demand reaches ACTIONABLE (manual checks pending)",
+ "trade_type": "MIT"
+}

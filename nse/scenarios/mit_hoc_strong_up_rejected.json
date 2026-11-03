@@ -1,0 +1,41 @@
+{
+ "as_of": "2024-07-03",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_hoc_uptrend.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "The reference history with a 120-day rising tail; CMP 359.91 sits high on the Monthly curve.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G1": "PASS",
+     "G2": "PASS",
+     "G3": "MANUAL",
+     "G4": "FAIL"
+    },
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    },
+    "status": "REJECTED"
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "R1: the curve position uses CMP only. HOC permits a buy only in extreme circumstances with sector support (RB 1600-1601; sector not evaluated), so G3 is MANUAL. R5 / RB 1901: HOC + Up for a demand long is REJECT (buying expensive), so G4 FAILs and a FAIL outranks everything (spec 8), even though the zone itself is still fresh and 7/7.",
+ "id": "mit_hoc_strong_up_rejected",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "R5",
+  "R1",
+  "RB 1600-1601",
+  "RB 1901",
+  "spec 7.6"
+ ],
+ "title": "Price HOC on the curve with a Strong Up trend: REJECTED",
+ "trade_type": "MIT"
+}

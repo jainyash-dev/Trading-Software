@@ -1,0 +1,39 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_missing_session.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history without 2024-01-31 (a weekday the WEEKDAYS_SYNTHETIC calendar says traded), after the zone formed.",
+ "expected": {
+  "blocked_zone_overlay_status": [
+   {
+    "disposition": "DATA_INSUFFICIENT",
+    "match": {
+     "tf": "D",
+     "zone_id": "demand-1250-1251"
+    },
+    "overlay_status": "UNKNOWN_DATA_GAP"
+   }
+  ],
+  "candidate_count": 0,
+  "fresh_zones_absent": [
+   {
+    "proximal": 159.94,
+    "tf": "D"
+   }
+  ],
+  "symbol_status": "DATA_INSUFFICIENT"
+ },
+ "explanation": "D27 / D34: a missing session after a zone formed means its freshness cannot be established (the missing candle may have touched it). Unknown freshness is never fresh: the overlay marks the zone UNKNOWN_DATA_GAP, blocks it with disposition DATA_INSUFFICIENT, and the execution series stops at the gap so G0 is DATA_INSUFFICIENT for the symbol.",
+ "id": "mit_missing_session_after_formation",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "D27",
+  "D34",
+  "spec 8 G0"
+ ],
+ "title": "A missing session after formation: overlay unknown, not a candidate",
+ "trade_type": "MIT"
+}

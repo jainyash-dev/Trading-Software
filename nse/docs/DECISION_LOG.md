@@ -1,7 +1,7 @@
 # Decision Log
 
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
-**Version:** 2.8, dated 2026-10-28. v2.8 adds D40 (first official calendar tables, B17; `PROPOSED`, pending review). v2.7 added D39 (per-date calendar ambiguity, audit L10 option B). v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29–D32 (§1D) for the external-validation phase. v2.3 added D24–D28 (§1C) for HTF freshness (B16). v2.2 added D21–D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12–D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
+**Version:** 3.0, dated 2026-11-02. v3.0 records product-owner-approved M1 decisions R1-R6; D41 remains proposed for readings not covered by those approvals. v2.9 added D41 (research-pipeline interpretations; `PROPOSED`, pending review). v2.8 added D40 (official calendar tables 2021-2025, B17; `PROPOSED`, pending review). v2.7 added D39 (per-date calendar ambiguity, audit L10 option B). v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29-D32 (§1D) for the external-validation phase. v2.3 added D24-D28 (§1C) for HTF freshness (B16). v2.2 added D21-D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12-D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
@@ -547,34 +547,51 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
 - **Nature:** implementation safety. No trading rule changes, and no calendar fact is inferred.
 - **Applied literally:** a period is truncated even when the ambiguous date is after as-of or before the first candle (`PHASE1_CORRECTNESS_AUDIT.md` §4C).
 
-### D40. First official calendar tables; Muhurat notices recorded but excluded (B17)
+### D40. Official calendar tables 2021-2025; special sessions recorded under D30 (B17)
 - **Status:** `PROPOSED`, 2026-10-28. **Pending the user's review of this wording.** The user approved the underlying decisions on 2026-10-28:
   - keep the supplied 2022 file name;
   - record the archive URL with a byte-identity note, and `downloaded_on=UNKNOWN`;
   - register the 2022 Muhurat notice as confirmed, keeping D30's exclusion;
   - use NSE/CMTR/41180 provisionally for normal hours;
-  - register the 2023 circulars without confirming the revised Bakri Id date;
-  - keep the PDFs local.
+  - register the 2023 circulars, confirming the revised Bakri Id date only on official evidence;
+  - keep the circular files local.
 
   The implementation choices marked *proposed* below were not part of those decisions.
-- **Proposed behaviour** (`nse/data/calendar/sources.csv`, `events.csv`):
-  - 2022 and 2023 holidays are transcribed from the base circulars NSE/CMTR/50560 and NSE/CMTR/54757. Both files are held locally and match their recorded SHA-256. Claude checked the rows against the extracted text and the rendered pages on 2026-10-28; the user has not checked them independently.
-  - The Muhurat sessions of 24 Oct 2022 (NSE/CMTR/54023) and 12 Nov 2023 (NSE/CMTR/59124) are `CONFIRMED` `MUHURAT_SESSION` rows. Each carries the circular's Normal Market times, 18:15-19:15; the other printed sessions are listed in the note.
-  - **D30 is unchanged.** Recording a Muhurat session is not using it. These dates are `EXCLUDED_MUHURAT`, and their candles never enter HTF construction or touch counts (D33). No rule for using Muhurat data is approved.
-  - **Bakri Id 2023 is unresolved on both dates.**
-    - 54757 prints Wednesday 28 June. Web search results (an NSE post on X and press reports, 2023-06-27) say NSE moved the holiday to Thursday 29 June. The amending circular has not been obtained or verified.
-    - 28 June is an `UNRESOLVED` row citing 54757, where it is printed. 29 June is an `UNRESOLVED` row with **no** `source_ref`, because no circular held prints it.
-    - Both dates raise `CalendarAmbiguityError`. They are handled per date (D39) and are never classified as normal sessions.
-  - The supplied 2022 copy keeps its file name `NSE_CMTR_50560_2022_trading_holidays.pdf.pdf` with `downloaded_on=UNKNOWN`, never inferred from file times. Its archive URL is recorded because the copy Claude retrieved there on 2026-10-28 is byte-identical (`nse/data/calendar/README.md` §1, §4). This shows the content is identical; it doesn't show where or when the original copy was downloaded.
-  - Normal hours of 09:15-15:30 (`REGULAR_OPEN`/`REGULAR_CLOSE`, `mtf_freshness.SESSION_OPEN`/`SESSION_CLOSE`) are **provisionally** evidenced by NSE/CMTR/41180 (31 May 2019, effective 3 Jun 2019). It is registered as a `SESSION_NOTICE` with `applicable_year` 2019 and has no events. Later amendments up to 2023 have not been checked, so this aspect is **not validated**.
+- **Proposed behaviour** (`nse/data/calendar/sources.csv`, `events.csv`; list in `nse/data/calendar/README.md` §1):
+  - **Scope: the whole D29 window, 2021-2025.** 19 official NSE sources: 5 base holiday circulars, 4 amendments, 9 session notices and the normal-hours circular NSE/CMTR/41180; 105 events. Every file is held locally and matches its recorded SHA-256. Claude checked every row against the extracted text, and the base circulars and every timing table also on the rendered pages (2026-10-28); the user has not checked them independently.
+  - **Bakri Id 2023 is resolved by NSE/CMTR/57285** (2023-06-27, "Change in Trading Holiday", partial modification of NSE/CMTR/54757): 28 June 2023 is a normal session and 29 June a holiday. NSE serves this circular only as a ZIP (circular plus the Maharashtra notification); the ZIP is stored and hashed as served.
+  - **Added holidays:** 22 Jan 2024 (NSE/CMTR/60338), 20 May 2024 (NSE/CMTR/61518), 20 Nov 2024 (NSE/CMTR/64960).
+  - **D30 is unchanged.** Five Muhurat sessions (2021-2025, Normal Market times from each notice) are `CONFIRMED` `MUHURAT_SESSION` rows and stay `EXCLUDED_MUHURAT`; their candles never enter HTF construction or touch counts (D33). The 2025 session (13:45-14:45) lies inside regular clock hours and is excluded by the calendar, not by the clock. No rule for using Muhurat data is approved.
+  - **Shortened sessions:** the DR-switch Saturdays of 2 Mar 2024 (NSE/MSD/60677) and 18 May 2024 (NSE/MSD/61893) had two Normal Market windows, 09:15-10:00 and 11:30-12:30. The schema holds one start and end per row, so each row spans 09:15-12:30 and its note says the session was not continuous. Both are `EXCLUDED_SHORTENED`.
+  - **Regular-hours Saturdays (D30 provisional rule):**
+    - 1 Feb 2025 (NSE/CMTR/65729) prints Normal Market 09:15-15:30 "as per the standard market timings": `NORMAL_SPECIAL`.
+    - 20 Jan 2024 (NSE/MSD/60340) withdraws the DR-switch session announced in NSE/MSD/59999 and holds "regular trading sessions ... as per regular market timings", without printing the times. *Proposed:* record 09:15-15:30 from NSE/CMTR/41180, so it is also `NORMAL_SPECIAL`. This is the one session whose hours come from a second circular.
+  - The supplied 2022 copy keeps its file name `NSE_CMTR_50560_2022_trading_holidays.pdf.pdf` with `downloaded_on=UNKNOWN`, never inferred from file times. Its archive URL is recorded because the copy Claude retrieved there on 2026-10-28 is byte-identical (`nse/data/calendar/README.md` §1, §4). This shows the content is identical; it does not show where or when the original copy was downloaded.
+  - **Normal hours 09:15-15:30** (`REGULAR_OPEN`/`REGULAR_CLOSE`, `mtf_freshness.SESSION_OPEN`/`SESSION_CLOSE`) are provisionally evidenced by NSE/CMTR/41180 (31 May 2019, effective 3 Jun 2019), registered as a 2019 `SESSION_NOTICE` with no events, and corroborated by NSE/CMTR/65729 (2024-12-23), which calls them the standard market timings. No systematic review of the timing circulars in between has been made, so this aspect is **not validated**.
 - **Proposed schema changes** (`nse_calendar.py`; tested):
   - `sources.csv` `downloaded_on` may be `UNKNOWN`, as in the EOD manifest.
-  - An `events.csv` row may leave `source_ref` empty **only** when its status is `UNRESOLVED`, and it still needs a note. A `CONFIRMED` row must cite a registered source.
+  - An `events.csv` row may leave `source_ref` empty **only** when its status is `UNRESOLVED`, and it still needs a note. A `CONFIRMED` row must cite a registered source. No current row uses this.
 - **Not complete:** B17 stays open and Phase 1 is not complete. Outstanding:
-  - TradingView holiday and boundary validation;
-  - review of normal-hours amendments after 41180;
-  - the 2023 Bakri Id amending circular;
-  - every year in the D29 window other than 2022-2023.
+  - TradingView holiday and boundary validation (with B8);
+  - the systematic normal-hours review;
+  - completeness of the event list: reconciliation with official EOD files covers Q1 2022 only.
+
+### D41. Research-pipeline interpretations (scanner, G0-G8)
+- **Status:** `PROPOSED` as an umbrella, 2026-10-29; **partially superseded by USER_APPROVED M1 decisions R1-R6, 2026-11-02**. The remaining D41 readings are not approved. The approvals are recorded in `DECISION_REGISTER.md` and do not approve unrelated D41 items.
+- **Proposed behaviour:** the fourteen readings P-TREND-1, P-LOC-1 to P-LOC-3, P-MAT-1, P-MAT-2, P-COIN-1, P-COIN-2, P-CAL-1, P-LVL-1, P-LVL-2, P-CONF-1, P-G8-1 and P-DQ-1, listed with their effect and code location in `RESEARCH_PIPELINE.md` section 4.
+  - **Approved in M1:** P-LOC-1 / R1 (CMP only); P-TREND-1 / R2 (12 o'clock maps to STRONG_UP, label retained); P-COIN-1 / R3 (actual demand-range overlap; Aggressive remains distinct); P-MAT-1 and P-MAT-2 / R5 (approved HOC/EQB outcomes); P-COIN-2 / R6 (known absence passes G6 as Standard, unknown remains MANUAL).
+  - The separate R4 approval confirms D24's own-timeframe completed-close invalidation and requires SL-hit events to remain separate from zone invalidation events.
+  - Other D41 readings remain PROPOSED, including P-LOC-2 (price inside tested HTF demand), P-LOC-3, P-CAL-1, P-LVL-1 to P-LVL-3, P-CONF-1, P-G8-1, P-DQ-1, P-CA-1/2, P-REF-1, P-BT-1 and M1 reporting.
+- **Added 2026-10-29 (second pass), also PROPOSED:**
+  - P-LVL-3: invalid levels make G7 MANUAL with no R:R. Invalid means SL <= 0, inverted zone geometry or a non-finite price.
+  - P-CA-1: a price-scale corporate action inside the replayed history makes G0 MANUAL; nothing is adjusted (B7).
+  - P-REF-1: the matching key for zone references.
+  - P-BT-1: backtests need a complete user-supplied execution model (B9, B12).
+  - M1: the fresh-zone report labels an open leg-out window; this is a report label only.
+  - P-CA-2 (third pass): a PREVCLOSE discontinuity inside the replayed history makes G0 MANUAL; a backtest trade alive across one is excluded from metrics.
+  - The full register, with alternatives and effects, is `DECISION_REGISTER.md`.
+- **Consequence while PROPOSED:** unapproved readings stay research output. Every record carries NOT_EXTERNALLY_VALIDATED and the manual checklist; no candidate status approves a trade.
+- **Not changed:** D1-D40; the Rulebook and the Pine Script; WIT stays BLOCKED (audit M4b).
 
 ---
 

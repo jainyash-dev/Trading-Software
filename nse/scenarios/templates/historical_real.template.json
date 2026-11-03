@@ -1,0 +1,17 @@
+{
+ "id": "real_REPLACE_WITH_ID",
+ "title": "REPLACE: one line naming the historical case",
+ "description": "REPLACE: symbol and window of official NSE bhavcopies used",
+ "rule_refs": ["RB 0000"],
+ "data_kind": "HISTORICAL_REAL",
+ "source_note": "REPLACE: manifest rows (nse/data/eod/manifest.csv) the files come from",
+ "data": {"SYMBOL": {"bhavcopy": [{"path": "nse/data/eod/raw/cmDDMONYYYYbhav.csv.zip",
+                                   "sha256": "0000000000000000000000000000000000000000000000000000000000000000"}],
+                     "series": "EQ", "manifest": "nse/data/eod/manifest.csv"}},
+ "as_of": "YYYY-MM-DD",
+ "trade_type": "MIT",
+ "calendar": "NSE",
+ "risk_per_trade": null,
+ "expected": {"symbol_status": "DATA_INSUFFICIENT"},
+ "explanation": "REPLACE: why the rules require this outcome on this real history"
+}

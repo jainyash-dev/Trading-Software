@@ -1,0 +1,18 @@
+{
+ "id": "owner_REPLACE_WITH_ID",
+ "title": "REPLACE: one line naming the chart case",
+ "description": "REPLACE: symbol, timeframe and dates of the chart the product owner reviewed",
+ "rule_refs": ["RB 0000"],
+ "data_kind": "OWNER_CHART",
+ "source_note": "REPLACE: who transcribed the candles, from which chart (platform, symbol, timeframe, adjustment), and when",
+ "data": {"SYMBOL": "owner/REPLACE.csv"},
+ "as_of": "YYYY-MM-DD",
+ "trade_type": "MIT",
+ "calendar": "NSE",
+ "risk_per_trade": null,
+ "expected": {
+  "symbol_status": "EVALUATED",
+  "candidates": [{"match": {"proximal": 0.0}, "status": "MANUAL_REVIEW", "gates": {"G1": "PASS"}}]
+ },
+ "explanation": "REPLACE: why the rulebook requires this outcome, citing the lines in rule_refs"
+}

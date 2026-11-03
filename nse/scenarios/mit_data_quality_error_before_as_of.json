@@ -1,0 +1,25 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_dq_error_2020.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history with the 2020-03-02 high set below its close (OHLC_INCONSISTENT).",
+ "expected": {
+  "candidate_count": 0,
+  "symbol_reason_contains": [
+   "OHLC_INCONSISTENT"
+  ],
+  "symbol_status": "DATA_INSUFFICIENT"
+ },
+ "explanation": "An ERROR finding dated at or before as_of means the history is not trustworthy, so G0 makes the symbol DATA_INSUFFICIENT (spec 8 G0, spec 11). Nothing is repaired, and the fresh zone of the reference is not offered.",
+ "id": "mit_data_quality_error_before_as_of",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "spec 8 G0",
+  "spec 11"
+ ],
+ "title": "A data-quality ERROR dated before as-of stops the symbol",
+ "trade_type": "MIT"
+}

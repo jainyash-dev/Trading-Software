@@ -236,8 +236,20 @@ class MtfSnapshot:
         s = self.series.get(tf)
         if s is None or s.engine is None:
             return [], []
+        return self._after_overlay(tf, s.engine.eligible)
+
+    def manual_review_after_overlay(self, tf):
+        """The same filter applied to the Zone Engine's MANUAL_REVIEW demand zones (a
+        reading reaches 7/7 but the sources disagree). A zone kept here is still never
+        eligible: the scanner can only give it MANUAL REVIEW. Returns (kept, blocked)."""
+        s = self.series.get(tf)
+        if s is None or s.engine is None:
+            return [], []
+        return self._after_overlay(tf, [a for a in s.engine.manual_review_zones if a.zone.is_demand])
+
+    def _after_overlay(self, tf, assessments):
         kept, blocked = [], []
-        for a in s.engine.eligible:
+        for a in assessments:
             st = self.zones.get("%s:%s" % (tf, a.zone.id))
             if st is not None and st.usable_as_fresh_context:
                 kept.append(a)
@@ -260,6 +272,12 @@ class MtfSnapshot:
             kept, blocked = self.eligible_after_overlay(tf)
             out["overlay"][tf] = {"kept": [a.zone.id for a in kept],
                                   "blocked": [{"zone_id": a.zone.id, "reasons": why} for a, why in blocked]}
+        out["overlay_manual_review"] = {}
+        for tf in self.series:
+            kept, blocked = self.manual_review_after_overlay(tf)
+            out["overlay_manual_review"][tf] = {
+                "kept": [a.zone.id for a in kept],
+                "blocked": [{"zone_id": a.zone.id, "reasons": why} for a, why in blocked]}
         return out
 
     def to_json(self, **kw):

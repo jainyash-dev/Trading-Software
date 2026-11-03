@@ -1,0 +1,36 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_k179_flat.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "The Daily DBR scaled by 1.79 (PL 170.41) with a flat tail, just under the Weekly supply.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "gates": {
+     "G1": "PASS",
+     "G2": "PASS",
+     "G5": "MANUAL"
+    },
+    "match": {
+     "proximal": 170.41
+    },
+    "status": "MANUAL_REVIEW"
+   }
+  ],
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "spec 7.4 / RB 1302-1316: an opposing supply close overhead is a higher-timeframe conflict; Weekly is evidence-only for MIT and a 5-10% band needs judgement (P-CONF-1), so G5 is MANUAL. A MANUAL gate can never be ACTIONABLE (spec 8).",
+ "id": "mit_weekly_supply_within_10pct",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "spec 7.4",
+  "RB 1302-1316",
+  "P-CONF-1"
+ ],
+ "title": "Weekly supply within 10% of the entry maximum: G5 MANUAL",
+ "trade_type": "MIT"
+}

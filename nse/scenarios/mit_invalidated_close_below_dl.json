@@ -1,0 +1,40 @@
+{
+ "as_of": "2024-02-19",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_invalidated.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history plus 2024-02-05 closing at 151.0 (below DL 157.92) and ten calm days at 151.",
+ "expected": {
+  "candidate_count": 0,
+  "fresh_zones_absent": [
+   {
+    "proximal": 159.94,
+    "tf": "D"
+   }
+  ],
+  "overlay_zone_states": [
+   {
+    "match": {
+     "proximal": 159.94,
+     "tf": "D"
+    },
+    "overlay_status": "INVALIDATED"
+   }
+  ],
+  "symbol_status": "NO_FRESH_EXECUTION_ZONE"
+ },
+ "explanation": "R4 / D24: a completed candle close beyond a demand zone's DL invalidates it, permanently (PS 2613, RB 1627). An invalidated zone is not fresh, so it cannot be a candidate or a fresh zone, however many calm days follow.",
+ "id": "mit_invalidated_close_below_dl",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "R4",
+  "D24",
+  "PS 2613",
+  "RB 1627",
+  "D3"
+ ],
+ "title": "A completed close below DL invalidates the zone permanently",
+ "trade_type": "MIT"
+}

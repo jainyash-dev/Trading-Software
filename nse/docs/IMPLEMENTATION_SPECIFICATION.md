@@ -1,8 +1,8 @@
 # Implementation Specification: Phase 1
 ## NSE GTF Demand & Supply Swing-Trading Research System
 
-**Version:** 2.2, dated 2026-10-26. It incorporates user decisions D12–D17 and D21–D23. v2.0 replaced v1; corrections are in SOURCE_COVERAGE_REPORT §8.
-**Status:** ⛔ **Not ready for implementation.** Remaining items are in `IMPLEMENTATION_BLOCKERS.md`, summarised in §13.
+**Version:** 2.3, dated 2026-11-02. It incorporates product-owner approvals R1-R6 in addition to D12-D17 and D21-D23.
+**Status:** Research implementation exists. External data, source validation and trading-performance validation remain incomplete; see `IMPLEMENTATION_BLOCKERS.md`.
 
 **Sources (both fully audited; see `SOURCE_COVERAGE_REPORT.md`)**
 
@@ -128,6 +128,8 @@ pine_only_break = close > open AND body_ratio <= 0.50 AND close > high[1]   # PR
   - Updated on **every completed candle of the finest TF processed** (daily; 75/125-min where WIT data exist), including for HTF zones (RB 292, 1508; PR8).
 - **Breach [PINE PS 2613; RB 1627, 1741].** Close beyond the DL invalidates the zone permanently. HTF zones are breached by their own TF's close (rulebook silent on which close).
 - **DL touch** (wick reaches the DL without a close beyond it) is recorded separately for D15.
+- **Approved R4:** a wick or temporary move beyond the DL is not itself invalidation and is not a bounce. Preserve D24: the zone's completed own-timeframe close controls permanent invalidation; an interim lower-timeframe close beyond an HTF DL remains pending until that HTF period resolves.
+- If an active trade's SL is touched, record a `STOP_LOSS_HIT` trade event separately from any `ZONE_INVALIDATED` zone event. Either, both, or neither may occur on the same completed candle, according to the selected stop and the DL close.
 - **[PROPOSED]** Per-zone event log: created, leg-out increment, test, DL touch, invalidated. This allows point-in-time reconstruction.
 
 ### 4.7 Timeframes
@@ -237,6 +239,7 @@ For Y, HY, Q, M, W and the execution TF: report the nearest fresh demand zone be
 - **MIT:** Monthly curve. **WIT:** Weekly curve (RB 1394).
 - Bottom and top = PLs of the nearest **fresh** DZ below and SZ above.
 - Levels 0 / 33.33 / 66.66 / 100%. Positions VLOC / LOC / EQB / HOC / VHOC.
+- **Approved R1:** classify curve position at CMP only. Execution PL and its buffer do not influence G3/G4 location. If CMP is HOC, apply HOC rules even when execution PL is LOC.
 - Redraw when a boundary zone is tested or broken.
 - ATH → no curve; follow trend; demand only (RB 1609).
 - Longs: HOC → reject unless "extreme circumstances" with sector support (RB 1600) → [MANUAL] (sector not evaluated). VHOC → reject (RB 1601).
@@ -250,7 +253,7 @@ For Y, HY, Q, M, W and the execution TF: report the nearest fresh demand zone be
 - **Method:** SMA-50 clock on completed candles (RB 1672–1711, 1748).
 - **Numeric reference [PINE]:** `pct = (SMA50 − SMA50[5]) / SMA50 × 100`; thresholds ±0.1 / 0.4 / 1.0 / 2.0 (PS 252–291).
 - **Mapping to rulebook readings** (D14 table):
-  - 12 = extreme up;
+  - 12 = Rulebook label **Extreme Uptrend**, mapped to `STRONG_UP` for eligibility and matrix evaluation (approved R2). Preserve both the original clock position and label in diagnostics and reports.
   - 1 and 2 = up, with strong vs moderate ambiguous;
   - 2–3 and 3–4 = ambiguous with sideways ("any doubt → sideways", RB 1708);
   - 3 = sideways;
@@ -274,12 +277,16 @@ Distances are reported from both the PL and the entry range (the rulebook measur
 ### 7.5 Coinciding (D15)
 - **Relevant HTF location zone:** Monthly DZ (MIT) or Weekly DZ (WIT). It qualifies if it exists and **its DL has never been touched** since creation. A PL touch does not disqualify it.
 - A tested HTF zone used here appears only as cited evidence. It never appears in zone results (D3).
+- **Approved R3:** Coinciding means that the inclusive price ranges of the execution demand and qualifying HTF demand overlap. Use both actual zone boundaries, `[min(PL, DL), max(PL, DL)]`; an exact shared boundary counts as overlap.
+- Example: Daily demand ₹100-₹110 and Weekly demand ₹105-₹115 overlap and are Coinciding.
 
 | Geometry | Classification |
 |---|---|
-| LTF PL between the HTF zone's DL and PL | **Coinciding** (RB 528, 1833, 1853) |
-| LTF zone below the HTF DL | **Invalid** (RB 1856) |
-| LTF PL above the HTF PL | [MANUAL]: "touching" tolerance undefined; Aggressive needs 7/7 + achievement (RB 1847, 1855) |
+| Execution demand range overlaps a qualifying HTF demand range | **Coinciding** (approved R3; D15 DL condition still applies) |
+| Execution demand range is wholly above the HTF demand range | **Aggressive**, separate from Coinciding; G6 stays [MANUAL] until the distinct Rulebook conditions can be verified (RB 1843-1847, 1854-1855) |
+| Execution demand range is wholly below the HTF DL | **Invalid** (RB 1856) |
+| Relevant zone freshness or DL status is unknown | [MANUAL]; unknown is not known absence |
+| No qualifying HTF location demand zone is known | G6 **PASS as Standard** (approved R6); G3 independently decides whether a curve exists |
 | Coinciding zone differs from the fresh curve boundary and the outcome depends on it | [MANUAL] |
 
 ### 7.6 Alignment matrix, long rows (RB 1883–1904)
@@ -299,8 +306,11 @@ There is **no separate WIT matrix**. Applying this table to WIT uses the ruleboo
 | LOC | Sideways | 7/7 + **sector support** | [MANUAL]: sector not evaluated |
 | LOC | Down | Reject | Reject |
 | EQB | Strong Up | Buy | Pass |
+| EQB | Down | Sell only; no long | Reject long (approved R5; RB 1599) |
 | EQB | Sideways | Do nothing | Reject |
-| HOC | Up | Reject | Reject |
+| HOC | Up | Reject demand long | Reject (approved R5; RB 1901) |
+| HOC | Sideways | Sector-supported exception only | [MANUAL] pending sector support (approved R5; D6) |
+| HOC | Down | Apply RF3; no invented exception | RF3 outcome (approved R5) |
 | VHOC | any | No buy | Reject |
 | Not listed, or trend reading ambiguous where it matters | - | - | [MANUAL] |
 
@@ -324,10 +334,10 @@ There is **no separate WIT matrix**. Applying this table to WIT uses the ruleboo
 | G0 | Completed candles only; history adequate; intraday sessions complete (WIT) | `DATA INSUFFICIENT` | §11 |
 | G1 | Execution-TF **demand** zone, not breached, **`test_count = 0`**; WIT recency | Not listed (D3) / recency [MANUAL] | D2, D3, D16 |
 | G2 | Core **7/7** under D12 definitions | Reject. D12 discrepancies → [MANUAL] | §5 |
-| G3 | Location (curve) | Reject / [MANUAL] | §7.2, §7.6 |
+| G3 | CMP-only location (curve) | Reject / [MANUAL] | §7.2, §7.6; approved R1 |
 | G4 | Trend: MIT Weekly gate + Monthly context + RB 1232 caution (D21); WIT Daily gate only (D22) | Reject (matrix) / [MANUAL] | §7.3 |
 | G5 | HTF conflict | Reject / [MANUAL] | §7.4 |
-| G6 | Coinciding / aggressive | Invalid → reject; unclear → [MANUAL] | §7.5 |
+| G6 | Actual range overlap / separate Aggressive / known absence | Invalid below HTF DL → reject; Aggressive or unknown → [MANUAL]; known absence → PASS as Standard | §7.5; approved R3/R6 |
 | G7 | Entry / SL / target / R:R (RF8) | `FAIL all` → reject; `DEPENDS` → [MANUAL] | §6 |
 | G8 | Red flags and Essential Checks | Per item | RB 594–631 |
 
@@ -350,7 +360,9 @@ There is **no separate WIT matrix**. Applying this table to WIT uses the ruleboo
 
 ---
 
-## 9. Proposed architecture [PROPOSED] (design only; nothing is built)
+## 9. Proposed architecture [PROPOSED]
+
+**Update 2026-10-29:** built as `nse/research/` (section 7-8 gates, scanner, reports) and `nse/validation/`; see `RESEARCH_PIPELINE.md`. 9.1 has a loader but no constituent data (B11); 9.10 is not built.
 
 Cross-cutting rules:
 - Completed candles only.
@@ -408,7 +420,7 @@ Synthetic-candle unit tests can be written before any market data exists.
 | **Intraday OHLCV, session-aligned, granularity dividing 75 and 125 min** | WIT execution zones | Kite (pending) | **No** | B6 |
 | Long intraday history | WIT validation | To verify | **No** | B15 |
 | Corporate actions / adjusted prices | Prevent false zones | Vendor-adjusted or exchange feed | **No** | B7 |
-| NSE trading calendar, special sessions | Candle completeness | Exchange circulars | Not yet obtained | - |
+| NSE trading calendar, special sessions | Candle completeness | Exchange circulars | Obtained for 2021-2025 (`nse/data/calendar/`); not externally validated | B17 |
 | Delisted / merged history | Validation | To identify | **No** | B11 |
 | Cost schedules, price bands | Validation fills | Official schedules | **No** | B12 |
 
@@ -454,12 +466,12 @@ Synthetic-candle unit tests can be written before any market data exists.
 | External technical checks | B6 Kite (incl. 75/125 construction), **B18 NSE CM EOD file formats (legacy and UDiFF)**, B7 corporate actions, **B8 TradingView verification of calendar boundaries and HTF candle values**, B10 TradingView parity references (incl. 75/125-min alignment), **B17 validated NSE calendar** (official circulars), constituent file |
 | Historical data / backtesting | B11 point-in-time universe, B15 intraday depth, B9 buffers, B12 fill/cost assumptions |
 
-**Implementation status (2026-10-27):** Phase 1 in progress; external validation pending.
+**Implementation status (2026-10-28):** Phase 1 in progress; external validation pending.
 - **Zone Engine** (`nse/zone-engine/zone_engine.py`): single-timeframe detection, scoring, freshness, invalidation and zone-level eligibility (D12, D13, D35).
 - **HTF freshness orchestrator** (`nse/mtf-freshness/mtf_freshness.py`): implements B16 under D24-D28, D33-D34 and D36-D39.
   - It applies completed finer candles to W/M/Q/HY/Y and D zones (D from an intraday base, or from a daily base under D38).
   - It never adds eligibility, only removes it (`eligible_after_overlay`). Candidates must come from it, never from the engine's `eligible` alone (audit M4).
-- **NSE calendar loader** (`nse/calendar/nse_calendar.py`): built and tested on synthetic data. No official circular has been obtained (B17).
-- **Evidence:** synthetic tests only. Current test counts and mutation results are in `IMPLEMENTATION_BLOCKERS.md` Part 5 and `PHASE1_CORRECTNESS_AUDIT.md`.
-- **Not validated:** neither component is validated against TradingView (B8, B10), uses real data (B6, B18, B7) or has a validated NSE calendar (B17).
-- **Not built:** trend, location, conflict, coinciding, R:R and the scanner.
+- **NSE calendar** (`nse/calendar/nse_calendar.py`, `nse/data/calendar/`): official circulars for 2021-2025 transcribed and hash-verified; Q1 2022 reconciles with the official EOD files. TradingView validation and a systematic normal-hours review are open (B17).
+- **Evidence:** synthetic tests, plus one real-data pipeline check (INFY, Q1 2022, official bhavcopies against a Yahoo Finance reference; not independent validation). Current test counts and mutation results are in `IMPLEMENTATION_BLOCKERS.md` Part 5 and `PHASE1_CORRECTNESS_AUDIT.md`.
+- **Not validated:** neither component is validated against TradingView (B8, B10) or on corporate-action-adjusted data (B7); the calendar is not externally validated (B17).
+- **Built 2026-10-29, not externally validated:** trend, location, conflict, coinciding, trade levels and R:R, G0-G8, the scanner and its reports (`nse/research/`, `RESEARCH_PIPELINE.md`; interpretations in D41, `PROPOSED`). WIT output is BLOCKED (audit M4b). Not built: the /14 score extras (EMA20, crossover, RSI/Stochastic, gap application), corporate actions (B7) and backtesting (B9, B12).

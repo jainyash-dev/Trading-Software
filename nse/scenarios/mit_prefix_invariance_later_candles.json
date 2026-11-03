@@ -1,0 +1,34 @@
+{
+ "as_of": "2024-02-02",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit_invalidated.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "The invalidation history (eleven extra days after 2024-02-02, including a close below DL) scanned at 2024-02-02.",
+ "expected": {
+  "candidate_count": 1,
+  "candidates": [
+   {
+    "match": {
+     "created_time": "2024-01-16T15:30:00",
+     "distal": 157.92,
+     "proximal": 159.94
+    },
+    "status": "ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING"
+   }
+  ],
+  "same_decisions_as": "mit_fresh_7of7_actionable",
+  "symbol_status": "EVALUATED"
+ },
+ "explanation": "The scanner reads nothing after as_of (spec 9, D23). The data up to 2024-02-02 is identical to the reference, so every decision (status, candidates, gates, blocked and fresh zones, top-down rows) must equal the reference scan; the later invalidation must not leak backwards.",
+ "id": "mit_prefix_invariance_later_candles",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "D23",
+  "spec 9",
+  "D3"
+ ],
+ "title": "Prefix invariance: appended later candles change nothing at the same as-of",
+ "trade_type": "MIT"
+}

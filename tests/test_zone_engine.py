@@ -5,6 +5,7 @@ Price conventions in the scenarios: F = a doji filler (body 0, a base candle tha
 cannot start a cluster because no strong candle precedes it).
 """
 
+import datetime
 import os
 import unittest
 
@@ -367,6 +368,12 @@ class Invalidation(unittest.TestCase):
         self.assertEqual(a.zone.dl_touch_index, 5)
         self.assertEqual(a.reasons, [ze.ZONE_TESTED])
 
+    def test_close_exactly_at_distal_is_not_a_close_beyond(self):
+        a = zone_at(ze.run_engine(bars(DBR + [(104.5, 105, 93.0, 94.0)]), "D"), 2)
+        self.assertTrue(a.zone.active)
+        self.assertIsNone(a.zone.invalidated_index)
+        self.assertEqual(a.zone.dl_touch_index, 5)
+
     def test_supply_invalidation_mirrors(self):
         rows = mirror(bars(DBR + [(104.5, 105, 93, 93.5)]))
         a = zone_at(ze.run_engine(rows, "D"), 2)
@@ -490,6 +497,24 @@ class CompletedCandlesAndLookahead(unittest.TestCase):
             ze.run_engine([Candle(0, *F), Candle(0, *F), Candle(1, *F)], "D")
         with self.assertRaises(ValueError):
             ze.run_engine([Candle(0, 100, 99, 98, 100)], "D")   # open above high
+
+    def test_input_validation_gaps_from_the_audit(self):
+        cs = bars(DBR)
+        # L1: an out-of-order candle after as_of is still reported, not silently dropped
+        with self.assertRaises(ValueError):
+            ze.run_engine(cs + [Candle(5, *F), Candle(4.5, *F)], "D", as_of=4)
+        self.assertEqual(ze.run_engine(cs + [Candle(5, *F)], "D", as_of=4).candles_processed, 5)
+        # L2: zero or negative prices are refused
+        for bad in ((0, 1, 0, 0.5), (-1, 1, -2, 0.5), (1, 2, 0, 1)):
+            with self.assertRaises(ValueError, msg=str(bad)):
+                ze.run_engine(cs + [Candle(5, *bad)], "D")
+        # L3: incomparable times raise ValueError, not TypeError
+        naive, aware = datetime.datetime(2025, 1, 6), datetime.datetime(2025, 1, 7, tzinfo=datetime.timezone.utc)
+        with self.assertRaises(ValueError):
+            ze.run_engine([Candle(naive, *F), Candle(aware, *F), Candle(aware + datetime.timedelta(days=1), *F)], "D")
+        timed = [Candle(naive + datetime.timedelta(days=i), *F) for i in range(3)]
+        with self.assertRaises(ValueError):
+            ze.run_engine(timed, "D", as_of=aware)
 
     def test_quarterly_has_no_pine_reference(self):
         r = ze.run_engine(bars(DBR), "Q")

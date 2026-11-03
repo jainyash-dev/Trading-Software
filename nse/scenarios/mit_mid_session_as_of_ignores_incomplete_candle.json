@@ -1,0 +1,22 @@
+{
+ "as_of": "2024-01-17T12:00:00",
+ "calendar": "WEEKDAYS_SYNTHETIC",
+ "data": {
+  "SYN": "data/long_mit.csv"
+ },
+ "data_kind": "SYNTHETIC",
+ "description": "Reference history scanned at 12:00 on 2024-01-17, before that day's candle completes.",
+ "expected": {
+  "candidate_count": 0,
+  "symbol_status": "NO_FRESH_EXECUTION_ZONE"
+ },
+ "explanation": "D23: only completed candles are read. At 12:00 the 2024-01-17 candle is incomplete, so the state is the leg-out-day state (6/7, no candidate) even though the full day's candle is in the file.",
+ "id": "mit_mid_session_as_of_ignores_incomplete_candle",
+ "risk_per_trade": 1000.0,
+ "rule_refs": [
+  "D23",
+  "spec 9"
+ ],
+ "title": "Mid-session as-of: the incomplete candle is not read",
+ "trade_type": "MIT"
+}
