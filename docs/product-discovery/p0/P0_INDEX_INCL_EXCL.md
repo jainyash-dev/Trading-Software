@@ -22,14 +22,18 @@ It does not establish a baseline, because all of the following are missing:
 
 Company names are not mapped to tickers. No universe row was written from this file. D59 still starts membership research at 2020-12-31. Dates before that remain candle history, not a survivorship-controlled universe.
 
-## Three ISIN breaks stay unresolved
+## ISIN notices retrieved 2026-11-11
 
-Local corporate-action responses do not name the new ISIN.
+The saved NSE corporate-action responses still do not name these new ISINs. Three exchange circulars were downloaded and read from the files, not from a search snippet. PDFs are local (git-ignored). Hashes:
 
-| Symbol | Bhavcopy change | ISIN in the saved response | What the response shows | What is missing |
-|---|---|---|---|---|
-| BAJFINANCE | 2016-09-09, `INE296A01016` then `INE296A01024` | `INE296A01016` only | Bonus 1:1 and face-value split, ex-date 2016-09-08, record date 2016-09-10 | A notice that names `INE296A01024` and the session it takes effect |
-| GRASIM | 2016-10-07, `INE047A01013` then `INE047A01021` | `INE047A01013` only | Face-value split, ex-date 2016-10-06, record date 2016-10-08 | A notice that names `INE047A01021` and the session it takes effect |
-| YESBANK | 2020-03-16, `INE528G01027` then `INE528G01035` | `INE528G01019` only | 2017 face-value split. No March 2020 event | A notice that names `INE528G01035` on 2020-03-16 |
+| File | SHA-256 | URL |
+|---|---|---|
+| `evidence/identity/isin_notices/msei_bajfinance_4496_2016.pdf` | `11b2a619b064c270d04a3fedc14633317d0a87959a212f98dad5349ad14babc5` | `https://www.msei.in/SX-Content/Circulars/2016/September/Circular-4496.pdf` |
+| `evidence/identity/isin_notices/msei_grasim_4581_2016.pdf` | `974296c5ad548d0f69e686af4cdb36d04e2472c7dc486a6ea68144d50ea2511d` | `https://www.msei.in/SX-Content/Circulars/2016/October/Circular-4581.pdf` |
+| `evidence/identity/isin_notices/nse_yesbank_cml43833_2020.pdf` | `c8d17de1f2d3e805d0776fc3cfd5d748cabb8a258d57e5eb27abd8138cf808e9` | `https://archives.nseindia.com/content/circulars/INSP43833.pdf` |
 
-`EQUITY_L.csv` lists the later GRASIM and YESBANK ISINs as the current equity-list values. It does not date the change. The bhavcopy first-session dates are observations. They are not joined. No inferred ISIN was written.
+BAJFINANCE, MSEI/LIST/4496/2016, 7 September 2016. The page says the ISIN changes with effect from 9 September 2016, from `INE296A01016` to `INE296A01024`, record date 10 September 2016, and also that the new ISIN is effective for trades from the ex-date 8 September 2016. Those are two effective dates. The histories are not joined.
+
+GRASIM, MSEI/LIST/4581/2016, 4 October 2016. The page says the ISIN changes with effect from 7 October 2016, from `INE047A01013` to `INE047A01021`, record date 6 October 2016, and also that the new ISIN is effective for trades from the ex-date 6 October 2016. Those are two effective dates. The histories are not joined. This is a Metropolitan Stock Exchange circular, not an NSE circular.
+
+YESBANK, NSE/CML/43833, 15 March 2020. The circular says dealing is permitted in new ISIN `INE528G01035` from 16 March 2020. It does not print the previous ISIN. That single date matches the first held session of `INE528G01035`. An `ISIN_CHANGE` row was added to `instrument_records.csv`. The previous ISIN closed by that row is the one already active in the records, `INE528G01027`. `EQUITY_L.csv` is still not the evidence for the date.
