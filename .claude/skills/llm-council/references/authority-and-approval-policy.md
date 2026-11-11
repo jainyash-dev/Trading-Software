@@ -21,8 +21,9 @@ The council cannot override a higher authority with consensus or persuasive lang
   - BUY CANDIDATE
   - WAIT
   - AVOID
-  - EXIT/REDUCE (only with position context)
+  - EXIT, only with position context and only on the Rulebook exit conditions below
   - INSUFFICIENT DATA
+- REDUCE is not an action. It has no Rulebook basis. Do not recommend it.
 - Do not invent live prices, volume, corporate actions, probabilities, fills, or performance.
 - No broker connection, order placement, or execution.
 

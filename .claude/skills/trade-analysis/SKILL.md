@@ -14,12 +14,18 @@ Use `trading-council` in Mode B (Trading Product Council), `trade` workflow, wit
 3. Verify zone freshness and deterministic eligibility.
 4. Tested, invalidated, or unknown-freshness zones cannot qualify.
 5. Assess multi-timeframe context, location, trigger, invalidation, liquidity, gap risk, and reward relative to risk.
-6. Return one status:
+6. Return the canonical qualification status from `derive_status` and the evidence pack.
+   You may also give one advisory description, and only when `verdict_cap` allows it:
    - BUY CANDIDATE
    - WAIT
    - AVOID
    - INSUFFICIENT DATA
 7. State what would change the status and what evidence is missing.
+
+The advisory description is not a qualification status. Never write BUY CANDIDATE, WAIT,
+AVOID or INSUFFICIENT DATA back as the canonical status. The evidence pack's
+`verdict_cap` is the strongest advisory description you may use. An attractive R:R never
+raises it.
 
 ## Important
 

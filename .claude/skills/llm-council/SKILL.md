@@ -20,9 +20,13 @@ an order.
 4. Verified evidence.
 5. Council reasoning.
 
-Tested, invalidated and unknown-freshness zones are never eligible. PROPOSED interpretations
-(D40, D41, R1-R6; `nse/docs/DECISION_REVIEW.md`) stay unresolved until the user approves.
-Never edit `nse/sources/`. Never stage, commit, push or download.
+Tested, invalidated and unknown-freshness zones are never eligible. Read the decision log
+before calling a decision proposed. D40 is `USER_APPROVED` (section 1F). R1–R6 are
+`USER_APPROVED`. D41 is `USER_APPROVED` as a whole in section 1F for the readings that
+section names. A reading the D41 entry still marks `PROPOSED`, and that section 1F does
+not name, stays proposed. Do not treat the umbrella as a blanket approval of those
+readings. The older sentence in decision-log section 3 that calls D40 proposed is stale.
+Do not follow it. Never edit `nse/sources/`. Never stage, commit, push or download.
 
 ## 1. Route the request
 

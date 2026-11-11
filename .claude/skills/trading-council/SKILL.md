@@ -28,7 +28,9 @@ Use statuses:
 - AVOID
 - INSUFFICIENT DATA
 
-For an existing position, EXIT/REDUCE may be discussed only with position details.
+These four words are advisory descriptions. They are not canonical qualification statuses. The canonical status is the scanner's `derive_status` result in the evidence pack. Do not write BUY CANDIDATE, WAIT, AVOID or INSUFFICIENT DATA back onto a qualification record.
+
+For an existing position, EXIT may be discussed only with position details. REDUCE is not an action. It has no Rulebook basis (RB 2343). Do not recommend it.
 
 Assess:
 

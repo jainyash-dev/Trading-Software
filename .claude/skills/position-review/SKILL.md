@@ -26,9 +26,10 @@ Do not assume missing position details.
 - Fresh-zone and invalidation status
 - Gap, liquidity, concentration, and event risks
 - Stop/exit rules from the Rulebook
-- Scenarios and explicit conditions for hold, reduce, or exit
+- Scenarios and explicit conditions for hold or exit
 
-Use EXIT/REDUCE only when supported by position context and Rulebook criteria.
+Use EXIT only when the Rulebook exit conditions below are met. REDUCE is not an action.
+It has no Rulebook basis. Do not recommend it.
 
 Clearly label stale or user-supplied prices.
 

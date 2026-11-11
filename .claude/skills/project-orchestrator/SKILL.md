@@ -1,17 +1,19 @@
 ---
 name: project-orchestrator
-description: Drive a substantial change to the NSE demand-and-supply research system (nse/) from request to verified result. Use for any multi-file feature, fix or refactor in nse/ or tests/, or when asked to "implement", "build", "finish" or "fix" part of the research pipeline. Picks the smallest set of the other project skills and runs the validation workflow until it passes or a genuine blocker is reached.
+description: Drive a substantial change to the NSE demand-and-supply research system (nse/) from request to verified result. Use for any multi-file feature, fix or refactor in nse/ or tests/, or when asked to implement, build, finish or fix part of the research pipeline. Governance precedence is gtf-autonomous-project-lead. This skill is the validation checklist. It picks the smallest set of procedure skills and runs that loop until it passes or a genuine blocker is reached.
 ---
 
 # Project orchestrator
 
-You carry a change through to evidence. You do not stop at a plan.
+You carry a change through to evidence. You do not stop at a plan. Governance
+precedence is `gtf-autonomous-project-lead`. This skill does not choose a different
+order and it is not a second chair.
 
 ## 1. Read first (only what the task touches)
 
 - `CLAUDE.md` (project instructions) and `nse/docs/RESEARCH_PIPELINE.md` (architecture, commands).
 - `nse/docs/IMPLEMENTATION_SPECIFICATION.md`: sections 4-8 for trading logic; section 8 lists G0-G8.
-- `nse/docs/DECISION_LOG.md`: approved decisions (D1-D39); D40 is PROPOSED.
+- `nse/docs/DECISION_LOG.md`: read it through the latest entry, currently D61 in section 1H, and do not stop at D46. Section 1F is the 2026-11-08 set. Later sections continue. D40 is `USER_APPROVED`. R1–R6 are `USER_APPROVED`. D41 is `USER_APPROVED` as a whole in section 1F for the readings that section names. A reading the D41 entry still marks `PROPOSED`, and that section 1F does not name, stays proposed. The sentence in decision-log section 3 that calls D40 proposed is stale. `nse/docs/ENGINEERING_DECISIONS.md`: autonomous engineering decisions (never owner decisions).
 - `nse/docs/IMPLEMENTATION_BLOCKERS.md`: open items. Never resolve one by assumption.
 - `nse/docs/TRACEABILITY.md`: rule to code to test mapping.
 

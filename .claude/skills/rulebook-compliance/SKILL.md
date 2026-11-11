@@ -13,7 +13,12 @@ description: Audit trading logic in nse/ against the Trading Rulebook, the appro
 4. A documented engineering assumption, labelled as such (e.g. P-TREND-1 in
    `nse/docs/RESEARCH_PIPELINE.md`), only where safe.
 
-A PROPOSED decision (D40 today) is not a rule. An ambiguity is never resolved in code: it
+A reading that the decision log still marks `PROPOSED` is not a rule. D40 is
+`USER_APPROVED` in section 1F and is not an example of a proposed decision. The stale
+sentence in decision-log section 3 that calls D40 proposed is not the status. R1–R6 are
+`USER_APPROVED`. D41 is `USER_APPROVED` as a whole in section 1F for the readings that
+section names. A D41 reading that entry still marks `PROPOSED`, and that section 1F does
+not name, stays proposed. Do not promote it. An ambiguity is never resolved in code: it
 becomes MANUAL REVIEW with the RB/PS references.
 
 ## Procedure

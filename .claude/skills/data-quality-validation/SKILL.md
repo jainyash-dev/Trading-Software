@@ -36,7 +36,8 @@ hand, missing sessions, per-timeframe history sufficiency, and the acquisition s
   unverified gap (D28); with one, a missing session truncates the series (D37).
 - A file existing is not provenance: only a manifest or sources.csv hash match is.
 - Distinguish verified defects from unverified assumptions (`verified` column).
-- Prices are unadjusted (B7): every result carries CORPORATE_ACTIONS_UNVERIFIED until a
-  corporate-action source is approved.
-- Never fix data in place. Report it; the user decides.
+- Prices are unadjusted (B7). A result that carries `CORPORATE_ACTIONS_UNVERIFIED` keeps that limitation until the code and the decision record remove it. This check does not clear it.
+- This skill is read-only. Report the defect. Do not edit the file.
+- A sourced transcription correction belongs to the main session under `gtf-p0-data-certification`, with provenance and a recomputed hash. The `data-validator` agent stays read-only. Never modify raw OHLC to close a continuity gap. Never infer a missing fact.
+- `HELD` in the acquisition ledger is file custody. It is not verification and it is not certification.
 - Downloading anything needs user approval (D31).
