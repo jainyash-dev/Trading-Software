@@ -4,7 +4,9 @@ GRASIM's unresolved identity excludes GRASIM. It does not rewrite another symbol
 gates, and the day is not the complete Nifty 100 while index-wide evidence is open.
 """
 
+import csv
 import datetime
+import os
 import unittest
 
 import _research as R
@@ -120,3 +122,14 @@ class ScanIsolation(unittest.TestCase):
         self.assertEqual(status["GRASIM"].status, scanner.SYMBOL_DATA_INSUFFICIENT)
         self.assertTrue(status["GRASIM"].reasons[0].startswith("NO_INPUT_FOR_UNIVERSE_MEMBER"))
         self.assertNotEqual(res.universe, "COMPLETE_NIFTY100")
+
+
+class CertifiedFile(unittest.TestCase):
+    def test_the_certified_universe_file_has_no_symbol_dates(self):
+        path = os.path.join(os.path.dirname(__file__), "..", "docs", "product-discovery", "p0",
+                            "P0_CERTIFIED_RESEARCH_UNIVERSE.csv")
+        with open(path, newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            rows = list(reader)
+            self.assertIn("authorises_order", reader.fieldnames)
+        self.assertEqual(rows, [])

@@ -28,7 +28,7 @@ Detailed evidence:
 
 | ID | Subject | Current state | Evidence in hand | Missing | Recommendation | If left open |
 |---|---|---|---|---|---|---|
-| OD-MEM-1 | 271 Nifty 100 review rows | D60 and D61 recorded. All 271 `decision` cells still blank. 246 rows have no reviewer | Hash-matched citations. Count arithmetic and ten E03 directions are approved. Periods are not | The owner's `decision` `ACCEPTED` or `REJECTED` on each membership row | Do not treat D60 or D61 as period approval | Every scan stays `UNIVERSE_UNVERIFIED` |
+| OD-MEM-1 | 271 Nifty 100 review rows | D60 and D61 recorded. All 271 `decision` cells still blank. 236 rows have no reviewer | Hash-matched citations. Count arithmetic and ten E03 directions are approved. Periods are not | The owner's `decision` `ACCEPTED` or `REJECTED` on each membership row | Do not treat D60 or D61 as period approval | Every scan stays `UNIVERSE_UNVERIFIED` |
 | OD-MEM-2 | DUMMYREL ISIN `INE758E01017` | Packet says verified. Build report says inferred. The Nifty 100 release does not print the symbol | Symbol comes from the Nifty 50 list of 31 July 2023 | An official Nifty 100 assignment of that ISIN | Leave the period unverified | The 2023-07-20 .. 2023-08-20 seat stays unverified |
 | OD-MEM-3 | Five dummy seats with no candles | No identity record under the dummy symbol | Releases print the symbol and date for four of them. ISINs are inferred from the later listing | A representation rule | Keep them unverified and out of candidate generation | Those dates stay `UNIVERSE_UNVERIFIED` while the seat is in the file |
 | D59, recorded | Moving the window earlier than 2020-12-31 | D59 is approved for 2020-12-31 onward. `IndexInclExcl.xls` is still NOT PARSED | Bhavcopies exist for 2016-2020. Membership does not | An official dated baseline, transcribed under D49, only if the window should start earlier | Leave the window at 2020-12-31 | 2016-2020 stays usable as candle history and is not a survivorship-controlled universe |
@@ -65,7 +65,7 @@ D60 does not approve constituents, dummy seats, inferred ISINs, or a historical 
 
 D61 approves the ten symbol directions in `ind_prs23082021.pdf` page 5 section 3, effective 30 September 2021 from page 1. It does not certify the open BANKBARODA or CHOLAFIN periods.
 
-The other 246 review rows are not approved. `decision` is blank on all 271 rows.
+236 review rows have no reviewer. `decision` is blank on all 271 rows, including the 35 scoped approvals.
 
 The 25 dates and derived counts are in
 [P0_COUNT_EXCEPTION_PROPOSED_DECISIONS.csv](P0_COUNT_EXCEPTION_PROPOSED_DECISIONS.csv).

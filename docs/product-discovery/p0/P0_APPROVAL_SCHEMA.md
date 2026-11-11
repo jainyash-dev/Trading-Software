@@ -21,6 +21,6 @@ Recorded on 2026-11-11, reviewer `Yash Jain`, and only on these rows:
 - 25 `exception:` rows: `count_approval` `APPROVED`.
 - 10 `change:E03:` rows: `mapping_approval` `APPROVED`.
 
-The other 246 rows have an empty reviewer, date, notes and both scope columns. The backup of the six-column file is `nse/data/universe/nifty100_review.before-approval-schema-2026-11-11.csv`. Its `row_key` and `row_sha256` values were not changed.
+`decision` stays blank on all 271 rows. 236 rows have an empty reviewer, date, notes and both scope columns. The 35 reviewed rows are the 25 count approvals and the ten E03 mappings. The backup of the six-column file is `nse/data/universe/nifty100_review.before-approval-schema-2026-11-11.csv`. Its `row_key` and `row_sha256` values were not changed.
 
 `RecordedOwnerApprovals` in `tests/test_research_membership.py` converts this file. With both groups recorded and every `decision` blank, zero periods verify. BANKBARODA and CHOLAFIN from 2021-09-30 stay unverified. The five dummy symbols stay unverified. A separate test writes `decision` `ACCEPTED` on the BANKBARODA row alone and checks that CHOLAFIN stays unverified.

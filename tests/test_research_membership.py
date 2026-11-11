@@ -751,6 +751,7 @@ class RecordedOwnerApprovals(unittest.TestCase):
         self.assertTrue(all(k.startswith("exception:") for k in count_keys))
         touched = set(count_keys) | set(map_keys)
         self.assertEqual(len(touched), 35)
+        self.assertEqual(sum(1 for row in self.rows if not row["reviewer"].strip()), 236)
         for row in self.rows:
             self.assertEqual(row["decision"], "")
             if row["row_key"] in touched:
@@ -769,6 +770,29 @@ class RecordedOwnerApprovals(unittest.TestCase):
             self.assertEqual(row["mapping_approval"], "")
             self.assertEqual(row["count_approval"], "")
             self.assertNotIn(key, touched)
+
+    def test_owner_review_queue_does_not_accept_a_period(self):
+        packet = os.path.join(self.folder, "nifty100_review_packet.csv")
+        queue = ms.owner_review_queue(self.review_path, packet)
+        self.assertEqual(len(queue), 271)
+        self.assertTrue(all(row["decision"] == "" for row in queue))
+        self.assertNotIn(ms.ACCEPT_RECOMMENDED, {row["recommendation"] for row in queue})
+        self.assertTrue(all(row["recommendation"] == ms.NEEDS_OWNER_REVIEW or row["recommendation"] == ms.INSUFFICIENT_EVIDENCE
+                            for row in queue))
+        dummies = [row for row in queue if "DUMMY" in row["row_key"]]
+        self.assertEqual(len(dummies), 5)
+        self.assertTrue(all(row["recommendation"] != ms.ACCEPT_RECOMMENDED for row in dummies))
+        # The canonical ledger is unchanged.
+        with open(self.review_path, newline="", encoding="utf-8") as fh:
+            again = list(csv.DictReader(fh))
+        self.assertTrue(all(row["decision"] == "" for row in again))
+        self.assertEqual(sum(1 for row in again if row["reviewer"].strip()), 35)
+        queue_path = os.path.join(os.path.dirname(__file__), "..", "docs", "product-discovery", "p0",
+                                  "P0_MEMBERSHIP_OWNER_QUEUE.csv")
+        with open(queue_path, newline="", encoding="utf-8") as fh:
+            stored = list(csv.DictReader(fh))
+        self.assertEqual([(r["row_key"], r["recommendation"], r["row_sha256"]) for r in stored],
+                         [(r["row_key"], r["recommendation"], r["row_sha256"]) for r in queue])
 
     def test_count_and_mapping_approval_verify_no_period(self):
         review = self.conv.report["review"]

@@ -21,7 +21,7 @@ The owner named the reviewer as `Yash Jain` on 2026-11-11. That string is writte
 
 - Exception rows: `count_approval` `APPROVED`, reviewer `Yash Jain`, `reviewed_on` `2026-11-11`.
 - E03 rows: `mapping_approval` `APPROVED`, reviewer `Yash Jain`, `reviewed_on` `2026-11-11`.
-- The other 246 rows: reviewer, date, notes and both scope columns blank.
+- The other 236 rows: reviewer, date, notes and both scope columns blank. `decision` is blank on all 271 rows.
 
 The six-column file remains `nse/data/universe/nifty100_review.before-approval-schema-2026-11-11.csv`. It was not overwritten.
 

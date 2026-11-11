@@ -611,6 +611,58 @@ def write(rows, path):
     return path
 
 
+NEEDS_OWNER_REVIEW = "NEEDS_OWNER_REVIEW"
+INSUFFICIENT_EVIDENCE = "INSUFFICIENT_EVIDENCE"
+ACCEPT_RECOMMENDED = "ACCEPT_RECOMMENDED"
+REJECT_RECOMMENDED = "REJECT_RECOMMENDED"
+
+
+def owner_review_queue(review_path, packet_path):
+    """Advisory queue for the 271 membership rows. It does not write the review file.
+
+    A packet verdict and a matching hash are not a membership-period decision.
+    Count and mapping approvals stay in their own columns. This function never
+    returns ACCEPT_RECOMMENDED: accepting a period still needs the owner, and
+    this queue does not re-read the cited PDF pages.
+    """
+    with open(review_path, newline="", encoding="utf-8") as fh:
+        review = list(csv.DictReader(fh))
+    with open(packet_path, newline="", encoding="utf-8") as fh:
+        packet = {r["row_key"]: r for r in csv.DictReader(fh)}
+    out = []
+    for row in review:
+        key = row["row_key"]
+        prior = packet.get(key)
+        verdict = (prior or {}).get("verifier_verdict", "")
+        evidence = (prior or {}).get("evidence", "")
+        if prior is None or prior.get("row_sha256") != row["row_sha256"]:
+            recommendation = INSUFFICIENT_EVIDENCE
+            why = "the advisory packet is missing or its hash does not match this review row"
+        elif "DUMMY" in key or verdict == "INFERENCE":
+            recommendation = INSUFFICIENT_EVIDENCE if verdict == "INFERENCE" else NEEDS_OWNER_REVIEW
+            why = "placeholder or inferred ISIN; not a tradable instrument and not a membership-period approval"
+        else:
+            recommendation = NEEDS_OWNER_REVIEW
+            why = ("row hash matches the advisory packet (%s); the period decision is still open"
+                   % (verdict or "no verdict"))
+        scope = []
+        if row.get("count_approval"):
+            scope.append("count_approval " + row["count_approval"])
+        if row.get("mapping_approval"):
+            scope.append("mapping_approval " + row["mapping_approval"])
+        out.append({
+            "row_key": key,
+            "row_sha256": row["row_sha256"],
+            "decision": row.get("decision", ""),
+            "recorded_scope": "; ".join(scope),
+            "packet_verdict": verdict,
+            "evidence": evidence,
+            "recommendation": recommendation,
+            "why": why,
+        })
+    return out
+
+
 def members_without_data(univ, available_symbols_by_date):
     """{date iso: [member symbols with no market data that day]} for each date given, so a
     historical member without an input file is reported instead of silently dropping out."""

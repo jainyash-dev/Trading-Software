@@ -70,6 +70,12 @@ class HeldResponses(unittest.TestCase):
                 if ca.empty_api_body(fh.read()):
                     empty_names.append(name)
         self.assertIn("ca_SRTRANSFIN_2016_2025.json", empty_names)
+        register = os.path.join(os.path.dirname(__file__), "..", "docs", "product-discovery", "p0",
+                                "P0_EMPTY_CA_RESPONSES.csv")
+        with open(register, newline="", encoding="utf-8") as fh:
+            recorded = list(csv.DictReader(fh))
+        self.assertEqual(sorted(r["file"] for r in recorded), sorted(empty_names))
+        self.assertTrue(all(r["status"] == ca.EMPTY_RESPONSE for r in recorded))
         loaded = ca.load_coverage(COVERAGE)
         self.assertNotIn("SRTRANSFIN", loaded)
         with open(COVERAGE, newline="", encoding="utf-8") as fh:

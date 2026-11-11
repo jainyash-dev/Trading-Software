@@ -49,7 +49,7 @@ Recorded on 2026-11-11 by Yash Jain, and only on those rows:
 - 25 `exception:` rows: `count_approval` `APPROVED`. This accepts the derived count arithmetic. It does not approve constituents, dummy seats, inferred ISINs, or a membership period.
 - 10 `change:E03:` rows (ABBOTINDIA, ALKEM, MRF, PETRONET, UBL out; BANKBARODA, CHOLAFIN, JINDALSTEL, PIIND, SAIL in): `mapping_approval` `APPROVED`. This accepts the symbol and the direction in `ind_prs23082021.pdf` page 5 section 3, effective 2021-09-30 from page 1. It does not approve the membership period. BANKBARODA and CHOLAFIN stay open and unverified.
 
-The other 246 rows have an empty decision, reviewer, date and both scope columns. Agents do not write `decision` `ACCEPTED`. The stored scope value is `APPROVED`, not `ACCEPTED`, so it cannot be read as a membership-period decision.
+`decision` is blank on all 271 rows, including the 35 rows above. 236 rows have an empty reviewer, date, notes and both scope columns. Agents do not write `decision` `ACCEPTED`. The stored scope value is `APPROVED`, not `ACCEPTED`, so it cannot be read as a membership-period decision.
 
 Re-run the conversion afterwards:
 
@@ -69,7 +69,8 @@ instrument_records=i.load(U+'/instrument_records.csv')); ms.write(c.rows, U+'/ni
 
 What the records cover:
 - **ISIN changes.** 30 ISIN changes of member symbols appear in the 2016-2025 bhavcopies; 27 are evidenced by an official split or bonus record whose ex-date or record date is the first session under the new ISIN. Each evidenced change is an `ISIN_CHANGE` record citing the saved NSE response.
-- **Three unevidenced changes:** BAJFINANCE 2016-09-09 and GRASIM 2016-10-07 (their splits' printed record dates are the Saturdays after the change, so a match would be an inference) and YESBANK 2020-03-16 (no official price event held). Their histories are never joined across those dates (`ISIN_CHANGED_WITHOUT_RECORD`, DATA_INSUFFICIENT across them).
+- **YESBANK 2020-03-16** is an `ISIN_CHANGE` to `INE528G01035`, from NSE/CML/43833, which names that ISIN from that date and does not print the previous ISIN.
+- **Two unjoined changes:** BAJFINANCE (`INE296A01016` to `INE296A01024`) and GRASIM (`INE047A01013` to `INE047A01021`). The MSEI circulars name both ISINs and each states two effective dates, so neither history is joined.
 - **ISINs missing from EQUITY_L.** Member ISINs absent from EQUITY_L.csv (HDFC, MINDTREE, PEL, TATAMTRDVR, the pre-2026 KOTAKBANK ISIN) are listed from their first held session. Their end is not recorded without an official document.
 - **Joins.** Renames are joined only through verified ISIN continuity (ED-29). ISIN changes and mergers are never joined, and names and reused tickers never link two instruments.
 
