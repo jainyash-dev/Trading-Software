@@ -73,4 +73,4 @@ What the records cover:
 - **ISINs missing from EQUITY_L.** Member ISINs absent from EQUITY_L.csv (HDFC, MINDTREE, PEL, TATAMTRDVR, the pre-2026 KOTAKBANK ISIN) are listed from their first held session. Their end is not recorded without an official document.
 - **Joins.** Renames are joined only through verified ISIN continuity (ED-29). ISIN changes and mergers are never joined, and names and reused tickers never link two instruments.
 
-Every 2016-2025 observation of every member symbol was checked against the records. The only findings left are those three unevidenced changes.
+Every 2016-2025 observation of every member symbol was checked against the records. The only findings left are those three unevidenced changes. `IndexInclExcl.xls` was parsed (`nse.research.index_incl_excl`). Its Nifty 100 sheet is a company-name change log from 2003-03-19 to 2020-07-31, with no symbol and no ISIN, so it is not a baseline. The three ISIN breaks above are still not joined: the saved corporate-action responses do not name the new ISINs.
