@@ -1,0 +1,9 @@
+blocking_gate,scope,symbol_dates,reason
+EXCLUDED_MEMBERSHIP,every Nifty 100 member-date from 2020-12-31 through 2025-12-31,123778,membership decision is blank on the row that would verify the period; count_approval and mapping_approval do not verify a period
+EXCLUDED_IDENTITY,BAJFINANCE dates inside the 123778,1234,subset of the membership exclusions; two ISINs remain listed; MSEI/LIST/4496/2016 states 8 September 2016 and 9 September 2016
+EXCLUDED_IDENTITY,GRASIM dates inside the 123778,1234,subset of the membership exclusions; two ISINs remain listed; MSEI/LIST/4581/2016 states 6 October 2016 and 7 October 2016
+EXCLUDED_IDENTITY,DUMMYREL while that placeholder is a member,21,no instrument record; symbol is not printed on the Nifty 100 release
+EXCLUDED_IDENTITY,DUMMYITC while that placeholder is a member,17,inferred ISIN; no instrument record
+EXCLUDED_IDENTITY,DUMMYSIEMS while that placeholder is a member,49,inferred ISIN; no instrument record
+EXCLUDED_IDENTITY,DUMMYTATAM while that placeholder is a member,18,inferred ISIN; no instrument record
+EXCLUDED_IDENTITY,DUMMYHDLVR while that placeholder is a member,18,inferred ISIN; no instrument record
