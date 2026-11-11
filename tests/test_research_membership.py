@@ -794,6 +794,30 @@ class RecordedOwnerApprovals(unittest.TestCase):
         self.assertEqual([(r["row_key"], r["recommendation"], r["row_sha256"]) for r in stored],
                          [(r["row_key"], r["recommendation"], r["row_sha256"]) for r in queue])
 
+    def test_evidence_package_does_not_write_decisions(self):
+        path = os.path.join(os.path.dirname(__file__), "..", "docs", "product-discovery", "p0",
+                            "P0_MEMBERSHIP_ROW_RECOMMENDATIONS.csv")
+        with open(path, newline="", encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        self.assertEqual(len(rows), 271)
+        self.assertEqual({r["row_key"] for r in rows}, set(self.by_key))
+        for row in rows:
+            self.assertEqual(row["row_sha256"], self.by_key[row["row_key"]]["row_sha256"])
+            self.assertEqual(row["canonical_decision"], "")
+            self.assertEqual(row["owner_decision"], "")
+        counts = {}
+        for row in rows:
+            counts[row["recommendation"]] = counts.get(row["recommendation"], 0) + 1
+        self.assertEqual(counts, {"ACCEPT_RECOMMENDED": 239, "NOT_A_MEMBERSHIP_PERIOD": 25,
+                                  "INSUFFICIENT_EVIDENCE": 7})
+        insufficient = {r["row_key"] for r in rows if r["recommendation"] == "INSUFFICIENT_EVIDENCE"}
+        self.assertEqual(insufficient, set(self.DUMMY_KEYS) | {
+            "change:I-2024-09-12-VBL:ISIN_CHANGE:VBL:INE200M01039",
+            "change:I-2025-06-16-BAJFINANCE:ISIN_CHANGE:BAJFINANCE:INE296A01032"})
+        with open(self.review_path, newline="", encoding="utf-8") as fh:
+            live = list(csv.DictReader(fh))
+        self.assertTrue(all(row["decision"] == "" for row in live))
+
     def test_count_and_mapping_approval_verify_no_period(self):
         review = self.conv.report["review"]
         self.assertEqual(review["problems"], [])
