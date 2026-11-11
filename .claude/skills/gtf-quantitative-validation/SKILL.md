@@ -1,6 +1,6 @@
 ---
 name: gtf-quantitative-validation
-description: "Autonomous quantitative research and strategy validation for the GTF Trading Intelligence Platform, including backtesting integrity, historical data eligibility, bias detection, realistic costs, walk-forward validation, out-of-sample testing, robustness, sensitivity analysis, reproducibility and strategy acceptance. Use when a task materially involves backtests, walk-forward tests, transaction costs, performance metrics, prospective setup logs, or strategy acceptance, including roadmap phases P7, P0, and P6."
+description: "Autonomous quantitative research and strategy validation, including backtest integrity, bias, costs, walk-forward tests, sensitivity and strategy-acceptance language. GTF phase Pn is not Product Prompt n. GTF P7 is the Prompt 02 backtest engine plus Prompts 09, 10 and 11, not Prompt 07. Product Prompt 12 is the prospective shadow log and is not a GTF phase. Also use this skill for GTF P0 when data will be quoted as performance, and for GTF P6 so the journal stays separate from the simulator. Never activate it by matching the number alone."
 ---
 
 # GTF Quantitative Validation
@@ -21,6 +21,8 @@ This skill owns study design, bias checks, cost treatment, walk-forward accounti
 
 Read this skill before designing, running, changing, or quoting a backtest, a walk-forward test, a sensitivity grid, a cost model, a performance number, or the prospective setup log.
 
+GTF phase Pn is not Product Prompt n. Never activate this skill by matching the number alone. GTF P7 is the Prompt 02 backtest engine plus Prompts 09, 10 and 11. It is not Product Prompt 07. Product Prompt 12 is the owner's prospective shadow log. It is not a GTF phase. When that prompt is the task, this skill's shadow-log rules apply and actual fills stay in a different column. The full crosswalk is master-skill section 7.1.
+
 | Roadmap phase | How this skill applies |
 |---|---|
 | P7 Backtesting and quantitative validation | Primary owner of research integrity, bias checks, costs, walk-forward, out-of-sample tests, sensitivity, and acceptance language |
@@ -35,11 +37,11 @@ Narrower checks still apply. `.claude/skills/backtest-review/SKILL.md` and `.cla
 
 Before starting work, read `.claude/skills/gtf-autonomous-project-lead/SKILL.md` in full.
 
-`gtf-autonomous-project-lead` remains mandatory. It governs project-wide authority, autonomy, repository safety, owner interaction, and Git policy. This specialist skill adds quantitative procedure. It cannot override the master skill. It cannot change approved GTF methodology. It cannot authorize automated order execution. It cannot weaken fail-closed eligibility, the owner caps, or the validation requirements in master-skill section 11.
+`gtf-autonomous-project-lead` remains the only governance chair. This specialist adds quantitative procedure. It does not override an explicit Rulebook rule, an owner decision, or the master skill. It cannot change approved GTF methodology. It cannot authorize automated order execution. It cannot weaken fail-closed eligibility, the owner caps, or the validation requirements in master-skill section 11.
 
-Explicit Rulebook rules outrank this skill. Owner decisions in `nse/docs/DECISION_LOG.md` outrank a convenient research design. B9 and B12, recorded in `nse/research/execution_policy.py`, are owner execution assumptions. Do not replace them because another assumption backtests better.
+When instructions disagree, use the master's governance precedence. Explicit Rulebook rules outrank this skill and outrank the master skill. Owner decisions in `nse/docs/DECISION_LOG.md` outrank a convenient research design. Pine does not override the Rulebook. R-5 stays unresolved. B9 and B12, recorded in `nse/research/execution_policy.py`, are owner execution assumptions. Do not replace them because another assumption backtests better.
 
-Repository safety follows master-skill section 9. Do not reset, clean, amend, or rewrite history. Do not stage unrelated work. Do not push unless the owner asks. Do not edit `nse/sources/` or the Rulebook PDF.
+Repository safety follows master-skill section 9. A passing batch is not permission to commit. Do not reset, clean, amend, or rewrite history. Do not stage unrelated work. Do not push unless the owner asks. Do not edit `nse/sources/` or the Rulebook PDF.
 
 ## 4. Decisions you make, and decisions you do not
 
@@ -271,6 +273,8 @@ If the sign of expectancy depends on one symbol, one quarter, one slippage rate,
 ## 14. Prospective validation
 
 The frozen protocol is `docs/product-discovery/priority-03/PROSPECTIVE_10_SETUP_PROTOCOL.md`. Re-read it before logging a setup. It is a manual shadow log. It is not a paper-trading engine and it does not place orders.
+
+Product Prompt 12 is this shadow-testing workflow. It is in scope when that prompt is the task. It is recorded separately from the journal. It does not authorise broker integration, order placement, or an automated paper-trading engine. A hypothetical shadow observation and an actual fill stay in different columns. Do not copy one into the other.
 
 Hold the protocol to these rules:
 

@@ -1,6 +1,6 @@
 ---
 name: gtf-p0-data-certification
-description: "Autonomous NSE historical market-data research, point-in-time Nifty 100 reconstruction, instrument identity resolution, corporate-action verification, exchange-calendar validation, EOD integrity, price continuity, source provenance, historical exclusions and research-universe certification. Use when a task materially involves NSE historical data, Nifty 100 membership, instrument identity, corporate actions, the exchange calendar, EOD files, price continuity, exclusions, or research-universe certification, including roadmap phases P0, P2, P7, and P11."
+description: "Autonomous NSE historical market-data certification for membership, identity, corporate actions, the calendar, EOD integrity, price continuity, provenance, exclusions and the research universe. GTF phase Pn is not Product Prompt n. GTF P0 is Product Prompt 01 and milestone MP1, not Prompt 00. Also consume this skill on GTF P2, P7 and P11. Never activate it by matching the number alone."
 ---
 
 # GTF P0 Data Certification
@@ -21,6 +21,8 @@ Chart work (P2), quantitative studies (P7), and production certification (P11) c
 
 Read this skill before any task that materially changes or relies on historical NSE market data.
 
+GTF phase Pn is not Product Prompt n. Never activate this skill by matching the number alone. GTF P0 is Product Prompt 01 and milestone MP1. It is not Product Prompt 00. The crosswalk for every phase is master-skill section 7.1.
+
 | Roadmap phase | How this skill applies |
 |---|---|
 | P0 Historical data foundation | Primary owner of membership, identity, corporate actions, calendar, EOD, price continuity, the certified universe, and the exclusion register |
@@ -30,17 +32,23 @@ Read this skill before any task that materially changes or relies on historical 
 
 Also load this skill when new bhavcopies, calendar circulars, identity files, corporate-action responses, or index notices arrive, when a scan is `DATA_INSUFFICIENT` for a data reason, or when someone asks whether a dataset is certified.
 
-Acquisition mechanics (inbox, quarantine, approved download scripts) stay with `.claude/skills/nse-data-engineering/SKILL.md`. Content validation of a file already on disk also uses `.claude/skills/data-quality-validation/SKILL.md`. External chart comparison uses `.claude/skills/reference-data-validation/SKILL.md`. This skill is the certification judgement over those checks. It does not replace them.
+Three data roles stay separate.
+
+- `nse-data-engineering` owns source collection and custody. `HELD` means the file is in custody. It is not verification and it is not certification.
+- `data-quality-validation` is a read-only check of a file already on disk. It reports defects. It does not edit the file.
+- This skill owns certification and directs a sourced repair. The main session may correct a transcription when the authentic source document disagrees with the typed field, recompute that row's hash, and record the provenance. The `data-validator` agent stays read-only. Never modify raw OHLC to close a continuity gap. Never infer a missing fact.
+- `CORPORATE_ACTIONS_UNVERIFIED` stays on the results that carry it until the code and the decision record remove it. A certification label does not delete that limitation.
+- External chart comparison uses `reference-data-validation`. This skill does not replace that comparison.
 
 ## 3. Master skill dependency
 
 Before starting work, read `.claude/skills/gtf-autonomous-project-lead/SKILL.md` in full.
 
-`gtf-autonomous-project-lead` remains mandatory. It governs project-wide authority, autonomy, repository safety, owner interaction, and Git policy. This specialist skill adds data-certification procedures. It cannot override the master skill. It cannot change approved GTF methodology. It cannot authorize automated order execution. It cannot weaken project safety, fail-closed eligibility, or validation requirements.
+`gtf-autonomous-project-lead` remains the only governance chair. This specialist adds data-certification procedure. It does not override an explicit Rulebook rule, an owner decision, or the master skill. It cannot change approved GTF methodology, risk limits, or manual execution. It cannot authorize automated order execution. It cannot weaken fail-closed eligibility or validation requirements.
 
-If this file and the master skill appear to disagree, follow the master skill, then the owner decisions in `nse/docs/DECISION_LOG.md`, then the explicit Rulebook rule. Record the disagreement. Do not invent a resolution that enlarges eligibility.
+When instructions disagree, use the master's governance precedence: explicit Rulebook rule, then `USER_APPROVED` or `USER_STATED` owner decisions, then Pine only where the Rulebook is silent and nothing conflicts, then the master skill, then this specialist, then the procedure skill for the check. Record the disagreement. Do not invent a resolution that enlarges eligibility. R-5 stays unresolved.
 
-Repository safety and commits follow master-skill section 9. Do not use `git reset`, `git clean`, destructive checkout, a broad revert, history rewriting, or `git commit --amend`. Do not stage unrelated owner work. Do not push unless the owner asks. Treat the dirty working tree as the owner's. The master skill file itself is not edited by this skill.
+Repository safety and commits follow master-skill section 9. A passing batch is not permission to commit. Do not use `git reset`, `git clean`, destructive checkout, a broad revert, history rewriting, or `git commit --amend`. Do not stage unrelated owner work. Do not push unless the owner asks. Treat the dirty working tree as the owner's. The master skill file itself is not edited by this skill.
 
 Protected inputs stay untouched: the Rulebook PDF, the files under `nse/sources/`, and vendored third-party skills. Hashes of protected sources are part of the evidence, not something to regenerate in order to match a parse.
 
@@ -129,12 +137,12 @@ The research universe is point-in-time NSE cash equity, initially Nifty 100 (D1)
 
 The converter in `nse/research/membership.py` reads:
 
-- `nse/data/universe/nifty100_baseline.csv` — a composition actually in force on `as_of_date`. Nothing before `as_of_date` is inferred.
-- `nse/data/universe/nifty100_changes.csv` — `effective_date` is the first date the new composition is in force. An ADD is a member from `effective_date`. A REMOVE is a member through the calendar day before `effective_date`.
-- `nse/data/universe/nifty100_count_exceptions.csv` — official counts other than the nominal size, only when declared.
-- `nse/data/universe/nifty100_review.csv` — human gate. `decision` is the only full row approval.
-- `nse/data/universe/evidence/baseline/IndexInclExcl.xls` — name-only corroboration.
-- `nse/data/universe/evidence/sources.csv` — provenance for the files that were actually read.
+- `nse/data/universe/nifty100_baseline.csv` - a composition actually in force on `as_of_date`. Nothing before `as_of_date` is inferred.
+- `nse/data/universe/nifty100_changes.csv` - `effective_date` is the first date the new composition is in force. An ADD is a member from `effective_date`. A REMOVE is a member through the calendar day before `effective_date`.
+- `nse/data/universe/nifty100_count_exceptions.csv` - official counts other than the nominal size, only when declared.
+- `nse/data/universe/nifty100_review.csv` - human gate. `decision` is the only full row approval.
+- `nse/data/universe/evidence/baseline/IndexInclExcl.xls` - name-only corroboration.
+- `nse/data/universe/evidence/sources.csv` - provenance for the files that were actually read.
 
 The converter rolls forward from the earliest baseline. It refuses a change on or before that baseline. Do not implement a backward roll from a later constituent file.
 

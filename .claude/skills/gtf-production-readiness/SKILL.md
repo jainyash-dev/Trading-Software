@@ -1,6 +1,6 @@
 ---
 name: gtf-production-readiness
-description: "Autonomous production-readiness engineering, application reliability, security, local data protection, database integrity, backup and recovery, observability, operational resilience, performance, end-to-end testing and final certification for the GTF Trading Intelligence Platform. Use when a task materially involves production readiness, security, backups, reliability, performance, or final certification, including roadmap phases P11, P1, P5, P8, P9, and P10."
+description: "Autonomous production-readiness engineering for reliability, security, local data protection, database integrity, backup and recovery, monitoring, performance and final certification. GTF phase Pn is not Product Prompt n. GTF P11 is Product Prompt 14, not Prompt 11. Also use this skill for GTF P1, P5, P8, P9 and P10. Never activate it by matching the number alone."
 ---
 
 # GTF Production Readiness
@@ -19,6 +19,8 @@ This skill owns application boundaries, security, databases, backup and recovery
 
 Read this skill when the task is about whether the application is safe to run, or about hardening, recovery, security, monitoring, or the final certification.
 
+GTF phase Pn is not Product Prompt n. Never activate this skill by matching the number alone. GTF P11 is Product Prompt 14 and release gates R1–R5. It is not Product Prompt 11. The full crosswalk is master-skill section 7.1.
+
 | Roadmap phase | How this skill applies |
 |---|---|
 | P11 Final production certification | Primary owner of the ten readiness gates and the final status |
@@ -28,7 +30,7 @@ Read this skill when the task is about whether the application is safe to run, o
 | P9 AI research assistant | Explanations stay grounded in records. The assistant does not qualify a stock and does not authorise a trade |
 | P10 Professional UI/UX | Workflows, failure states, and measured responsiveness. Visual polish does not close a reliability gate |
 
-Also load this skill after adding a dependency, a file writer, a log line, a background job, or a migration, and whenever someone asks "is it ready".
+Also load this skill for a backup, a restore, a security boundary of the local application, monitoring that could become execution, or a final certification. A new log line, file writer, or dependency loads `security-reliability` and does not by itself open the ten gates. "Is it ready" for the research tree loads `release-readiness`. "Is the application ready" also loads this skill. The two answers stay separate.
 
 `.claude/skills/release-readiness/SKILL.md` and `.claude/skills/security-reliability/SKILL.md` remain the focused research-tree checks. This skill is the production procedure around them. Database work also uses `.claude/skills/database-engineering/SKILL.md` where that skill has a procedure. None of them override the master skill.
 
@@ -36,11 +38,11 @@ Also load this skill after adding a dependency, a file writer, a log line, a bac
 
 Before starting work, read `.claude/skills/gtf-autonomous-project-lead/SKILL.md` in full.
 
-`gtf-autonomous-project-lead` remains mandatory. It governs project-wide authority, autonomy, repository safety, owner interaction, and Git policy. This specialist skill adds production-engineering procedure. It cannot override the master skill. It cannot change approved GTF methodology. It cannot authorize automated order execution. It cannot weaken safety checks, eligibility, or the validation standard that a test counts only when it was run.
+`gtf-autonomous-project-lead` remains the only governance chair. This specialist adds production-engineering procedure. It does not override an explicit Rulebook rule, an owner decision, or the master skill. It cannot change approved GTF methodology. It cannot authorize automated order execution. It cannot weaken safety checks, eligibility, or the validation standard that a test counts only when it was run.
 
-When this skill and the master skill disagree, follow the master skill. Explicit Rulebook rules and owner decisions in `nse/docs/DECISION_LOG.md` outrank a convenience fix. D57 is the local-first application decision: browser on one Mac, API and UI on loopback, no public exposure, no cloud required for core use, no broker integration. Do not introduce Tauri, Electron, or a public bind to make deployment "simpler".
+When instructions disagree, use the master's governance precedence. An explicit Rulebook rule leads. Then owner decisions recorded as `USER_APPROVED` or `USER_STATED`. Then Pine only where the Rulebook is silent and nothing conflicts. Then the master skill. Then this specialist. A convenience fix does not outrank any of those. R-5 stays unresolved. D57 is the local-first application decision: browser on one Mac, API and UI on loopback, no public exposure, no cloud required for core use, no broker integration. Do not introduce Tauri, Electron, or a public bind to make deployment simpler.
 
-Repository safety follows master-skill section 9. Do not reset, clean, amend, or rewrite history. Do not stage unrelated owner work. Do not push unless the owner asks. Do not edit `nse/sources/` or the Rulebook PDF. Do not commit secrets, `.env` files, session tokens, or database files that contain the owner's journal.
+Repository safety follows master-skill section 9. A passing batch is not permission to commit. Do not reset, clean, amend, or rewrite history. Do not stage unrelated owner work. Do not push unless the owner asks. Do not edit `nse/sources/` or the Rulebook PDF. Do not commit secrets, `.env` files, session tokens, or database files that contain the owner's journal.
 
 ## 4. Decisions you make, and decisions you do not
 
@@ -355,6 +357,29 @@ Strategy validation is not an execution approval. If it is open, `PRODUCTION_REA
 
 Do not declare `PRODUCTION_READY` because the server started, because unit tests passed, or because a chart rendered.
 
+### 13.2 Three readiness vocabularies
+
+Keep these three systems. Do not collapse them into one tick.
+
+1. Capability states in `nse/research/readiness.py`, reported by `release-readiness`: implemented, unit-tested, integration-tested, reference-validated, externally validated, deferred, blocked, requires-human-decision.
+2. The ten gates and the five final statuses in this skill.
+3. Product release gates R1–R5 in `docs/product/MASTER_PROMPT_ROADMAP.md`.
+
+| Evidence | readiness.py | This skill | Product gate |
+|---|---|---|---|
+| P0 certification label and exclusion register for the claimed window | Data capability rows, each state separate | Gate 1 | R1 evidence only. It does not close R2, R3, R4 or R5 |
+| Canonical envelope on the screen and the API | Engine and gate rows | Gate 2 | R2 evidence. An eligibility failure keeps R2 open |
+| Quant skill status for the study | Not a green capability tick | Gate 3 | R4 evidence. It is not execution approval and it does not close R5 |
+| Section 11 journey actually walked | `integration_tested` only for journeys that were run | Gate 4 | R3 evidence |
+| Loopback, redaction, file modes, no secrets | Security findings stay findings | Gate 5 | An open critical security gate keeps R5 open |
+| Both databases reconcile | Store rows | Gate 6 | A corrupt or unbalanced journal keeps R5 open |
+| Backup whose restore check passed | Not closed by `run_all` | Gate 7 | An unrestored backup keeps R5 open |
+| Measurements from section 10 | `NOT_MEASURED` is not a pass | Gate 8 | A missing measurement does not close R3 or R5 |
+| Monitoring that cannot send an order | Operational note | Gate 9 | A monitor that can trade keeps R5 open and fails this gate |
+| Owner session | `requires_human_decision` until that session exists | Gate 10 | R5 stays open without it |
+
+An open critical gate, as defined above, keeps the applicable release gate open. A P0 label is evidence for R1. It is not a substitute for production readiness. A quantitative result is evidence for R4. It does not authorise an order and it does not move `authorises_order`.
+
 ## 14. Testing and validation
 
 Run what the change touches, then the certification commands for any gate you are closing:
@@ -377,7 +402,7 @@ A passing `run_all` does not close gates 7, 8, or 10 by itself. Those need the r
 
 ## 15. Documentation and audit trail
 
-Update the existing readiness statement and the operations notes. Do not create a second certification scheme beside `nse/research/readiness.py`. That table already separates implemented, unit-tested, integration-tested, reference-validated, externally validated, deferred, blocked, and requires-human-decision. Copy those states. Do not collapse them into one tick.
+Update the existing readiness statement and the operations notes. The three vocabularies in section 13.2 stay side by side. Copy the `readiness.py` states. Do not collapse them, the ten gates, or R1–R5 into one tick.
 
 The final report lists the ten gates with the six fields, the one status from section 13.1, the commands and counts, the commit hashes of the code you actually tested, and what you did not run.
 
