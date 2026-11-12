@@ -29,7 +29,7 @@ ENTRY = ("engineering-council", "trading-council", "nse-code-review", "trade-ana
 COUNCIL_FILES = [os.path.join(SKILLS, n, "SKILL.md") for n in ENTRY + ("llm-council",)] + [
     os.path.join(COUNCIL, "references", f) for f in sorted(os.listdir(os.path.join(COUNCIL, "references")))]
 WRITE_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
-VERDICTS = ("BUY CANDIDATE", "WAIT", "AVOID", "EXIT / REDUCE", "INSUFFICIENT DATA")
+VERDICTS = ("BUY CANDIDATE", "WAIT", "AVOID", "INSUFFICIENT DATA")
 CAL = R.WeekdayCalendar()
 
 
@@ -102,7 +102,10 @@ class Structure(unittest.TestCase):
             for v in ("BUY CANDIDATE", "WAIT", "AVOID", "INSUFFICIENT DATA"):
                 self.assertIn(v, text, f)
         pack = load_pack()
-        self.assertEqual(set(pack.STATUS_CAP.values()) | {"EXIT / REDUCE"}, set(VERDICTS))
+        self.assertEqual(set(pack.STATUS_CAP.values()), set(VERDICTS))
+        self.assertNotIn("EXIT / REDUCE", read(COUNCIL, "SKILL.md"))
+        self.assertNotIn("EXIT / REDUCE", read(COUNCIL, "references", "report-format.md"))
+        self.assertIn("REDUCE is not a verdict", read(COUNCIL, "references", "report-format.md"))
 
     def test_named_tests_in_the_validation_cases_exist(self):
         import unittest as u

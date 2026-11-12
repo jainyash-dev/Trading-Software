@@ -98,9 +98,10 @@ Follow `references/peer-review-protocol.md`:
 
 ## 5. Synthesize and gate
 
-- **Trading verdicts:** BUY CANDIDATE (user approval required) | WAIT | AVOID | EXIT / REDUCE
-  (position details and Rulebook rules required; REDUCE has no Rulebook basis, RB 2343) |
-  INSUFFICIENT DATA.
+- **Trading verdicts:** BUY CANDIDATE (user approval required) | WAIT | AVOID | INSUFFICIENT DATA.
+  EXIT is not a scanner verdict. For an existing position, EXIT may be discussed only when
+  the Rulebook exit conditions in position-review are met. REDUCE is not an action (RB 2343).
+  Do not recommend it.
   - Check every entry verdict:
     `python3 .claude/skills/llm-council/scripts/evidence_pack.py --scan <scan.json> --symbol <S> [--zone-id <id>] --check-verdict "<VERDICT>"`.
     A non-zero exit means lower the verdict.

@@ -65,9 +65,12 @@ def check_calendar(folder=CALENDAR_DIR):
     except cal_mod.CalendarError as e:
         return _check("calendar", FAIL, "calendar does not load: %s" % e)
     unresolved = sorted(e.date.isoformat() for e in cal.events if e.status == "UNRESOLVED")
-    # loads and hash-verifies, but B17 (external validation) and D40 (PROPOSED) are open: never OK
+    # loads and hash-verifies. D40 is USER_APPROVED (decision log section 1F). B17 external
+    # validation is still open, so this check stays WARNING. Approval is not validation.
     return _check("calendar", WARNING,
-                  "official circular tables for %s; not externally validated (B17); D40 PROPOSED"
+                  "official circular tables for %s; not externally validated (B17); "
+                  "D40 is USER_APPROVED in the decision log and is not external validation; "
+                  "20 Jan 2024 hours remain an inference from NSE/CMTR/41180"
                   % ", ".join(str(y) for y in cal.covered_years),
                   covered_years=cal.covered_years,
                   unverified_sources=sorted(s.source_ref for s in cal.unverified_sources),

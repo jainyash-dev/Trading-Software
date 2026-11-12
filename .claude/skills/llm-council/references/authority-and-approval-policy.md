@@ -9,6 +9,8 @@
 5. Council reasoning and model-generated hypotheses.
 
 The council cannot override a higher authority with consensus or persuasive language.
+This list does not replace the governance precedence in `gtf-autonomous-project-lead`
+sections 3 and 6. The council does not decide eligibility. Risk R-5 remains unresolved.
 
 ## Trading Safeguards
 
@@ -42,7 +44,7 @@ The council cannot override a higher authority with consensus or persuasive lang
 - Never claim tests passed unless actually run.
 ## Decision Register
 
-- `nse/docs/DECISION_LOG.md`: `USER_APPROVED` decisions are authoritative.
+- `nse/docs/DECISION_LOG.md`: `USER_APPROVED` decisions are authoritative within their recorded scope. `USER_STATED` entries are recorded operating constraints within their wording. They are not methodology changes and are not reclassified as `USER_APPROVED`. `PROPOSED` is not a rule. Read the log through its last heading.
 - `nse/docs/DECISION_REGISTER.md` and `nse/docs/DECISION_REVIEW.md` list open items.
   D40 and D41 readings not covered by an approval in the register stay unresolved until
   the user approves them, even when the council agrees with a recommendation. R1-R6 are
@@ -65,7 +67,7 @@ never strengthen it. `scripts/evidence_pack.py --check-verdict` enforces this me
 
 An attractive R:R, a strong chart impression or unanimous specialists never raise the cap.
 
-## Position Rules (EXIT / REDUCE)
+## Position rules (EXIT)
 
 These verdicts apply only with position details: symbol, entry date and price, SL, target,
 quantity, and a price with its source and timestamp.

@@ -152,13 +152,15 @@ Use the following authority model. This skill is the only GTF project governance
 
 Apply this order on every GTF task. A lower layer does not override a higher one.
 
-1. Explicit GTF Rulebook rules. Cite the Markdown companion as `RB <line>`. An explicit Rulebook rule cannot be overridden by this skill, by a specialist, by a procedure skill, by an advisory council, or by an informal interpretation of an owner comment. A change to the Rulebook follows the formal methodology-change process and needs an owner decision.
-2. Explicit owner decisions recorded as `USER_APPROVED` or `USER_STATED` in `nse/docs/DECISION_LOG.md`.
-3. Pine methodology only where the Rulebook is silent and there is no conflict.
+1. Explicit GTF Rulebook rules. Cite the Markdown companion as `RB <line>`. An explicit Rulebook rule cannot be overridden by this skill, by a specialist, by a procedure skill, by an advisory council, by an owner decision, or by an informal interpretation of an owner comment. A change to the Rulebook follows the formal methodology-change process and needs an owner decision.
+2. Explicit owner decisions in `nse/docs/DECISION_LOG.md`, subject to the Rulebook. Read the log through its last heading. Do not assume a fixed decision number is still current.
+3. Pine methodology only where the Rulebook is silent and there is no conflict. Pine does not override the Rulebook.
 4. This skill.
 5. The one GTF specialist for the active phase.
 6. The existing procedure skill responsible for the specific check.
-7. Advisory councils.
+7. Advisory councils and their recommendations. A recommendation is not an owner decision and does not decide eligibility.
+
+Statuses are not interchangeable. `USER_APPROVED` applies within the wording and scope recorded for that entry. `USER_STATED` is a recorded operating constraint within its wording and scope. D42 stays `USER_STATED`. It is not a methodology change and it is not relabelled `USER_APPROVED`. `PROPOSED` is not a rule. Decision registers and engineering notes restate or implement these records. They are not a layer above this list. Where a register and the log disagree, the log's recorded status and scope control. Current code describes what the software does today. A defect is not methodology.
 
 The delivery council's section 2 lists owner decisions before the Rulebook. That wording disagreement is risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md`. R-5 is unresolved. This skill does not settle it. Until the owner records a resolution, nobody overrides an explicit Rulebook rule.
 
@@ -486,15 +488,17 @@ Do not treat a secondary source as sufficient to override contradictory primary 
 
 These two lists answer different questions. Do not use one as the other.
 
-Methodology, which answers what the software should do:
+Methodology, which answers what the software should do. This is the same order as section 3:
 
-1. Explicit Rulebook rules.
-2. Owner decisions recorded as `USER_APPROVED` or `USER_STATED`.
+1. Explicit Rulebook rules. An explicit Rulebook rule is not overridden by an owner decision, this skill, a specialist, a procedure skill, an advisory council, or the current code.
+2. Owner decisions in `nse/docs/DECISION_LOG.md`, subject to the Rulebook. Read the last heading rather than a fixed number. `USER_APPROVED` applies within its recorded wording and scope. `USER_STATED` is a recorded operating constraint within its wording and scope. It is not a methodology change and is not interchangeable with `USER_APPROVED`. `PROPOSED` is not a rule.
 3. Pine methodology only where the Rulebook is silent and nothing conflicts. Pine does not override the Rulebook.
-4. Decision registers and documented constraints.
-5. This skill, then the active specialist, then the procedure skill for the check.
+4. This skill.
+5. The one GTF specialist for the active phase.
+6. The procedure skill responsible for the specific check.
+7. Advisory councils and their recommendations. A recommendation is not an owner decision and does not decide eligibility.
 
-A defect in the code is not preserved because the code exists. Fix it, or fail closed and record it. Do not keep a wrong trading result in order to match the current implementation.
+Decision registers and engineering notes restate or implement the records above. They do not sit above this list. Where a register and the decision log disagree, the log controls. R-5 remains unresolved, as section 3 states. This list does not settle it. A defect in the code is not methodology because the code exists. Fix it, or fail closed and record it. Do not keep a wrong trading result in order to match the current implementation.
 
 Current code behaviour, which answers what the software does today:
 

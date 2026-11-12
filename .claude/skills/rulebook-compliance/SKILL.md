@@ -8,18 +8,25 @@ description: Audit trading logic in nse/ against the Trading Rulebook, the appro
 ## Authority (D12)
 
 1. Explicit rulebook rules (`nse/sources/Trading Rulebook ...md`, cite as RB line).
-2. Approved decisions in `nse/docs/DECISION_LOG.md` (USER_APPROVED only).
+   An explicit Rulebook rule is not overridden by an owner decision or by current code.
+2. Owner decisions in `nse/docs/DECISION_LOG.md`, read from the log through its last
+   heading. Do not assume a fixed decision number is current.
+   - `USER_APPROVED`: binding within the recorded wording and scope. It is not a licence
+     to override item 1.
+   - `USER_STATED`: a recorded operating constraint, binding within its wording and scope.
+     It is not a methodology change and is not interchangeable with `USER_APPROVED`.
+     Do not ignore it. Do not relabel it. D42 stays `USER_STATED`.
+   - `PROPOSED`: not a rule.
 3. Pine Script (`PS line`) only where the rulebook is silent and does not conflict.
-4. A documented engineering assumption, labelled as such (e.g. P-TREND-1 in
-   `nse/docs/RESEARCH_PIPELINE.md`), only where safe.
+   Pine does not override the Rulebook.
+4. A documented engineering assumption, labelled as such, only where it does not conflict
+   with items 1-3. Current code is not an approved methodology.
 
-A reading that the decision log still marks `PROPOSED` is not a rule. D40 is
-`USER_APPROVED` in section 1F and is not an example of a proposed decision. The stale
-sentence in decision-log section 3 that calls D40 proposed is not the status. R1–R6 are
-`USER_APPROVED`. D41 is `USER_APPROVED` as a whole in section 1F for the readings that
-section names. A D41 reading that entry still marks `PROPOSED`, and that section 1F does
-not name, stays proposed. Do not promote it. An ambiguity is never resolved in code: it
-becomes MANUAL REVIEW with the RB/PS references.
+D40 is `USER_APPROVED` in its entry and in section 1F. R1-R6 are `USER_APPROVED` within
+their recorded scope. D41 is `USER_APPROVED` for the readings section 1F names. A D41
+reading that entry still marks `PROPOSED`, and that section 1F does not name, stays
+proposed. Do not promote it. An ambiguity is never resolved in code: it becomes MANUAL
+REVIEW with the RB/PS references.
 
 ## Procedure
 

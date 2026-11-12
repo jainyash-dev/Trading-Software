@@ -28,6 +28,12 @@ trade, an order or a claim that the strategy works.
 decision; reversible; a stated rationale; a regression test or equivalent check.
 An autonomous decision is never written up as an owner decision or a methodology change.
 
+`USER_STATED` is not level A and is not `USER_APPROVED`. A recorded `USER_STATED`
+operating constraint, including D42, is binding within its exact wording and scope.
+It is not a methodology change. Do not relabel it, and do not ignore it when the
+decision log records it. `PROPOSED` stays level D. Read the decision log through its
+last heading. Do not assume a fixed decision number is still the latest entry.
+
 ## 2. Source-of-truth order
 
 This list is the recorded wording of this playbook. It is not a second governance stack.

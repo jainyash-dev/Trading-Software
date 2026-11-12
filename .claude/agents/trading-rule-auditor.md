@@ -6,8 +6,12 @@ tools: Read, Grep, Glob, Edit, Bash
 
 Follow `.claude/skills/rulebook-compliance/SKILL.md`.
 
-Precedence (D12): rulebook, then USER_APPROVED decisions, then non-conflicting Pine, then a
-labelled engineering assumption. PROPOSED decisions are not rules. You may edit only
+Precedence (D12): the Rulebook, then owner decisions in the decision log. `USER_APPROVED`
+applies within its recorded scope. `USER_STATED` is a recorded operating constraint within
+its wording. It is not a methodology change. Do not ignore it and do not relabel it
+`USER_APPROVED`. D42 stays `USER_STATED`. Then non-conflicting Pine, then a
+labelled engineering assumption. `PROPOSED` decisions are not rules. Read the log through
+its last heading. You may edit only
 `nse/docs/TRACEABILITY.md` and the blocker list; never code, never `nse/sources/`.
 
 For each rule in scope: quote the source line, name the implementing function, name the test

@@ -90,29 +90,30 @@ applies WIT roles so their differences are tested.
 
 These engineering readings are recorded under **D41** in `DECISION_LOG.md`. Product owner
 decisions R1-R6 were approved on 2026-11-02 and are authoritative as recorded in
-`DECISION_REGISTER.md`. Other readings in this table remain PROPOSED; approval of R1-R6
-does not approve D41 as a whole.
+`DECISION_REGISTER.md`. Approval of R1-R6 did not approve D41 as a whole. Section 1F
+(2026-11-08) later approves the readings it names. A reading this table does not mark
+approved, and that section 1F does not name, stays proposed.
 
 | ID | Reading | Effect | Where |
 |---|---|---|---|
 | P-TREND-1 / R2 | Pine "12 o'clock" (RB 1688 "Extreme Uptrend") maps to STRONG_UP for the matrix; retain the Extreme label in diagnostics and reports [USER_APPROVED] | Can PASS G4 | `trend.READINGS`, `trend_for`, `reports` |
 | P-LOC-1 / R1 | Curve position uses CMP only (RB 1591); execution PL does not influence G3/G4 [USER_APPROVED] | Resolves only the location-reference ambiguity | `qualification._g3`, `_g4` |
-| P-LOC-2 | Price inside a TESTED HTF demand zone: VLOC needs a fresh zone (RB 1587, 1597) but the redraw rule (situation 3) describes a bounce; MANUAL [OPEN] | Restricts | `structure.build_curve` |
-| P-LOC-3 | A curve boundary of unknown freshness stops the boundary search (MANUAL) instead of being skipped | Restricts | `structure.build_curve` |
+| P-LOC-2 | Price inside a TESTED Monthly demand: redraw from the next fresh Monthly demand below (RB 1621). Unknown boundaries stay MANUAL. [USER_APPROVED, section 1F, 2026-11-08]. Not externally validated | Restricts | `structure.build_curve` |
+| P-LOC-3 | Unknown, missing or unverified Monthly boundary freshness is MANUAL [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `structure.build_curve` |
 | P-MAT-1 / R5 | EQB + Down long rejects under RB 1599 [USER_APPROVED] | Can FAIL | `qualification.matrix_long` |
 | P-MAT-2 / R5 | HOC + Up long rejects; HOC + Sideways is MANUAL pending sector support; HOC + Down follows RF3 [USER_APPROVED] | Mixed | `matrix_long`, `_g3`, `_g8` |
 | P-COIN-1 / R3 | Actual inclusive range overlap between execution and qualifying HTF demand is COINCIDING; non-overlapping Aggressive remains distinct [USER_APPROVED] | G6 is MANUAL for Aggressive pending its separate Rulebook conditions | `structure.coinciding`, `qualification._g6` |
 | P-COIN-2 / R6 | Known absence of qualifying HTF location zone: G6 PASS as Standard; unknown freshness/DL status MANUAL [USER_APPROVED] | Can PASS G6 only; G3 stays independent | `qualification._g6` |
-| P-CAL-1 | No calendar: G0 MANUAL (D28 limitations: unverified gaps, undetectable special sessions) | Restricts | `qualification._g0` |
-| P-LVL-1 | Buffer tiers: the union of the tiers of PL, normal DL and exceptional DL, tier edges inclusive on both sides (B9) | Widens ranges; more MANUAL | `levels.ranges` |
-| P-LVL-2 | Target: nearest FRESH opposing zone with PL above the entry maximum; a tested one is skipped; one of unknown freshness, or inside the entry range, stops the search (MANUAL) | Restricts | `levels.select_target` |
-| P-CONF-1 | HTF conflict distances measured from the PL and from both entry bounds; if the band differs between them and that changes the outcome, MANUAL | Restricts | `structure.htf_conflict` |
-| P-G8-1 | RF7 (reaction zone with poor closing) is MANUAL whenever the leg-out did not close beyond the leg-in extreme; whether the zone is a "reaction zone" is a human call | Restricts | `qualification._g8` |
-| P-DQ-1 | A data-quality finding is dated by the trade date it concerns; an earlier scan does not read later findings (prefix invariance). Undated findings (bad header, bad date) always apply | Neutral | `marketdata.Finding.known_at` |
-| P-LVL-3 | Invalid levels (SL <= 0, inverted zone geometry, non-finite price) make G7 MANUAL; no R:R or quantity is computed | Restricts | `levels.problems`, `_g7` |
-| P-CA-1 | A price-scale corporate action inside the replayed history (ex-date on or before as_of) makes G0 MANUAL; nothing is adjusted | Restricts | `corporate_actions.in_history`, `_g0` |
-| P-REF-1 | Zone references match on timeframe, side and creation period; prices compare exactly unless a tolerance is passed | Neutral (comparison only) | `refcheck.compare_zones` |
-| P-BT-1 | A backtest needs every execution assumption from the user; signals come from point-in-time scans, one order per zone | Neutral (nothing runs without inputs) | `backtest.ExecutionModel`, `run` |
+| P-CAL-1 | No calendar: G0 MANUAL (D28 limitations: unverified gaps, undetectable special sessions) [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `qualification._g0` |
+| P-LVL-1 | Buffer tiers: the union of the tiers of PL, normal DL and exceptional DL, tier edges inclusive on both sides (B9) [USER_APPROVED, section 1F, 2026-11-08] | Widens ranges; more MANUAL | `levels.ranges` |
+| P-LVL-2 | Target: nearest FRESH opposing zone with PL above the entry maximum; a tested one is skipped; one of unknown freshness, or inside the entry range, stops the search (MANUAL) [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `levels.select_target` |
+| P-CONF-1 | HTF conflict distances measured from the PL and from both entry bounds; if the band differs between them and that changes the outcome, MANUAL [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `structure.htf_conflict` |
+| P-G8-1 | RF7 (reaction zone with poor closing) is MANUAL whenever the leg-out did not close beyond the leg-in extreme; whether the zone is a "reaction zone" is a human call [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `qualification._g8` |
+| P-DQ-1 | A data-quality finding is dated by the trade date it concerns; an earlier scan does not read later findings (prefix invariance). Undated findings (bad header, bad date) always apply [USER_APPROVED, section 1F, 2026-11-08] | Neutral | `marketdata.Finding.known_at` |
+| P-LVL-3 | Invalid levels (SL <= 0, inverted zone geometry, non-finite price) make G7 MANUAL; no R:R or quantity is computed [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `levels.problems`, `_g7` |
+| P-CA-1 | A price-scale corporate action inside the replayed history (ex-date on or before as_of) makes G0 MANUAL; nothing is adjusted [USER_APPROVED, section 1F, 2026-11-08] | Restricts | `corporate_actions.in_history`, `_g0` |
+| P-REF-1 | Zone references match on timeframe, side and creation period; prices compare exactly unless a tolerance is passed [USER_APPROVED, section 1F, 2026-11-08] | Neutral (comparison only) | `refcheck.compare_zones` |
+| P-BT-1 | A backtest needs every execution assumption from the user; signals come from point-in-time scans, one order per zone [USER_APPROVED, section 1F, 2026-11-08] | Neutral (nothing runs without inputs) | `backtest.ExecutionModel`, `run` |
 
 ## 5. How to run
 

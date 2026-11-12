@@ -1,5 +1,7 @@
 # Architecture (as implemented, 2026-11-02)
 
+> Dated snapshot (2026-11-02). Current status: `docs/MILESTONE_STATUS.md`, `nse/docs/DECISION_LOG.md` (section 1F, 2026-11-08 approvals) and `docs/ARCHITECTURE.md`.
+
 A modular monolith in standard-library Python. One deterministic decision pathway; every
 other module reads its outputs. No network, broker or order code anywhere under `nse/`.
 

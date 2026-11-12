@@ -17,6 +17,9 @@ ORDER_PATH = ["trader-scanner", "trader-entry", "trader-exit", "trader-timemachi
 V1_ONLY = ["trader-copycat", "trader-screener", "trader-tax", "trader-rebalance"]
 RULEBOOK_PDF = "340fe490-8783-4eea-8cbd-e834449e9a42_Trading_Rulebook.pdf"
 RULEBOOK_PDF_SHA256 = "e41cd0e7893513a492a39095c0f771ec67b320f1b51bc356da7c6a2c2946c2fc"
+# the owner's original master prompt, moved verbatim out of CLAUDE.md
+OWNER_PROMPT = os.path.join("docs", "owner", "MASTER_IMPLEMENTATION_PROMPT.md")
+OWNER_PROMPT_SHA256 = "c6c8cd9176e83ed40452149a3e784fd6c45c66de98ff4c8144f0f58b5f86ba8f"
 
 
 def frontmatter(path):
@@ -47,7 +50,13 @@ class Repo(unittest.TestCase):
         # authoritative reference kept exactly as supplied) are the only additions
         root = sorted(d for d in os.listdir(ROOT) if not d.startswith(".git"))
         self.assertEqual(root, sorted([".claude", ".claude-plugin", "CLAUDE.md", "LICENSE", "README.md", "nse",
-                                       "tests", "PRODUCT_MASTER_STATUS.md", RULEBOOK_PDF] + SKILLS))
+                                       "tests", "PRODUCT_MASTER_STATUS.md", RULEBOOK_PDF, "docs"] + SKILLS))
+
+    def test_owner_master_prompt_is_kept_verbatim(self):
+        # the owner's original CLAUDE.md, moved out of the root instruction file unchanged
+        import hashlib
+        with open(os.path.join(ROOT, OWNER_PROMPT), "rb") as fh:
+            self.assertEqual(hashlib.sha256(fh.read()).hexdigest(), OWNER_PROMPT_SHA256)
 
     def test_owner_rulebook_pdf_is_kept_verbatim(self):
         # the PDF is an authoritative owner reference (never edited); pin it like nse/sources
@@ -102,7 +111,7 @@ class Repo(unittest.TestCase):
             # fixtures are real data, nse/sources holds the user's reference documents and CLAUDE.md
             # is the user's own instruction file; all kept exactly as written
             if not rel.startswith((os.path.join("tests", "fixtures"), os.path.join("nse", "sources"))) \
-                    and rel != "CLAUDE.md":
+                    and rel not in ("CLAUDE.md", OWNER_PROMPT):
                 self.assertNotIn("\u2014", text, rel)
             self.assertNotIn("jakeschincariol" + "@" + "gmail.com", text, rel)  # built, so this file passes too
 

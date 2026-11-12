@@ -135,8 +135,11 @@ class Serialisation(unittest.TestCase):
     def test_m1_approvals_are_removed_from_open_readiness_decisions(self):
         rows = {r["id"]: r for r in readiness.report()}
         self.assertEqual(rows["trend_sma_clock"]["requires_human_decision"], [])  # R2
-        self.assertEqual(rows["location_curve"]["requires_human_decision"],
-                         ["VLOC vs a tested zone (P-LOC-2 remains open)"])
+        self.assertEqual(rows["location_curve"]["requires_human_decision"], [])
+        self.assertFalse(rows["location_curve"]["reference_validated"])
+        self.assertFalse(rows["location_curve"]["externally_validated"])
+        self.assertTrue(any("P-LOC-2" in item and "not externally validated" in item
+                            for item in rows["location_curve"]["limits"]))
         self.assertEqual(rows["coinciding"]["requires_human_decision"],
                          ["Aggressive entry criteria, including achievement (RB 1843-1847, 1854-1855)"])
         self.assertIn("wholly above HTF demand is Aggressive", rows["coinciding"]["limits"][0])

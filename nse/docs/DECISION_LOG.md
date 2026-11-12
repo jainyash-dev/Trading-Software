@@ -3,6 +3,8 @@
 **Project:** NSE GTF Demand & Supply Swing-Trading Research System
 **Version:** 3.0, dated 2026-11-02. v3.0 records product-owner-approved M1 decisions R1-R6; D41 remains proposed for readings not covered by those approvals. v2.9 added D41 (research-pipeline interpretations; `PROPOSED`, pending review). v2.8 added D40 (official calendar tables 2021-2025, B17; `PROPOSED`, pending review). v2.7 added D39 (per-date calendar ambiguity, audit L10 option B). v2.6 records the user's approval of P1-P3 as D36-D38 and the provisional approval of the D30 special-session rule (§1E). v2.5 added D33-D35 from the Phase 1 correctness audit (`PHASE1_CORRECTNESS_AUDIT.md`). v2.4 adds user-approved decisions D29-D32 (§1D) for the external-validation phase. v2.3 added D24-D28 (§1C) for HTF freshness (B16). v2.2 added D21-D23 (§1B), resolving B13 and B14 and deciding the B8 approach. v2.1 added D12-D17 (§1A). v2.0 replaced v1; §4 maps old IDs to new.
 
+**Current-status note (2026-11-11):** the version sentence above is the 2026-11-02 record. Sections 1F-1H are the later record through D61. D40 is `USER_APPROVED` in section 1F. D41 is `USER_APPROVED` only for the readings section 1F names. D42 remains `USER_STATED`. Do not treat a fixed number in another document as proof that D61 is still the last entry; read this file.
+
 **ID note:** D18–D20 are not reused. They appear in the v1 history table (§4) with different meanings, so the new decisions start at D21.
 **References:** `RB n` = Trading Rulebook line; `PS n` = Pine Script line. Blocker IDs (B*, N*) are defined in `IMPLEMENTATION_BLOCKERS.md`.
 
@@ -15,6 +17,7 @@
 | `USER_APPROVED` | Explicit user decision. Authoritative. It is never reclassified as unresolved. |
 | `SOURCE_DEFINED` | Stated explicitly in the Rulebook. |
 | `PINE_DEFINED` | Observed Pine behaviour where the Rulebook is silent. Used only if it does not conflict with an explicit rule (D12). |
+| `USER_STATED` | Recorded owner instruction that is an operating constraint within its exact wording and scope. Binding for that scope. Not a Rulebook rule, not a methodology change, and not interchangeable with `USER_APPROVED`. It does not override an explicit Rulebook requirement. |
 | `OPEN` | Needs a user decision. Listed in `IMPLEMENTATION_BLOCKERS.md`. |
 | `WITHDRAWN` | A v1 decision that was unsupported or rejected by the user. |
 
@@ -548,7 +551,7 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
 - **Applied literally:** a period is truncated even when the ambiguous date is after as-of or before the first candle (`PHASE1_CORRECTNESS_AUDIT.md` §4C).
 
 ### D40. Official calendar tables 2021-2025; special sessions recorded under D30 (B17)
-- **Status:** `PROPOSED`, 2026-10-28. **Pending the user's review of this wording.** The user approved the underlying decisions on 2026-10-28:
+- **Status:** `USER_APPROVED` 2026-11-08 (section 1F), with the escalated discrepancy D40-Q1 about 20 Jan 2024. Originally `PROPOSED`, 2026-10-28, pending the user's review of this wording. The user approved the underlying decisions on 2026-10-28:
   - keep the supplied 2022 file name;
   - record the archive URL with a byte-identity note, and `downloaded_on=UNKNOWN`;
   - register the 2022 Muhurat notice as confirmed, keeping D30's exclusion;
@@ -565,7 +568,7 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
   - **Shortened sessions:** the DR-switch Saturdays of 2 Mar 2024 (NSE/MSD/60677) and 18 May 2024 (NSE/MSD/61893) had two Normal Market windows, 09:15-10:00 and 11:30-12:30. The schema holds one start and end per row, so each row spans 09:15-12:30 and its note says the session was not continuous. Both are `EXCLUDED_SHORTENED`.
   - **Regular-hours Saturdays (D30 provisional rule):**
     - 1 Feb 2025 (NSE/CMTR/65729) prints Normal Market 09:15-15:30 "as per the standard market timings": `NORMAL_SPECIAL`.
-    - 20 Jan 2024 (NSE/MSD/60340) withdraws the DR-switch session announced in NSE/MSD/59999 and holds "regular trading sessions ... as per regular market timings", without printing the times. *Proposed:* record 09:15-15:30 from NSE/CMTR/41180, so it is also `NORMAL_SPECIAL`. This is the one session whose hours come from a second circular.
+    - 20 Jan 2024 (NSE/MSD/60340) withdraws NSE/MSD/59999, 60300 and 60318 *(correction 2026-11-08: their contents are not held, so the earlier wording "the DR-switch session announced in NSE/MSD/59999" is not verified)* *[2026-11-09: now held and hash-registered; 59999 did announce the two-window DR session, which 60340 withdrew before the day. See the D40 evidence-trail note in section 1F.]* and holds "regular trading sessions ... as per regular market timings", without printing the times. *Proposed:* record 09:15-15:30 from NSE/CMTR/41180, so it is also `NORMAL_SPECIAL`. This is the one session whose hours come from a second circular.
   - The supplied 2022 copy keeps its file name `NSE_CMTR_50560_2022_trading_holidays.pdf.pdf` with `downloaded_on=UNKNOWN`, never inferred from file times. Its archive URL is recorded because the copy Claude retrieved there on 2026-10-28 is byte-identical (`nse/data/calendar/README.md` §1, §4). This shows the content is identical; it does not show where or when the original copy was downloaded.
   - **Normal hours 09:15-15:30** (`REGULAR_OPEN`/`REGULAR_CLOSE`, `mtf_freshness.SESSION_OPEN`/`SESSION_CLOSE`) are provisionally evidenced by NSE/CMTR/41180 (31 May 2019, effective 3 Jun 2019), registered as a 2019 `SESSION_NOTICE` with no events, and corroborated by NSE/CMTR/65729 (2024-12-23), which calls them the standard market timings. No systematic review of the timing circulars in between has been made, so this aspect is **not validated**.
 - **Proposed schema changes** (`nse_calendar.py`; tested):
@@ -577,11 +580,11 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
   - completeness of the event list: reconciliation with official EOD files covers Q1 2022 only.
 
 ### D41. Research-pipeline interpretations (scanner, G0-G8)
-- **Status:** `PROPOSED` as an umbrella, 2026-10-29; **partially superseded by USER_APPROVED M1 decisions R1-R6, 2026-11-02**. The remaining D41 readings are not approved. The approvals are recorded in `DECISION_REGISTER.md` and do not approve unrelated D41 items.
+- **Status:** `USER_APPROVED` 2026-11-08 for the readings section 1F names. History: `PROPOSED` as an umbrella, 2026-10-29; **partially superseded by USER_APPROVED M1 decisions R1-R6, 2026-11-02**. A reading this entry still marks `PROPOSED`, and that section 1F does not name, stays proposed. The register does not approve a reading the log does not.
 - **Proposed behaviour:** the fourteen readings P-TREND-1, P-LOC-1 to P-LOC-3, P-MAT-1, P-MAT-2, P-COIN-1, P-COIN-2, P-CAL-1, P-LVL-1, P-LVL-2, P-CONF-1, P-G8-1 and P-DQ-1, listed with their effect and code location in `RESEARCH_PIPELINE.md` section 4.
   - **Approved in M1:** P-LOC-1 / R1 (CMP only); P-TREND-1 / R2 (12 o'clock maps to STRONG_UP, label retained); P-COIN-1 / R3 (actual demand-range overlap; Aggressive remains distinct); P-MAT-1 and P-MAT-2 / R5 (approved HOC/EQB outcomes); P-COIN-2 / R6 (known absence passes G6 as Standard, unknown remains MANUAL).
   - The separate R4 approval confirms D24's own-timeframe completed-close invalidation and requires SL-hit events to remain separate from zone invalidation events.
-  - Other D41 readings remain PROPOSED, including P-LOC-2 (price inside tested HTF demand), P-LOC-3, P-CAL-1, P-LVL-1 to P-LVL-3, P-CONF-1, P-G8-1, P-DQ-1, P-CA-1/2, P-REF-1, P-BT-1 and M1 reporting.
+  - Other D41 readings remain PROPOSED, including P-LOC-2 (price inside tested HTF demand), P-LOC-3, P-CAL-1, P-LVL-1 to P-LVL-3, P-CONF-1, P-G8-1, P-DQ-1, P-CA-1/2, P-REF-1, P-BT-1 and M1 reporting. This bullet is the 2026-10-29 proposed set. Section 1F is the later record: a reading named there, including P-LOC-2 and P-LOC-3 under "Other approvals" and the D41 policy list in that section, is approved within that wording. This bullet does not keep a named reading proposed.
 - **Added 2026-10-29 (second pass), also PROPOSED:**
   - P-LVL-3: invalid levels make G7 MANUAL with no R:R. Invalid means SL <= 0, inverted zone geometry or a non-finite price.
   - P-CA-1: a price-scale corporate action inside the replayed history makes G0 MANUAL; nothing is adjusted (B7).
@@ -592,6 +595,338 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
   - The full register, with alternatives and effects, is `DECISION_REGISTER.md`.
 - **Consequence while PROPOSED:** unapproved readings stay research output. Every record carries NOT_EXTERNALLY_VALIDATED and the manual checklist; no candidate status approves a trade.
 - **Not changed:** D1-D40; the Rulebook and the Pine Script; WIT stays BLOCKED (audit M4b).
+
+### D42. Owner-stated portfolio and pending-order policy (task brief, 2026-11-06)
+- **Status:** `USER_STATED`, 2026-11-06; owner-approved operating constraints 2026-11-08 (D46, section 1F, which also supersedes the labelling below with D45 refusals and IST month counting). The owner's task instruction for the multi-agent audit states these as requirements. They are implemented only where they restrict output; no requirement here loosens a gate.
+- **Stated requirements and implementation:**
+  - **Maximum 10 simultaneous positions, independent of the RB 2392 monthly maximum of 10 trades.** This is not a Rulebook rule. `models.OWNER_MAX_OPEN_POSITIONS`.
+    - `store.journal_event` refuses a TRIGGERED event while 10 positions are open (`MAX_OPEN_POSITIONS`). An exit at the same time counts as open.
+    - The backtest keeps `max_open_positions` as a model input. It labels `MAX_OPEN_POSITIONS_ABOVE_OWNER_LIMIT` (or `PORTFOLIO_CONCURRENCY_NOT_MODELLED`) instead of refusing, so sensitivity runs stay possible.
+  - **Pending orders do not fill once a pre-trade condition is invalid (RB 2530-2538).**
+    - Backtest: every later point-in-time scan known before a bar opens must still list the zone in an allowed status. Otherwise the order is `CANCELLED_SETUP_INVALID`, and the result carries `REVALIDATION_AT_SCAN_TIMES_ONLY`.
+    - Journal: a TRIGGERED event is refused when a stored scan strictly before it no longer lists the zone (`ZONE_NO_LONGER_CANDIDATE`).
+  - **Ten verified-session expiry.** `models.OWNER_ENTRY_EXPIRY_SESSIONS`.
+    - With a calendar, the backtest counts verified sessions. A missing, excluded or unclassifiable session ends the record (`DATA_MISSING_SESSION` / `DATA_EXCLUDED_SESSION` / `DATA_UNVERIFIED_SESSION`, no R).
+    - A model whose expiry is not 10 is labelled `ENTRY_EXPIRY_NOT_OWNER_POLICY`.
+  - **Missing point-in-time evidence stays MANUAL or DATA_INSUFFICIENT.** This is already implemented (P-DQ-1, D27).
+    - Added: an in-progress candle that has reached a fresh zone's PL makes G1 MANUAL (`INCOMPLETE_CANDLE_TOUCH`).
+    - Added: an incomplete bar inside a backtest window ends that record (`DATA_INCOMPLETE_CANDLE`).
+  - **WIT remains BLOCKED** (unchanged, M4b).
+- **Not decided here:**
+  - B9 (entry/stop baseline) and the B12 cost/slippage values.
+  - Counting the monthly cap in IST.
+  - P-LOC-2, P-RISK-1 and RB-VERSION-1. These remain as in `DECISION_REGISTER.md`.
+
+---
+
+## 1F. Owner-approved decisions (owner task brief, 2026-11-08)
+
+The owner's task brief of 2026-11-08 (the `autonomous-gtf-project-council` activation)
+lists the decisions below as binding and not to be reopened. They are recorded here as
+`USER_APPROVED`, except D42's constraints, which D46 keeps as `USER_STATED` owner-approved
+operating constraints (they are not Rulebook rules). Engineering choices made while
+implementing them are in `ENGINEERING_DECISIONS.md` (ED-1 onwards) and are not owner
+decisions. Nothing here changes the Rulebook or the Pine Script.
+
+### D42 (status update). Portfolio and pending-order constraints
+- **Status:** `USER_STATED`, owner-approved operating constraints (D46), 2026-11-08. The wording question raised on 2026-11-06 is closed by the brief, which restates them:
+  - 10 simultaneous open positions;
+  - 10 trades per IST calendar month, counted by the first fill/trigger time converted to IST, months running from 00:00 IST on day 1 to the end of the last day;
+  - pending orders revalidated before filling;
+  - expiry after 10 verified NSE sessions, which missing or unclassifiable sessions never extend;
+  - WIT BLOCKED.
+- **Implementation:**
+  - `models.ist_month` is used by `store.journal_event` (ceiling), `store.journal_summary` and `backtest.apply_portfolio_rules`.
+  - `backtest` refuses a run without a calendar (expiry must count verified sessions).
+  - D45 refuses limits above these values.
+- **Tests:**
+  - `test_research_execution_policy.IstMonth`, `D45Refusals`
+  - `test_research_store.JournalIstMonth20261108`
+
+### D43. Opposing Pine-only zones in G5 / G7 (was PINE-ONLY-1)
+- **Status:** `USER_APPROVED`, 2026-11-08.
+- **Decision:** a relevant opposing Pine-only zone that cannot be validated independently makes G5 / G7 MANUAL. It is never silently ignored and never used as an automatic target.
+- **Implementation:**
+  - `zone_engine` Pine-only records now carry Pine's own `invalidated_index` and `test_count`.
+  - `structure.pine_only_zones` drops only a zone Pine itself deleted (completed close beyond DL; PS 2613, RB 1313). A record without the field counts as unbroken.
+  - **G5:** a Pine-only supply on a G5 timeframe (MIT: M, Q, HY reject; W, Y evidence; Pine-only zones exist only on M, W, D) whose band is not CLEAR for PL or either entry bound turns PASS into MANUAL (`PINE_ONLY_ZONE_REVIEW`). It never turns into FAIL and never softens one.
+  - **G7:** a Pine-only supply on the target timeframe above the entry minimum and below the structural target (or anywhere above when there is none) makes G7 MANUAL. A zone Pine recorded as touched is excluded, because a tested zone cannot be the fresh target (RB 551-558, as `levels.select_target`; ED-4).
+- **Tests:** `test_research_gates.PineOnlyD43`; `test_research_adversarial.CouncilRegressions20261108`; scenario `mit_aggressive_zone_above_monthly_demand` (G5 now MANUAL).
+
+### D44. Point-in-time evidence and undated errors (was UNDATED-ERR-1)
+- **Status:** `USER_APPROVED`, 2026-11-08.
+- **Decision:**
+  - Later verified evidence must not affect earlier historical scans.
+  - Undated errors are never silently ignored. If their impact cannot be bounded, the affected analysis is MANUAL or DATA_INSUFFICIENT.
+  - Unaffected periods are not contaminated.
+- **Implementation:**
+  - `marketdata._bad_date`: a CSV row with an unreadable date is dated at the previous valid row's date (inclusive) when its neighbouring valid rows are in order and the file has no OUT_OF_ORDER or DUPLICATE_DATE finding anywhere. Only scans on or after that date are blocked. The finding is `verified=False`, and an undated `ERROR_DATE_BOUND_INFERRED` warning makes the inference visible.
+  - Without a previous row, or with out-of-order neighbours, the finding stays undated and blocks every scan.
+  - Whole-input errors (`BAD_HEADER`, `NO_INPUT_FILE`, `NO_BARS`, `BHAVCOPY_INPUT`) stay unbounded.
+  - Dated findings were already filtered by `Finding.known_at` (P-DQ-1).
+- **Tests:** `test_research_lookahead.FutureDataQuality.test_d44_*`.
+- **Not implemented, recorded for owner visibility (ED-6):**
+  - `recorded_on` columns (universe, corporate actions, instruments) are not read by the loaders. Filtering records by when they were *entered* would loosen G0 for earlier scans (a split with ex-date before as_of would vanish), so the restrictive behaviour is kept.
+  - A per-file bhavcopy error is still whole-input (backlog).
+
+### D45. Hard rejection of backtest configurations above owner limits
+- **Status:** `USER_APPROVED`, 2026-11-08.
+- **Implementation:** `backtest.ExecutionModel.__post_init__` raises `ValueError` for:
+  - `max_open_positions` or `monthly_trade_cap` that is None (unlimited) or above 10;
+  - `entry_expiry_sessions` above 10.
+
+  Both caps now default to 10. Stricter values are allowed; an expiry other than 10 keeps the `ENTRY_EXPIRY_NOT_OWNER_POLICY` label. The 2026-11-02 labels `MONTHLY_CAP_ABOVE_RULEBOOK` and `MAX_OPEN_POSITIONS_ABOVE_OWNER_LIMIT` can no longer occur, and nothing about the limits is only a warning.
+- **Tests:** `test_research_backtest.Portfolio`, `CapAuditRegressions`; `test_research_execution_policy.D45Refusals`; adversarial `test_dataclasses_replace_cannot_bypass_the_d45_limits`.
+
+### D46. D42 recorded as USER_STATED owner-approved operating constraints
+- **Status:** `USER_APPROVED`, 2026-11-08.
+- **Decision:** D42 keeps `USER_STATED` (not a Rulebook rule, not a methodology change) and is enforced in the journal, pending-order and backtest workflows.
+
+### Other approvals in the 2026-11-08 brief
+- **P-LOC-2** `USER_APPROVED`:
+  - Monthly determines curve and VLOC; Daily identifies and executes.
+  - When a Monthly demand holding CMP is TESTED, the curve is redrawn from the next valid fresh Monthly demand below (RB 1621).
+  - Missing or unknown boundaries are MANUAL.
+  - `structure.build_curve` applies this to Monthly demand only. A tested Weekly zone or a tested supply holding price stays MANUAL. A fresh zone also holding price stays the bottom.
+  - G3 evidence `redrawn_past_tested`.
+  - Tests: `G3.test_price_inside_a_tested_monthly_demand_redraws_from_the_next_fresh_zone`, `test_redraw_*`. The earlier MANUAL test was replaced, as a specification correction.
+- **P-LOC-3** `USER_APPROVED`: unknown, missing or unverified Monthly boundary freshness is MANUAL. This was already implemented; the redraw keeps it (`test_redraw_stops_at_a_boundary_of_unknown_freshness`).
+- **P-RISK-1** `USER_APPROVED`:
+  - above the declared stage maximum: FAIL;
+  - below the minimum: MANUAL;
+  - no stage: MANUAL;
+  - no stage and above 2%: FAIL;
+  - inside the inclusive range: PASS;
+  - no automatic stage promotion.
+
+  `risk.assess_config` already matches every branch (council audit 2026-11-08); no change.
+- **B9** `USER_APPROVED`:
+  - the original Rulebook price-tier ranges;
+  - the PL / normal-DL / exceptional-DL tier union;
+  - inclusive shared boundaries;
+  - predeclared sensitivity scenarios;
+  - no automatic buffer selection.
+
+  `levels` (P-LVL-1) was unchanged. `execution_policy.owner_grid` requires the (entry, stop) scenarios to be declared before the run and selects nothing.
+- **B12** `USER_APPROVED`:
+  - manual Kite/GTT execution only, no broker integration;
+  - ten verified-session expiry;
+  - STOP_FIRST baseline and EXCLUDE sensitivity;
+  - AT_OPEN gap proxy;
+  - slippage 0.05%, 0.10% and 0.20% per side;
+  - a separate dated, instrument-specific Zerodha cost model.
+
+  Implemented in `nse/research/execution_policy.py` (`owner_grid`, `CostSchedule`). No Zerodha figures exist in the repository, so the schedule is a user-supplied file and no cost is defaulted. Flat per-order charges are not modelled (`flat_charges_modelled: false`).
+- **B12-CAP / CAP-IST-1** closed by D42 / D46: the cap counts the first fill time, IST month.
+- **D40** `USER_APPROVED`: the approved calendar tables and special-session handling are kept as recorded. **Escalated discrepancy D40-Q1 (not reconciled):**
+  - The brief describes "the January 20, 2024 two-part primary/DR normal-market sessions; one trading date for expiry; do not create candles across the break or discard valid observations".
+  - The registered evidence says otherwise: NSE/MSD/60340 withdrew three earlier circulars (contents not held at the time; held since 2026-11-09) and held regular trading from the primary site (`events.csv` row 61, NORMAL_SPECIAL). The two-window primary/DR sessions are **2 Mar 2024** (NSE/MSD/60677) and **18 May 2024** (NSE/MSD/61893), which D30 excludes from candle construction (`EXCLUDED_SHORTENED`).
+  - The calendar data and code are unchanged. The backtest still ends a record that meets an excluded session (`DATA_EXCLUDED_SESSION`), which is fail-closed.
+  - Owner action: say whether the instruction refers to 2 Mar / 18 May 2024 and, if so, whether D30's exclusion should change for them.
+  - **Resolved by evidence, later 2026-11-08** (`REAL_DATA_READINESS.md` §1). Two independent council reviews extracted the held circulars, hash-verified against `sources.csv`, and agreed on every point:
+    - 20 Jan 2024 was a regular session from the primary site only (NSE/MSD/60340).
+    - The two-window primary/DR sessions are 2 Mar and 18 May 2024 (NSE/MSD/60677, 61893).
+    - So the owner's instruction describes those two dates. The approval is kept as given; the correction is factual only.
+  - **Implemented (ED-10):**
+    - the two dates stay `EXCLUDED_SHORTENED`, so no candle is built across the break (D30);
+    - each counts as one trading date for expiry;
+    - its daily bar is used only as a bound (nothing is discarded).
+  - **Calendar correction:** `events.csv` row 61 no longer says the withdrawn NSE/MSD/59999, 60300 and 60318 announced a DR-switch session; those circulars were not held at the time, so their content was not verified. *[2026-11-09: now held and hash-registered; 59999 did announce the two-window DR session, which 60340 withdrew before the day. See the D40 evidence-trail note in section 1F.]*
+  - **Still unverified:** the 20 Jan 2024 hours (from NSE/CMTR/41180).
+  - **Evidence trail closed, 2026-11-09 (MP1; factual, not a new decision).** The three withdrawn circulars are now held and hash-registered in `nse/data/calendar/sources.csv`. One independent investigator and the Chair both extracted their text:
+    - **NSE/MSD/59999** (28 Dec 2023) announced a "Special Live trading session on Saturday, January 20, 2024 with intra day switch over to DR site": 09:15-10:00 on the primary site, 11:30-12:30 on the DR site, closing session 12:40-12:50.
+    - **NSE/MSD/60300 and 60318** (18 and 19 Jan 2024) only updated ENIT and member-portal timings for that plan.
+    - **NSE/MSD/60340** (19 Jan 2024) withdrew all three and held "regular trading sessions ... from primary site ... as per regular market timings".
+
+    So the owner's wording describes the plan of 59999, which was withdrawn before the day. The two-window sessions that actually took place are 2 Mar and 18 May 2024. The owner approval above is unchanged. Calendar classifications and code are unchanged. The only data change is the `events.csv` 2024-01-20 note, which now states what 59999 said. Tests: `test_nse_calendar_data.Tables.test_d40_twentieth_january_is_one_primary_session_not_the_withdrawn_dr_plan`.
+  - **Still open:** no official text prints the 20 Jan 2024 clock times; 09:15-15:30 remains an inference from "regular market timings" and NSE/CMTR/41180.
+- **D41** `USER_APPROVED` as a whole:
+  - the calendar, level, target, geometry, HTF-conflict, weak-close, data-quality, corporate-action and exact-price-match policies, including P-CAL-1, P-LVL-1 to P-LVL-3, P-CONF-1, P-G8-1, P-DQ-1, P-CA-1/2, P-REF-1, P-BT-1 and the M1 report label;
+  - every one as already implemented; no code change.
+- **RB-VERSION-1** `USER_APPROVED`:
+  - The supplied Rulebook PDF is canonical.
+  - The protected Markdown is its immutable, line-indexed citation companion; citations stay `RB <line>`.
+  - Substantive discrepancies are escalated, never silently reconciled.
+  - The open extraction dispute (RB 1784 and 1786-1803 present in the PDF or not) affects only WIT, which stays BLOCKED.
+- **Instrument identity** `USER_APPROVED`:
+  - inclusive listing intervals;
+  - effective-date semantics;
+  - successors distinct;
+  - unknown or conflicting identity unresolved.
+
+  Already implemented and tested (`test_research_instruments`). It is not yet wired into the scanner (backlog). *[2026-11-09: wired into every bhavcopy input, ED-21; this implements the approval, it does not change it.]*
+- **Deferred / manual, unchanged:**
+  - Aggressive setups (G6 MANUAL);
+  - automatic wick-to-wick selection (not implemented; G7 takes both DLs);
+  - automatic timeframe descent in 6+ candle bases (no zone is formed);
+  - calendar-gap truncation (disclosed limitation);
+  - WIT intraday BLOCKED.
+
+---
+
+## 1G. Owner decisions on Master Prompt 1 (2026-11-09)
+
+All `USER_APPROVED`, 2026-11-09, given in response to the MP1 report. They are recorded in the owner's terms. How each is implemented is in `ENGINEERING_DECISIONS.md` ED-25 to ED-32.
+
+### D47. Scripted backfill of the missing 2021-2025 NSE EOD files
+- **Status:** `USER_APPROVED`.
+- **Approved:** a scripted download of the missing 2021-2025 files identified by `acquire-plan`, from the verified official NSE URLs it prints.
+- **Conditions:**
+  - rate limiting, retries and resumable downloads;
+  - verify integrity, source URL, content hash and expected format;
+  - preserve raw files and never silently replace one;
+  - no unauthorised sources and no paid data;
+  - quarantine malformed or conflicting files;
+  - a complete acquisition and validation report.
+- **Scope:** this backfill only. It is not unrestricted future downloading, and it does not cover 2016-2020 EOD files.
+
+### D48. Ten-year window: calendar and data readiness extended to 2016-2020
+- **Status:** `USER_APPROVED`. It extends D29's 2021-2025 window.
+- **Conditions:**
+  - authoritative NSE holiday and special-session circulars only;
+  - verify trading dates and session information;
+  - never infer a holiday or session; keep unresolved dates flagged;
+  - preserve the verified 2021-2025 calendar.
+
+### D49. Historical Nifty 100 transcription, approved with review
+- **Status:** `USER_APPROVED`.
+- **Approved:** prepare the membership dataset from the official baseline list and reconstitution notices, with:
+  - every addition and removal, with its effective date;
+  - ad-hoc changes, including the Jio Financial spin-off where applicable;
+  - ISINs and identity verified;
+  - independent agent cross-checks.
+- **Counts:** officially documented temporary counts such as 101 are accepted; the count is never forced to 100.
+- **Review gate:** a human review of the completed transcription is required before the universe is marked verified. Until it is reviewed and accepted, results stay `UNIVERSE_UNVERIFIED` and are never presented as research-ready.
+
+### D50. Corporate-action policy
+- **Status:** `USER_APPROVED`.
+- **Canonical prices:** raw, unadjusted OHLC.
+- **Events:** verified corporate-action events and their terms are stored separately.
+- **No silent adjustment:** prices are never adjusted silently, and unverified ratios are never used in zone detection, scanning or backtesting.
+- **Derived series:** any adjusted series must be separate, traceable and governed by a documented adjustment policy.
+
+### D51. Historical identity continuity
+- **Status:** `USER_APPROVED`.
+- **Join rule:** renamed companies are connected only through verified ISIN continuity and effective dates.
+- **Never joined:** two companies are never joined because they share a ticker or a similar name.
+- **Fallback:** if continuity cannot be established, the existing DATA_INSUFFICIENT restriction stays.
+
+**Standing instruction (2026-11-09):** do not claim DATA_READY until the historical files, the calendar, universe membership and the required identity evidence have passed validation. No commit or push.
+
+---
+
+## 1H. Owner decisions on the D47-D51 follow-up (2026-11-09)
+
+All `USER_APPROVED`, 2026-11-09, recorded in the owner's terms. Implementation: `ENGINEERING_DECISIONS.md` ED-33 onwards.
+
+### D52. DQ-1: PREVCLOSE discontinuity across an excluded session, approved with strict safeguards
+- **Status:** `USER_APPROVED`.
+- **When it counts as an explained calendar gap:** only when all three hold:
+  - an authoritative NSE calendar or circular confirms the excluded or special session;
+  - the session is explicitly recorded as excluded from the accepted EOD dataset;
+  - no EOD file is expected for it under the approved acquisition policy.
+- **Must not:**
+  - classify this discontinuity alone as a split, bonus or other corporate action;
+  - fabricate an OHLC candle;
+  - suppress independent corporate-action or identity warnings;
+  - make a candidate ACTIONABLE merely because this discontinuity is explained.
+- **Must:**
+  - preserve the missing-session marker and provenance in scan inputs and manifests;
+  - audit every downstream calculation that assumes consecutive daily candles or uses the missing session's price action;
+  - return MANUAL or DATA_INSUFFICIENT where the missing candle could materially affect a calculation or decision.
+- **Regression tests:** confirmed excluded sessions, unconfirmed sessions, genuine corporate actions and sequence-dependent calculations.
+
+### D53. B11-R: Nifty 100 transcription, conditional acceptance
+- **Status:** `USER_APPROVED` (process), not acceptance of the data.
+- **Approved:** independent verification of every addition, removal, effective date, symbol and ISIN against authoritative NSE evidence.
+- **Jio Financial:** the symbol discrepancy is resolved from official evidence; an inference is never accepted as fact.
+- **Counts:** documented 101-member periods are preserved.
+- **Review gate:** the universe stays unverified until the human review is complete and the review file holds the explicitly accepted rows. Nothing is marked accepted automatically, and no evidence is manufactured.
+
+### D54. CAL-2: Dhanteras dates remain UNRESOLVED
+- **Status:** `USER_APPROVED`.
+- **Approved:**
+  - no inference of session status or hours;
+  - seek authoritative NSE evidence;
+  - keep the dates flagged;
+  - never treat them as verified sessions;
+  - they must not block daily readiness that does not require them.
+
+### D55. DATA-2: official NSE EOD backfill 2016-2020, approved
+- **Status:** `USER_APPROVED`.
+- **Approved:** a resumable, rate-limited download of the missing 2016-2020 official files, with the D47 safeguards:
+  - verified official URLs only;
+  - no overwriting;
+  - verify source, hash, format, parsing and EQ-row validity;
+  - quarantine malformed or conflicting files;
+  - preserve raw files and provenance;
+  - report downloaded, parsed, validated and accepted coverage separately.
+- **Readiness:** none is claimed until the calendar and data validation pass.
+
+### D56. B7-C / B11-I: corporate-action and identity evidence, approved
+- **Status:** `USER_APPROVED`.
+- **Approved:**
+  - collection of official NSE corporate-action records for all relevant historical Nifty 100 members;
+  - verification of event dates, types, terms, ratios and instrument identity;
+  - investigation of the 13 unresolved ISIN changes from official evidence.
+- **Rules:**
+  - join only through verified identity continuity and effective dates, never through similar names or reused tickers;
+  - raw unadjusted OHLC stays canonical;
+  - any derived adjusted series is separate, traceable and documented;
+  - missing or ambiguous evidence stays DATA_INSUFFICIENT or MANUAL.
+
+### D57. Local-first web application
+- **Status:** `USER_APPROVED` (owner instruction, 2026-11-09).
+- **Decision:** The GTF Trading Intelligence Platform is a local-first web application opened in a browser. It is not a Tauri, Electron, or AppKit application.
+- **Initial deployment:** one Mac. The API and the UI bind to loopback only. No public exposure. No cloud service is required for core use. No paid provider is enabled by this decision.
+- **Later deployment:** frontend and backend may be hosted on cloud infrastructure. Environment-specific configuration stays outside business logic. Persistence and provider interfaces stay replaceable. This decision does not authorise creating that infrastructure or spending on it.
+- **Session:** HttpOnly cookie, `SameSite=Strict`, host and origin checks, and a custom request header. The session value is not placed in localStorage, a URL, browser logs, or frontend source. The withdrawn Tauri inherited-token design is not reused.
+- **Unchanged:** the research pipeline remains the only eligibility authority. Live fills, journal mutations, and unresolved trade-plan identity keep their existing restrictions. No broker integration.
+- **Records:** [API contracts](../../docs/architecture/API_CONTRACTS.md) section 1, [system architecture](../../docs/architecture/SYSTEM_ARCHITECTURE.md) process model, AR-2 and AR-3 in [decisions](../../docs/product/DECISIONS_AND_OPEN_QUESTIONS.md).
+
+### D58. CAL-2: Dhanteras dates confirmed as regular equity sessions (option A)
+- **Status:** `USER_APPROVED` (owner instruction, 2026-11-10). Supersedes D54 for these four dates only.
+- **Decision:** the existing `SPECIAL_SESSION` rows for 2016-10-28 (NSE/CMTR/33442), 2017-10-17 (NSE/CMTR/36003), 2018-11-05 (NSE/CMTR/39215) and 2019-10-25 (NSE/CMTR/42455) change from `UNRESOLVED` to `CONFIRMED`. Each keeps its 09:15-15:30 regular equity hours, so the calendar classifies it `NORMAL_SPECIAL`. The Gold ETF/SGB-only evening extension stays in the row's note and builds no candle.
+- **Evidence:** the four circulars, read in full and hash-matched to `sources.csv` ("Regular Market Timing (there is no change to this)"), and a normal bhavcopy held for each date. See [T-002 evidence report](../../docs/product-discovery/phase-01/T002_DHANTERAS_EVIDENCE_REPORT.md).
+- **Effect:** the ED-44 history cut no longer applies. No UNRESOLVED calendar row remains, and the ED-31 / ED-42 / ED-44 rules stay in force for any future one.
+- **Not decided here:** any other calendar date, T-001 membership, identity, or readiness gates. DATA_READY is not claimed.
+
+### D59. Provisional Nifty 100 membership research window
+- **Status:** `USER_APPROVED` (owner instruction, 2026-11-10).
+- **Decision:** membership-based Nifty 100 research uses 2020-12-31 onward. This is a research-window restriction. It is not membership certification.
+- **Conditions:** every membership period still needs a human review and a matching source hash. An unverified period stays `UNIVERSE_UNVERIFIED`. An unresolved identity stays `DATA_INSUFFICIENT` or the existing fail-closed status. Corporate-action coverage still has to satisfy G0. A later constituent list is not used to reconstruct 2016-2020 membership. No pre-2020 baseline is invented. EOD before 2020-12-31 may warm indicators and other uses that are not represented as a survivorship-controlled Nifty 100 study.
+- **Effect:** a non-ad-hoc universe scan or backtest whose as-of is before 2020-12-31 carries `MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW`. Dates on or after 2020-12-31 do not carry that label. They remain `UNIVERSE_UNVERIFIED` until the review rows are accepted. `DATA_READY` is not claimed.
+
+### D60. Twenty-five Nifty 100 count calculations, arithmetic only
+- **Status:** `USER_APPROVED` (owner Yash Jain, 2026-11-11).
+- **Approved:** the derived member-count arithmetic on the 25 `exception:` rows of `nse/data/universe/nifty100_review.csv`, whose keys and SHA-256 values are the rows of `nifty100_count_exceptions.csv`. The review stores this as `count_approval` `APPROVED`, reviewer `Yash Jain`, `reviewed_on` `2026-11-11`. Twenty of those dates derive to 101 and five derive to 100.
+- **Not approved:** any constituent, any dummy seat (`DUMMYREL`, `DUMMYITC`, `DUMMYSIEMS`, `DUMMYTATAM`, `DUMMYHDLVR`), any inferred ISIN, any membership period, and any historical Nifty 100 certification. `decision` stays blank on these rows. Count approval does not verify a period.
+
+### D61. Ten E03 membership mappings, direction only
+- **Status:** `USER_APPROVED` (owner Yash Jain, 2026-11-11).
+- **Approved:** the symbol and the direction of the ten `change:E03:` rows transcribed from `ind_prs23082021.pdf` page 5 section 3 (NIFTY 100). Page 1 dates the change effective 30 September 2021. Exclusions: ABBOTINDIA, ALKEM, MRF, PETRONET, UBL. Inclusions: BANKBARODA, CHOLAFIN, JINDALSTEL, PIIND, SAIL. The review stores this as `mapping_approval` `APPROVED`, reviewer `Yash Jain`, `reviewed_on` `2026-11-11`.
+- **Not approved:** the membership period those rows would start or end. In particular the open periods BANKBARODA `INE028A01039` from 2021-09-30 and CHOLAFIN `INE121A01024` from 2021-09-30 are not certified. `decision` stays blank. Mapping approval does not verify a period.
+
+**Standing instruction (2026-11-09):**
+- DATA_READY is not claimed until the acceptance criteria pass.
+- Engineering completion, data readiness and research validation are kept distinct.
+- No change to the Pine indicator or the Rulebook.
+- No staging, commit or push.
+
+**Implementation record (2026-11-09; engineering, not owner decisions):**
+
+| Decision | Implemented by | Data state |
+|---|---|---|
+| D52 | ED-33, ED-34 | 12 excluded-session files held |
+| D53 | ED-35 | human review pending |
+| D54 | ED-31, ED-42 | 4 dates UNRESOLVED; confirmed by D58 (2026-11-10) |
+| D55 | ED-38, ED-41 | 2,466 of 2,466 equity sessions accepted after D58 (2,462 before the four Dhanteras dates were confirmed) |
+| D56 | ED-37, ED-39 | 145 symbols covered; 27 of 30 ISIN changes evidenced |
+| D59 | ED-47 | provisional membership research from 2020-12-31; not certified |
+| D60 | ED-48 | 25 count rows: `count_approval` APPROVED; `decision` blank; no period verified |
+| D61 | ED-48 | 10 E03 rows: `mapping_approval` APPROVED; `decision` blank; no period verified |
+
+Details: `IMPLEMENTATION_BLOCKERS.md` Part 11.
 
 ---
 
@@ -635,7 +970,7 @@ These three were proposed as P1-P3 after the second-pass review of D33 and D34. 
 | B8 | Q/HY/Y alignment | **Decided by D23** (calendar alignment). **TradingView boundary/value verification still open** |
 | B9 | Deterministic buffers | **Open** (needed only for historical validation) |
 
-The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D39 (D40 is proposed, pending review).
+The full remaining list is in `IMPLEMENTATION_BLOCKERS.md` Part 4 ("Decisions still required before reliable implementation"). None of it reopens D1–D17 or D21–D39. D40 is `USER_APPROVED` in section 1F (2026-11-08). An older note that called D40 proposed is not the status.
 
 ---
 

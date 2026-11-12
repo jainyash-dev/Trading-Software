@@ -8,14 +8,17 @@
 
 ## 1. Source-of-truth hierarchy
 
-1. Explicit rules of the canonical Rulebook PDF (root), cited through `nse/sources/Trading Rulebook ....md` as `RB <line>` (D12, rulebook-strict).
-2. Owner decisions: `USER_APPROVED` / `USER_STATED` in `nse/docs/DECISION_LOG.md` (1F for 2026-11-08, and later sections through the latest entry); they resolve ambiguities and set operating constraints and are never reopened. (The council playbook lists these first; see risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md`. R-5 is unresolved. An explicit Rulebook rule still leads.)
-3. The Pine Script `nse/sources/Demand&Supply Indicator.pine` where the Rulebook is silent.
-4. `nse/docs/IMPLEMENTATION_SPECIFICATION.md`, `DECISION_REGISTER.md`, `IMPLEMENTATION_BLOCKERS.md`.
-5. Source code and tests (what the system actually does).
-6. `docs/ARCHITECTURE.md`, the module map, these documents, council opinions (navigation and advice only).
+This is the same order as `gtf-autonomous-project-lead` sections 3 and 6.
 
-A lower source never overrides a higher one. A conflict is recorded, not settled by an agent.
+1. Explicit rules of the canonical Rulebook PDF (root), cited through `nse/sources/Trading Rulebook ....md` as `RB <line>` (D12, rulebook-strict). An explicit Rulebook rule is not overridden by an owner decision or by current code.
+2. Owner decisions in `nse/docs/DECISION_LOG.md`, subject to the Rulebook. Read the log through its last heading. Do not assume a fixed decision number is current. `USER_APPROVED` applies within its recorded scope. `USER_STATED` is a recorded operating constraint within its wording and is not interchangeable with `USER_APPROVED`. D42 stays `USER_STATED`. `PROPOSED` is not a rule. (The council playbook lists owner decisions first; see risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md`. R-5 is unresolved. An explicit Rulebook rule still leads.)
+3. The Pine Script `nse/sources/Demand&Supply Indicator.pine` where the Rulebook is silent and nothing conflicts. Pine does not override the Rulebook.
+4. `gtf-autonomous-project-lead`, the only GTF governance chair. It cannot override items 1-3.
+5. The active GTF specialist.
+6. The procedure skill for the check.
+7. Advisory councils and their recommendations. A recommendation is not an owner decision and does not decide eligibility.
+
+`nse/docs/IMPLEMENTATION_SPECIFICATION.md`, `DECISION_REGISTER.md` and `IMPLEMENTATION_BLOCKERS.md` restate or record these constraints. They do not outrank items 1-3. Where a register and the decision log disagree, the log controls. Source code and tests describe what the system does today. A defect is not methodology. `docs/ARCHITECTURE.md` and this page are navigation. A lower source never overrides a higher one. A conflict is recorded, not settled by an agent.
 
 ## 2. Roles
 

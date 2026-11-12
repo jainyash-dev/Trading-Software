@@ -83,7 +83,7 @@ invalidation rule R4.
   - (b) VLOC while price is still in the zone that its first touch made tested.
   - (c) Redraw at once to the next fresh zone below.
 - **Consequence:** `G3.test_price_inside_a_tested_monthly_demand_needs_review` changes. Under (b) the best matrix rows (VLOC) become reachable; under (c), LOC or EQB with the lower boundary.
-- **USER DECISION REQUIRED.** RB 1587 and 1597 pull in opposite directions while the touch is in progress. RB 1617 describes the redraw only after a bounce.
+- **Resolved 2026-11-08: USER_APPROVED (c), redraw from the next fresh Monthly demand below** (DECISION_LOG 1F; the test is now `G3.test_price_inside_a_tested_monthly_demand_redraws_from_the_next_fresh_zone`). Original note: RB 1587 and 1597 pull in opposite directions while the touch is in progress. RB 1617 describes the redraw only after a bounce.
 
 ### A8. P-CONF-1: where the HTF conflict distance is measured
 - **Source:** RB 1302 "Is there a Monthly Supply Zone within 5-10% above your buy entry?" Spec 7.4: "Distances are reported from both the PL and the entry range (the rulebook measures from the entry; Pine from the PL)."
@@ -125,7 +125,7 @@ invalidation rule R4.
   - costs and slippage.
 
   None appears in the Rulebook.
-- The 10-trades-a-month cap is not enforced in the backtest. Enforcing it needs a selection rule (which 10?), which is also a user decision.
+- The 10-trades-a-month cap is enforced in the backtest when `monthly_trade_cap` is set, counted at fill in fill order (`apply_portfolio_rules`); the Rulebook's "best 10" selection stays a user decision (B12-CAP). *(Corrected 2026-11-06: this line used to say the cap was not enforced.)*
 
 ### A13. M4b: intraday (WIT) session and gap design
 - **Current:** WIT is BLOCKED everywhere.

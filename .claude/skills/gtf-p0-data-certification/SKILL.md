@@ -89,7 +89,7 @@ Prepare the evidence, the recommended exclusion, and the consequence. Keep worki
 
 ### 4.3 What you must re-read
 
-Examples in this skill were grounded in the repository's decisions through D61 and the P0 blocker board. Before acting, re-read:
+Examples in this skill were grounded in the repository's decisions through D61 and the P0 blocker board. D61 is the last entry those examples were checked against. It is not a promise that D61 is still the latest. Before acting, re-read the decision log through its last heading, then:
 
 - `nse/docs/DECISION_LOG.md` from D49 onward
 - `nse/docs/ENGINEERING_DECISIONS.md` from ED-20 onward

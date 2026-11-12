@@ -114,7 +114,8 @@ Risk: entry range, SL range, target, R:R range, quantity (only with valid inputs
 Devil's Advocate: objections and how each was answered (evidence) or left open
 Disagreements: <who, what, evidence, resolution / UNRESOLVED>
 Chair Verification: <claim | by | primary evidence (pack field, file:line, RB line) | VERIFIED / REFUTED / UNVERIFIABLE | correction>
-VERDICT: BUY CANDIDATE | WAIT | AVOID | EXIT / REDUCE | INSUFFICIENT DATA
+VERDICT: BUY CANDIDATE | WAIT | AVOID | INSUFFICIENT DATA
+  EXIT is not a scanner verdict. For an existing position, EXIT is allowed only when position-review's Rulebook exit conditions are met. REDUCE is not a verdict (RB 2343).
   cap check: evidence_pack.py --check-verdict exit code
   conditions to enter / wait / exit / avoid: <observable conditions>
   manual checklist (BUY CANDIDATE): <scanner checklist codes>

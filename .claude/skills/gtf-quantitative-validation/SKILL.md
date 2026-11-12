@@ -39,7 +39,7 @@ Before starting work, read `.claude/skills/gtf-autonomous-project-lead/SKILL.md`
 
 `gtf-autonomous-project-lead` remains the only governance chair. This specialist adds quantitative procedure. It does not override an explicit Rulebook rule, an owner decision, or the master skill. It cannot change approved GTF methodology. It cannot authorize automated order execution. It cannot weaken fail-closed eligibility, the owner caps, or the validation requirements in master-skill section 11.
 
-When instructions disagree, use the master's governance precedence. Explicit Rulebook rules outrank this skill and outrank the master skill. Owner decisions in `nse/docs/DECISION_LOG.md` outrank a convenient research design. Pine does not override the Rulebook. R-5 stays unresolved. B9 and B12, recorded in `nse/research/execution_policy.py`, are owner execution assumptions. Do not replace them because another assumption backtests better.
+When instructions disagree, use the master's governance precedence. Explicit Rulebook rules outrank this skill, the master skill, and owner decisions. Owner decisions in `nse/docs/DECISION_LOG.md` outrank a convenient research design and do not override an explicit Rulebook rule. `USER_STATED` is not interchangeable with `USER_APPROVED`. Pine does not override the Rulebook. R-5 stays unresolved. B9 and B12, recorded in `nse/research/execution_policy.py`, are owner execution assumptions. Do not replace them because another assumption backtests better.
 
 Repository safety follows master-skill section 9. A passing batch is not permission to commit. Do not reset, clean, amend, or rewrite history. Do not stage unrelated work. Do not push unless the owner asks. Do not edit `nse/sources/` or the Rulebook PDF.
 

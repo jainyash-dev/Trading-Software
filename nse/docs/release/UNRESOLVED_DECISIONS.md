@@ -1,5 +1,7 @@
 # Unresolved decisions and their safe handling (2026-11-02)
 
+> Dated snapshot (2026-11-02). Current status: `docs/MILESTONE_STATUS.md`, `nse/docs/DECISION_LOG.md` (section 1F, 2026-11-08 approvals) and `docs/ARCHITECTURE.md`.
+
 Exact texts and alternatives: `nse/docs/DECISION_REGISTER.md`. Nothing here is approved by
 being listed. Each item's current behaviour only restricts or is labelled.
 

@@ -1,5 +1,7 @@
 # Next phase roadmap
 
+> Dated snapshot (2026-11-02). Current status: `docs/MILESTONE_STATUS.md`, `nse/docs/DECISION_LOG.md` (section 1F, 2026-11-08 approvals) and `docs/ARCHITECTURE.md`.
+
 In dependency order. Each step names the smallest action and the command that verifies it.
 
 1. **Owner decisions:** RB-VERSION-1 (which Rulebook revision), P-LOC-2, P-RISK-1. Record

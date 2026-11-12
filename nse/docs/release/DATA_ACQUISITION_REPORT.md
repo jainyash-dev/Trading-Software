@@ -1,5 +1,9 @@
 # Data acquisition report (2026-11-02)
 
+> Dated snapshot (2026-11-02). Current decision status is `nse/docs/DECISION_LOG.md`.
+> D40 is `USER_APPROVED` in section 1F. The calendar row below records this date's
+> measurement, including the label that was current then. It is not the current status.
+
 ## What is held (measured with `python3 -m nse.research.cli acquire-coverage`)
 
 | Item | Status |

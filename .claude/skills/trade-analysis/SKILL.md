@@ -45,7 +45,8 @@ If the user provides a chart or values, distinguish those inputs from independen
       --manifest nse/data/eod/manifest.csv --calendar nse/data/calendar --out nse/output/council-<S>-<date>
   python3 .claude/skills/llm-council/scripts/evidence_pack.py --scan nse/output/council-<S>-<date>/scan.json --symbol <S>
   ```
-- The pack's `verdict_cap` is the strongest status you may return. An attractive R:R never
-  raises it.
-- Check the final status with `--check-verdict "<STATUS>"`.
+- The pack's `verdict_cap` is the strongest advisory description you may return.
+  `derive_status` remains the canonical qualification status. An attractive R:R never
+  raises the cap.
+- Check the advisory description with `--check-verdict "<VERDICT>"`.
 - No local data for the symbol and date means INSUFFICIENT DATA.

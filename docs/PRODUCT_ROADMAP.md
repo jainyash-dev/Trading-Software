@@ -53,6 +53,6 @@ fundamentals sources.
 
 1. The owner issues the milestone prompt; the governance chair (`gtf-autonomous-project-lead`) records its title and exit criteria
    here and in `docs/MILESTONE_STATUS.md`.
-2. That chair runs the work. `autonomous-gtf-project-council` staffs the agents. It is not a second chair. GTF phase Pn is not Product Prompt n. The crosswalk is in the master skill, section 7.1.
+2. That chair runs the work. `autonomous-gtf-project-council` staffs the agents. It is not a second chair. GTF phase Pn is not Product Prompt n. The crosswalk is in the master skill, section 7.1. Risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md` is unresolved. The delivery council's source list still names owner decisions before the Rulebook. That wording is not a second hierarchy and is not settled here. Until the owner records a resolution, an explicit Rulebook rule is not overridden. Product Prompt 12 remains the manual prospective shadow log. It is not an automated paper-trading engine.
 3. Exit is evidence-based: `python3 -m nse.validation.run_all` results, the readiness
    table, open blockers, and the milestone's own acceptance criteria. Readiness vocabularies stay distinct: `readiness.py` states, the ten production gates, and product gates R1–R5.
