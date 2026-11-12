@@ -34,14 +34,26 @@ It is not a methodology change. Do not relabel it, and do not ignore it when the
 decision log records it. `PROPOSED` stays level D. Read the decision log through its
 last heading. Do not assume a fixed decision number is still the latest entry.
 
-## 2. Source-of-truth order
+## 2. Recorded source list
 
-This list is the recorded wording of this playbook. It is not a second governance stack.
-Risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md` records that this list puts owner
-decisions before the Rulebook, while D12 and the master skill put an explicit Rulebook
-rule first. R-5 is unresolved. This skill does not settle it. Until the owner records a
-resolution, nobody overrides an explicit Rulebook rule. The master skill's governance
-precedence is the order the session follows.
+This numbered list is the preserved wording of this playbook. It is not a staffing
+roster, and it is not the operative precedence. The session follows the governance
+precedence in `gtf-autonomous-project-lead` sections 3 and 6.
+
+An explicit Rulebook rule controls trading methodology (D12). An owner decision applies
+only inside the status and scope recorded for that entry, and it does not override an
+explicit Rulebook rule. `USER_APPROVED`, `USER_STATED`, and `PROPOSED` are not
+interchangeable. D42 stays `USER_STATED`. Pine applies only where the Rulebook is silent
+and nothing conflicts. This playbook staffs agents and classifies work. It does not
+decide eligibility and it is not a governance chair.
+
+Risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md` is unresolved. It is the fact that the
+numbered list below still puts owner decisions before the Rulebook, while D12 and the
+master skill put an explicit Rulebook rule first. R-5 is not resolved here. Reordering
+this list would be the owner action R-5 reserves. Until the owner records that
+resolution, nobody overrides an explicit Rulebook rule.
+
+The preserved list:
 
 1. Explicit owner decisions (level A).
 2. The canonical Rulebook PDF `340fe490-8783-4eea-8cbd-e834449e9a42_Trading_Rulebook.pdf`

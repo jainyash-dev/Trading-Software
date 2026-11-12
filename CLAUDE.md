@@ -32,8 +32,8 @@ was forked from. Leave them alone unless a task names them.
 | `.claude/` | Project skills, agents, hooks; `vendored-skills.json` pins third-party skills |
 | `tests/` | unittest modules, each assigned to a `run_all` group |
 
-Architecture and layer rules: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
-Commands, setup and troubleshooting: [docs/OPERATIONS_RUNBOOK.md](docs/OPERATIONS_RUNBOOK.md).
+Architecture as committed: [nse/docs/release/ARCHITECTURE.md](nse/docs/release/ARCHITECTURE.md)
+(2026-11-02 snapshot). Commands and troubleshooting for this checkout are in the block below.
 
 ## Commands (run from the repository root)
 
@@ -75,8 +75,9 @@ Decision registers and `nse/docs/ENGINEERING_DECISIONS.md` restate or record imp
 They do not outrank items 1-3. An `ED-<n>` entry is never an owner decision. Current code
 describes what the software does today. A defect is not an approved methodology.
 
-The council skill's section 2 lists owner decisions before the Rulebook. That wording
-difference is risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md`. R-5 is unresolved.
+The delivery council's section 2 keeps a numbered list that puts owner decisions before
+the Rulebook. That list is preserved wording, not the order used when sources conflict.
+The difference is risk R-5 in `nse/docs/ENGINEERING_DECISIONS.md`. R-5 is unresolved.
 Until the owner records a resolution, nobody overrides an explicit Rulebook rule.
 GTF phase Pn is not Product Prompt n.
 
