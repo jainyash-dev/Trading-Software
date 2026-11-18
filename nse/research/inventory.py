@@ -15,8 +15,6 @@ adjusted-price correctness (B7).
 """
 
 import datetime
-import glob
-import os
 
 from nse.research import trend
 from nse.research.deps import bhavcopy, calendar as cal_mod, mtf, ze
@@ -83,19 +81,22 @@ def inventory(bhavcopy_dir, manifest_path, calendar_folder, as_of_date, symbols=
     to as_of need history before window_start; pass the window's first data date)."""
     out = {"as_of": as_of_date.isoformat(), "problems": [],
            "window_start": window_start.isoformat() if window_start else None}
-    paths = sorted(glob.glob(os.path.join(bhavcopy_dir, "cm*bhav.csv.zip")))
+    paths = bhavcopy.archive_paths(bhavcopy_dir)
     files = []
     if paths:
         try:
             manifest = bhavcopy.read_manifest(manifest_path) if manifest_path else None
-            files = bhavcopy.load_many(paths, manifest)
+            wanted = set(symbols)
+            files = bhavcopy.load_many(paths, manifest, keep=lambda r: r.symbol in wanted)   # memory (ED-41)
         except bhavcopy.BhavcopyError as e:
             out["problems"].append("strict loader refused the archives: %s" % e)
     have = sorted(f.trade_date for f in files)
     out["eod_files"] = {"archives_found": len(paths), "archives_loaded": len(files),
                         "first": have[0].isoformat() if have else None,
                         "last": have[-1].isoformat() if have else None,
-                        "runs": _ranges(have), "format": "NSE_CM_BHAVCOPY_LEGACY (B18; UDiFF not supported)",
+                        "runs": _ranges(have), "formats": sorted(set(f.format for f in files)),
+                        "source_selection": "legacy up to %s, UDiFF from %s (ED-20)"
+                                            % (bhavcopy.LEGACY_LAST_TRADE_DATE, bhavcopy.UDIFF_ONLY_FROM),
                         "price_adjustment": "NONE (unadjusted; B7)"}
     req = required_start(as_of_date)
     if window_start is not None:
@@ -131,11 +132,14 @@ def inventory(bhavcopy_dir, manifest_path, calendar_folder, as_of_date, symbols=
             need = [d for d in trading if d >= first]
             gap = [d for d in need if d not in set(have)]
             unc = [d for d in uncovered if d >= first]
+            # an unresolved calendar date blocks the timeframes whose required range contains
+            # it, and only those (MP1: the 2016-2019 Dhanteras rows must not block Daily in 2022)
+            unr = [d for d in unresolved if d >= first]
             tf_rows[tf] = {"from": first.isoformat(),
                            "purpose": PURPOSE.get(tf, {"WINDOW": "evaluation window"}.get(tf, "Monthly trend context (reported only)")),
                            "sessions_needed": len(need), "sessions_missing": len(gap),
-                           "weekdays_without_calendar": len(unc),
-                           "ready": not gap and not unc and not unresolved}
+                           "weekdays_without_calendar": len(unc), "unresolved_dates": len(unr),
+                           "ready": not gap and not unc and not unr}
         out["history"] = tf_rows
     sym = {}
     for s in symbols:

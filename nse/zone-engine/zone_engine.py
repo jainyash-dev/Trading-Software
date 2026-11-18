@@ -835,6 +835,8 @@ def run_engine(candles, timeframe, as_of=None, rules=None):
                     "reason": PINE_ONLY_ZONE, "side": z.side, "pattern": z.pattern,
                     "start_index": z.start_index, "created_index": z.created_index,
                     "proximal": z.proximal, "distal": z.distal, "zero_base": z.zero_base,
+                    "invalidated_index": z.invalidated_index,     # Pine's own DL close-breach (PS 2613)
+                    "test_count": z.test_count,                   # Pine's own PL touches (PS 2651)
                     "note": "Pine would draw this zone; the rulebook-strict profile does not "
                             "(e.g. a candle strong only by closing beyond the prior extreme). "
                             "Never eligible; manual review.",

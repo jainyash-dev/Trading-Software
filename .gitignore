@@ -2,6 +2,8 @@
 # Reviewed provenance files (sources.csv, events.csv, manifests) and hand-recorded
 # zone comparisons are committed; raw exports, archives and PDFs are not.
 /nse/data/eod/raw/
+/nse/data/eod/inbox/
+/nse/data/eod/quarantine/
 /nse/data/intraday/raw/
 /nse/data/tradingview/**/*.csv
 /nse/data/calendar/circulars/
@@ -20,3 +22,15 @@ __pycache__/
 # credentials, if they ever exist, are never committed (D10)
 .env
 *.env
+
+# local developer tool state (docs/OPERATIONS_RUNBOOK.md): virtualenv and tool caches
+/.venv/
+/.ruff_cache/
+/.pytest_cache/
+
+# local web application dependencies and build output
+/platform/web/node_modules/
+/platform/web/dist/
+/platform/web/.vite/
+/platform/**/*.sqlite
+/platform/**/*.sqlite-journal

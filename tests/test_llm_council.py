@@ -200,7 +200,7 @@ class AuditFixes(unittest.TestCase):
 
 def scan_json(candles, as_of=None):
     cfg = scanner.ScanConfig(as_of=as_of or candles[-1].end, calendar=CAL, calendar_label="TEST_WEEKDAYS",
-                             risk_per_trade=1000.0)
+                             risk_per_trade=1000.0, corporate_action_coverage=R.verified_ca("SYN"))
     return json.loads(reports.to_json(scanner.scan([R.daily_input("SYN", candles)], cfg)))
 
 
@@ -250,6 +250,20 @@ class TradingCases(unittest.TestCase):
         self.assertIn("G5", p["candidate"]["not_passed"])
         self.assertFalse(self.pack.check("BUY CANDIDATE", "WAIT"))
         self.assertTrue(self.pack.check("AVOID", "WAIT"))
+
+    def test_a_relabelled_status_cannot_raise_the_cap(self):
+        # audit 2026-11-06 (Agent 3 D3): a REJECTED record edited to ACTIONABLE used to cap at BUY
+        import copy
+        scan = copy.deepcopy(self.cases["T5"])
+        c = scan["symbols"][0]["candidates"][0]
+        c["status"] = "ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING"
+        p = self.pack.pack(scan, "SYN", zone_pl=c["zone"]["proximal"])
+        self.assertEqual(p["verdict_cap"], "INSUFFICIENT DATA")
+        self.assertIn("STATUS_INCONSISTENT_WITH_GATES", p["candidate"]["status_problem"])
+        del c["gates"][3]
+        self.assertIn("GATES_UNREADABLE", self.pack.pack(scan, "SYN", zone_pl=c["zone"]["proximal"])
+                      ["candidate"]["status_problem"])
+        self.assertIsNone(self.cap("T1", R.LONG_PL)["candidate"]["status_problem"])
 
     def test_absent_symbol_or_blocked_wit_is_insufficient_data(self):
         self.assertEqual(self.pack.pack(self.cases["T1"], "NOPE")["verdict_cap"], "INSUFFICIENT DATA")
@@ -318,7 +332,7 @@ class EngineeringCases(unittest.TestCase):
     def test_e2_signal_day_lookahead_is_caught(self):
         from nse.research import backtest as bt
         src = read(ROOT, "nse", "research", "backtest.py")
-        mutated = src.replace("if c.start > signal_end and c.complete", "if c.end >= signal_end and c.complete")
+        mutated = src.replace("for c in candles if c.start > signal_end)", "for c in candles if c.end >= signal_end)")
         self.assertNotEqual(mutated, src)
         ns = dict(bt.__dict__)
         exec(compile(mutated, "mutated_backtest", "exec"), ns)

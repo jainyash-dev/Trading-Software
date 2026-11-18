@@ -1,0 +1,21 @@
+# Platform runtime dependencies. The research tree at the repository root keeps
+# dependencies = [] (architecture rule A5). Do not copy these into the root project.
+
+[project]
+name = "gtf-platform"
+version = "0.1.0"
+description = "Local-first web API for the GTF Trading Intelligence Platform"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi==0.121.0",
+    "httpx==0.28.1",
+    "uvicorn==0.38.0",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gtf_platform*"]

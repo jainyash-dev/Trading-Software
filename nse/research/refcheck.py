@@ -163,3 +163,72 @@ def compare_trend(refs, snapshot, period=50, tolerance=Decimal("0")):
                                                                         else INSUFFICIENT_EVIDENCE)})
     counts = {k: sum(1 for x in results if x["status"] == k) for k in (MATCH, MISMATCH, NO_ACTUAL)}
     return {"results": results, "counts": counts, "complete": bool(results) and counts[MATCH] == len(results)}
+
+
+PENDING_EXTERNAL_EVIDENCE = "PENDING_EXTERNAL_EVIDENCE"
+COMPARED_NOT_CERTIFIED = "COMPARED_NOT_CERTIFIED"
+
+
+def _line_of(row):
+    return row.line if hasattr(row, "line") else row["line"]
+
+
+def reject_duplicate_observations(rows, key, label):
+    """Two observations of the same bar or zone are a recording error, not two votes."""
+    seen = {}
+    for row in rows:
+        k = key(row)
+        line = _line_of(row)
+        if k in seen:
+            raise ValueError("duplicate %s %s at lines %s and %s" % (label, k, seen[k], line))
+        seen[k] = line
+
+
+def _plain(value):
+    if isinstance(value, Decimal):
+        return str(value)
+    if isinstance(value, datetime.date):
+        return value.isoformat()
+    if isinstance(value, dict):
+        return {k: _plain(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_plain(v) for v in value]
+    return value
+
+
+def external_comparison_report(replay, ohlc_rows=(), zone_rows=(), trend_rows=(),
+                               ohlc_tolerance=Decimal("0"), zone_tolerance=Decimal("0"),
+                               trend_tolerance=Decimal("0")):
+    """Compare already-read reference rows with one replay. Writes nothing.
+
+    certifies_external_validation is always false. A row MATCH is a comparison
+    result. It does not close T-005, and it does not copy an engine value into
+    an observation. Yahoo rows are compared and are not TradingView evidence.
+    """
+    from nse.research.deps import reference
+    reject_duplicate_observations(ohlc_rows, lambda r: (r.timeframe, r.bar_date), "OHLC observation")
+    reject_duplicate_observations(zone_rows, lambda r: (r["timeframe"], r["side"], r["created_date"],
+                                                        r["proximal"], r["distal"]), "zone observation")
+    reject_duplicate_observations(trend_rows, lambda r: (r["timeframe"], r["bar_date"]), "SMA observation")
+    supplied = bool(ohlc_rows or zone_rows or trend_rows)
+    calendar_validated = bool(getattr(replay.snapshot, "calendar_validated", False))
+    ohlc = reference.compare_ohlc(list(ohlc_rows), replay, ohlc_tolerance) if ohlc_rows else []
+    zones = compare_zones(list(zone_rows), replay.snapshot, zone_tolerance) if zone_rows else {"results": [], "complete": False}
+    trend = compare_trend(list(trend_rows), replay.snapshot, tolerance=trend_tolerance) if trend_rows else {
+        "results": [], "complete": False}
+    sources = sorted(set([r.source for r in ohlc_rows] + [r["source"] for r in zone_rows]
+                         + [r["source"] for r in trend_rows]))
+    return {
+        "status": COMPARED_NOT_CERTIFIED if supplied else PENDING_EXTERNAL_EVIDENCE,
+        "certifies_external_validation": False,
+        "t005_closed": False,
+        "calendar_validated": calendar_validated,
+        "series": "EQ",
+        "sources": sources,
+        "yahoo_is_not_tradingview": "YAHOO_FINANCE_SCREENSHOT" in sources,
+        "ohlc": _plain({"results": [c.__dict__ for c in ohlc], "summary": reference.coverage_summary(ohlc)}),
+        "zones": _plain(zones),
+        "trend": _plain(trend),
+        "note": "No observation was created by this comparison. T-005 stays open until a person supplies "
+                "TradingView evidence and reviews every difference.",
+    }

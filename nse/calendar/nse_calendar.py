@@ -50,7 +50,7 @@ import datetime
 import hashlib
 import os
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, List, Optional
+from typing import List, Optional
 
 REGULAR_OPEN = "09:15"
 REGULAR_CLOSE = "15:30"
@@ -166,6 +166,7 @@ class NseCalendar(object):
     # option B): an UNRESOLVED row or an event from an unverified source. A year without
     # a verified BASE circular (CalendarCoverageError) is a setup error and stays fatal.
     UNRESOLVED_ERRORS = (CalendarAmbiguityError,)
+    COVERAGE_ERRORS = (CalendarCoverageError,)        # outside the covered years (mtf_freshness H2a)
 
     def __init__(self, sources, events):
         self.sources = {s.source_ref: s for s in sources}

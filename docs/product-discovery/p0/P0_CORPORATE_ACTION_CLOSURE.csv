@@ -1,0 +1,58 @@
+record_type,symbol,date_or_window,closure_state,local_file,note
+EMPTY_RESPONSE,ADANIEXPO,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ADANIEXPO_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ADANIGAS,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ADANIGAS_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ADANITRANS,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ADANITRANS_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,BAJAJAUTO,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_BAJAJAUTO_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,BAJAJHFL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_BAJAJHFL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,BFLSOFTWAR,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_BFLSOFTWAR_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,BHARTI,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_BHARTI_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,CADILAHC,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_CADILAHC_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,CHOLADBS,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_CHOLADBS_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,CHOLAINV,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_CHOLAINV_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,CROMPGREAV,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_CROMPGREAV_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ENRIN,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ENRIN_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ETERNAL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ETERNAL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,GUJAMBCEM,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_GUJAMBCEM_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,HEROHONDA,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_HEROHONDA_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,HINDALC0,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_HINDALC0_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,HINDLEVER,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_HINDLEVER_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,I-FLEX,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_I-FLEX_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ICICIPRULI,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ICICIPRULI_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,INFOSYSTCH,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_INFOSYSTCH_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,INFRATEL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_INFRATEL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ITCHOTELS,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ITCHOTELS_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,JSWSTL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_JSWSTL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,KWIL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_KWIL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,LTI,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_LTI_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,LTIM,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_LTIM_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,MARICOIND,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_MARICOIND_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,MCDOWELL-N,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_MCDOWELL-N_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,MICO,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_MICO_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,MOTHERSUMI,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_MOTHERSUMI_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,MPHASISBFL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_MPHASISBFL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,MUNDRAPORT,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_MUNDRAPORT_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,PAYTM,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_PAYTM_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,SESAGOA,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_SESAGOA_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,SOLAREX,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_SOLAREX_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,SRTRANSFIN,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_SRTRANSFIN_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,SSLT,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_SSLT_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,SWIGGY,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_SWIGGY_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,TATAGLOBAL,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_TATAGLOBAL_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,TATAMOTORS,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_TATAMOTORS_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,TATATEA,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_TATATEA_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,TELCO,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_TELCO_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,TMCV,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_TMCV_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,TVS-SUZUKI,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_TVS-SUZUKI_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,UNIPHOS,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_UNIPHOS_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,UTIBANK,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_UTIBANK_2016_2025.json,HTTP body [] is not proof of no corporate action.
+EMPTY_RESPONSE,ZOMATO,2016-01-01..2025-12-31,UNRESOLVED,nse/data/corporate_actions/raw/ca_ZOMATO_2016_2025.json,HTTP body [] is not proof of no corporate action.
+UNPARSED_PRICE_EVENT,ADANIENT,2018-04-05,UNRESOLVED,nse/data/corporate_actions/actions.csv,Scheme of arrangement Ratio not applied.
+UNPARSED_PRICE_EVENT,ADANIENT,2018-09-06,UNRESOLVED,nse/data/corporate_actions/actions.csv,Scheme of arrangement Ratio not applied.
+UNPARSED_PRICE_EVENT,BRITANNIA,2019-08-22,UNRESOLVED,nse/data/corporate_actions/actions.csv,"Scheme of arrangement, bonus debenture Ratio not applied."
+UNPARSED_PRICE_EVENT,BRITANNIA,2021-05-25,UNRESOLVED,nse/data/corporate_actions/actions.csv,"Scheme of arrangement, bonus debenture Ratio not applied."
+UNPARSED_PRICE_EVENT,CGPOWER,2016-03-15,UNRESOLVED,nse/data/corporate_actions/actions.csv,Scheme of arrangement; ratio not in file Ratio not applied.
+UNPARSED_PRICE_EVENT,GRASIM,2017-07-19,UNRESOLVED,nse/data/corporate_actions/actions.csv,Scheme of arrangement Ratio not applied.
+UNPARSED_PRICE_EVENT,ICICIBANK,2017-06-20,UNRESOLVED,nse/data/corporate_actions/actions.csv,Dividend plus bonus line unparsed Ratio not applied.
+UNPARSED_PRICE_EVENT,TATASTEEL,2018-01-31,UNRESOLVED,nse/data/corporate_actions/actions.csv,"Rights, two paid classes Ratio not applied."
+UNPARSED_PRICE_EVENT,TVSMOTOR,2025-08-25,UNRESOLVED,nse/data/corporate_actions/actions.csv,"Scheme of arrangement, bonus NCRPS Ratio not applied."
+UNPARSED_PRICE_EVENT,VBL,2024-09-12,UNRESOLVED,nse/data/corporate_actions/actions.csv,"Face value Rs 5 to Rs 2, non-integer ratio Ratio not applied."

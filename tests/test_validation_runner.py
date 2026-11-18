@@ -84,6 +84,37 @@ class Groups(unittest.TestCase):
         self.assertEqual(r["status"], run_all.FAIL)
         self.assertGreaterEqual(r["errors"], 1)          # unittest reports it as a failed import
 
+    def test_a_group_that_runs_no_test_fails(self):
+        # audit 2026-11-06 (Agent 6 #7): zero tests used to be a PASS
+        with open(os.path.join(self.tmp, "vr_empty.py"), "w") as fh:
+            fh.write("import unittest\n")
+        self.names.append("vr_empty")
+        r = run_all.run_group("g", ["vr_empty"])
+        self.assertEqual((r["status"], r["ran"]), (run_all.FAIL, 0))
+
+
+class ReferenceEvidence(unittest.TestCase):
+    """audit 2026-11-06 (Agent 5): cited evidence files are re-hashed, never trusted by format."""
+
+    def test_evidence_files_are_rehashed(self):
+        import hashlib
+        from nse.research.deps import NSE
+
+        class Row(object):
+            def __init__(self, f, h):
+                self.export_file, self.export_sha256 = f, h
+        tmp = tempfile.mkdtemp(dir=os.path.join(NSE, "data"))
+        try:
+            with open(os.path.join(tmp, "vr-evidence-ok.png"), "wb") as fh:
+                fh.write(b"SYNTHETIC")
+            good = hashlib.sha256(b"SYNTHETIC").hexdigest()
+            got = run_all._evidence_hashes([Row("vr-evidence-ok.png", good), Row("vr-evidence-gone.png", good)])
+            self.assertEqual(got, {"matched": ["vr-evidence-ok.png"], "mismatch": [], "missing": ["vr-evidence-gone.png"]})
+            got = run_all._evidence_hashes([Row("vr-evidence-ok.png", "a" * 64)])
+            self.assertEqual(got["mismatch"], ["vr-evidence-ok.png"])
+        finally:
+            shutil.rmtree(tmp)
+
 
 class Verdict(unittest.TestCase):
     def c(self, status, required=True):
@@ -122,6 +153,9 @@ class Verdict(unittest.TestCase):
             with open(out) as fh:
                 rep = json.load(fh)
             self.assertTrue(rep["verdict"].startswith("FAIL"))
+            # the skipped optional checks are named in the report, not silently absent
+            self.assertEqual(rep["checks_not_run"], ["local_data, reference_comparison (--no-data)"])
+            self.assertIn("static_lint", [c["name"] for c in rep["checks"]])      # lint still ran
             rows = {r["id"]: r for r in rep["readiness"]}
             self.assertTrue(rows["zone_engine"]["unit_tested_state"].startswith("UNCONFIRMED"))
         finally:
@@ -139,11 +173,35 @@ class Verdict(unittest.TestCase):
             shutil.rmtree(tmp)
 
 
+class StaticLint(unittest.TestCase):
+    def test_no_linter_is_unavailable_never_pass(self):
+        with mock.patch.object(run_all, "_lint_command", return_value=(None, None)):
+            c = run_all.check_static_lint()
+        self.assertEqual(c["status"], run_all.UNAVAILABLE)
+        self.assertFalse(c["required"])
+
+    def test_findings_fail_and_are_reported(self):
+        cmd = [sys.executable, "-c", "print('nse/x.py:1:1: bad'); raise SystemExit(1)"]
+        with mock.patch.object(run_all, "_lint_command", return_value=("fake", cmd)):
+            c = run_all.check_static_lint()
+        self.assertEqual(c["status"], run_all.FAIL)
+        self.assertEqual(c["details"]["findings"], ["nse/x.py:1:1: bad"])
+        self.assertEqual(run_all.verdict([c], False)[1], 1)    # an optional FAIL still fails the run
+
+    def test_a_clean_run_passes(self):
+        with mock.patch.object(run_all, "_lint_command", return_value=("fake", [sys.executable, "-c", "pass"])):
+            self.assertEqual(run_all.check_static_lint()["status"], run_all.PASS)
+
+    def test_acceptance_cannot_skip_lint(self):
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            run_all.main(["--acceptance", "--no-lint"])
+
+
 class Hygiene(unittest.TestCase):
     def caches(self):
         found = set()
         for base, dirs, _ in os.walk(ROOT):
-            dirs[:] = [d for d in dirs if d != ".git"]
+            dirs[:] = [d for d in dirs if d not in (".git", ".venv")]     # .venv: local dev tools, git-ignored
             if os.path.basename(base) == "__pycache__":
                 found.add(base)
         return found

@@ -1,0 +1,165 @@
+symbol,window_from,window_to,member_dates,events_known,source_a_sha256,source_b_sha256,reconciliation_sha256,ready_for_owner_approval,blocking_reason
+ABB,2023-03-31,2025-12-31,678,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ABBOTINDIA,2020-12-31,2021-09-29,185,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ACC,2020-12-31,2023-09-28,679,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ADANIENSOL,2023-08-24,2025-12-31,580,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ADANIENT,2021-03-31,2025-12-31,1173,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+ADANIGREEN,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ADANIPORTS,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ADANIPOWER,2024-03-28,2025-12-31,434,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+ADANITRANS,2020-12-31,2023-08-23,654,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ALKEM,2020-12-31,2021-09-29,185,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+AMBUJACEM,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+APOLLOHOSP,2021-03-31,2025-12-31,1173,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ASIANPAINT,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ATGL,2022-09-30,2025-03-27,614,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+AUROPHARMA,2020-12-31,2022-03-30,308,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+AWL,2023-03-31,2024-03-27,244,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+AXISBANK,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BAJAJ-AUTO,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BAJAJFINSV,2020-12-31,2025-12-31,1234,2,,,,NO,No qualified independent source pair (D66); no reconciliation record
+BAJAJHFL,2025-03-28,2025-12-31,187,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BAJAJHLDNG,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BAJFINANCE,2020-12-31,2025-12-31,1234,2,,,,NO,No qualified independent source pair (D66); no reconciliation record
+BANDHANBNK,2020-12-31,2023-03-29,556,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BANKBARODA,2020-12-31,2025-12-31,1110,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BEL,2022-09-30,2025-12-31,801,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+BERGEPAINT,2020-12-31,2024-09-27,924,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+BHARTIARTL,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+BHEL,2024-09-30,2025-03-27,123,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BIOCON,2020-12-31,2023-03-29,556,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BOSCHLTD,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+BPCL,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+BRITANNIA,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+CADILAHC,2020-12-31,2022-03-04,291,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+CANBK,2023-03-31,2025-12-31,678,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+CGPOWER,2025-03-28,2025-12-31,187,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+CHOLAFIN,2021-09-30,2025-12-31,1049,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+CIPLA,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+COALINDIA,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+COLPAL,2020-12-31,2024-09-27,924,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+CONCOR,2020-12-31,2021-03-30,61,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+DABUR,2020-12-31,2025-09-29,1172,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DIVISLAB,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DLF,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DMART,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DRREDDY,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+DUMMYHDLVR,2025-12-05,2025-12-31,18,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DUMMYITC,2025-01-06,2025-01-28,17,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DUMMYREL,2023-07-20,2023-08-18,21,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DUMMYSIEMS,2025-04-07,2025-06-18,49,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+DUMMYTATAM,2025-10-14,2025-11-11,18,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+EICHERMOT,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ENRIN,2025-06-19,2025-12-31,68,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ETERNAL,2025-04-09,2025-12-31,180,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+GAIL,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+GICRE,2020-12-31,2021-03-30,61,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+GLAND,2021-06-30,2023-03-29,434,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+GODREJCP,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+GRASIM,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+HAL,2022-09-30,2025-12-31,801,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+HAVELLS,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HCLTECH,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HDFC,2020-12-31,2023-07-12,625,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HDFCAMC,2020-12-31,2023-09-28,679,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+HDFCBANK,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+HDFCLIFE,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HEROMOTOCO,2020-12-31,2025-09-29,1172,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HINDALCO,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HINDPETRO,2020-12-31,2022-03-30,308,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+HINDUNILVR,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+HINDZINC,2020-12-31,2025-12-31,123,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+HYUNDAI,2025-03-28,2025-12-31,187,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ICICIBANK,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ICICIGI,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ICICIPRULI,2020-12-31,2025-09-29,1172,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+IGL,2020-12-31,2022-03-30,308,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+INDHOTEL,2025-03-28,2025-12-31,187,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+INDIGO,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+INDUSINDBK,2020-12-31,2025-09-29,1172,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+INDUSTOWER,2020-12-31,2023-09-28,679,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+INFY,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+IOC,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+IRCTC,2022-09-30,2025-03-27,614,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+IRFC,2024-03-28,2025-12-31,434,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ITC,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+ITCHOTELS,2025-01-29,2025-02-07,9,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+JINDALSTEL,2021-09-30,2025-12-31,732,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+JIOFIN,2023-08-21,2025-12-31,447,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+JSWENERGY,2024-09-30,2025-12-31,310,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+JSWSTEEL,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+JUBLFOOD,2021-03-31,2022-09-29,372,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+KOTAKBANK,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+LICI,2022-08-08,2025-12-31,837,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+LODHA,2024-09-30,2025-12-31,310,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+LT,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+LTI,2020-12-31,2022-12-02,475,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+LTIM,2022-12-05,2025-12-31,759,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+LUPIN,2020-12-31,2022-09-29,433,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+M&M,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MARICO,2020-12-31,2024-09-27,924,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MARUTI,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MAXHEALTH,2025-09-30,2025-12-31,62,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MAZDOCK,2025-09-30,2025-12-31,62,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+MCDOWELL-N,2020-12-31,2024-06-06,846,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MINDTREE,2022-03-31,2022-09-29,125,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MOTHERSON,2022-09-30,2025-12-31,801,3,,,,NO,No qualified independent source pair (D66); no reconciliation record
+MOTHERSUMI,2020-12-31,2021-06-29,122,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MPHASIS,2022-09-30,2023-03-29,123,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MRF,2021-03-31,2021-09-29,124,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+MUTHOOTFIN,2020-12-31,2024-03-27,800,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+NAUKRI,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+NESTLEIND,2020-12-31,2025-12-31,1234,2,,,,NO,No qualified independent source pair (D66); no reconciliation record
+NHPC,2024-09-30,2025-03-27,123,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+NMDC,2020-12-31,2022-08-05,397,2,,,,NO,No qualified independent source pair (D66); no reconciliation record
+NTPC,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+NYKAA,2022-03-31,2023-09-28,371,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+OFSS,2020-12-31,2021-03-30,61,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ONGC,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+PAGEIND,2023-03-31,2023-09-28,123,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+PAYTM,2022-03-31,2023-03-29,248,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+PEL,2020-12-31,2022-08-05,397,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+PETRONET,2020-12-31,2021-09-29,185,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+PFC,2020-12-31,2025-12-31,495,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+PGHH,2020-12-31,2024-03-27,800,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+PIDILITIND,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+PIIND,2021-09-30,2024-03-27,615,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+PNB,2020-12-31,2025-12-31,988,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+POWERGRID,2020-12-31,2025-12-31,1234,2,,,,NO,No qualified independent source pair (D66); no reconciliation record
+RECLTD,2024-03-28,2025-12-31,434,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+RELIANCE,2020-12-31,2025-12-31,1234,2,,,,NO,No qualified independent source pair (D66); no reconciliation record
+SAIL,2021-09-30,2022-09-29,248,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SBICARD,2020-12-31,2024-09-27,924,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SBILIFE,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SBIN,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SHREECEM,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SHRIRAMFIN,2023-09-29,2025-12-31,555,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+SIEMENS,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+SOLARINDS,2025-09-30,2025-12-31,62,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SRF,2022-03-31,2024-09-27,616,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+SUNPHARMA,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+SWIGGY,2025-03-28,2025-09-29,125,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TATACONSUM,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+TATAMOTORS,2020-12-31,2025-10-23,1187,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TATAMTRDVR,2023-09-29,2024-08-29,224,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TATAPOWER,2022-08-08,2025-12-31,837,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TATASTEEL,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+TCS,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TECHM,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TITAN,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TMCV,2025-11-12,2025-11-14,3,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TMPV,2025-10-24,2025-12-31,47,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+TORNTPHARM,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+TRENT,2023-09-29,2025-12-31,555,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+TVSMOTOR,2023-09-29,2025-12-31,555,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+UBL,2020-12-31,2021-09-29,185,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ULTRACEMCO,2020-12-31,2025-12-31,1234,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+UNIONBANK,2024-09-30,2025-03-27,123,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+UNITDSPR,2024-06-07,2025-12-31,388,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+UPL,2020-12-31,2024-03-27,800,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+VBL,2023-03-31,2025-12-31,678,4,,,,NO,No qualified independent source pair (D66); no reconciliation record
+VEDL,2021-03-31,2025-12-31,1173,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+WIPRO,2020-12-31,2025-12-31,1234,1,,,,NO,No qualified independent source pair (D66); no reconciliation record
+YESBANK,2021-03-31,2022-03-30,247,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ZOMATO,2022-03-31,2025-04-08,746,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable
+ZYDUSLIFE,2022-03-07,2025-12-31,697,0,,,,NO,No qualified independent source pair (D66); no reconciliation record; empty-window proof unavailable

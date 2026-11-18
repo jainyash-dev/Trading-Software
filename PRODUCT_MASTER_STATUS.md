@@ -60,7 +60,7 @@ Full validation: `python3 -m nse.validation.run_all` on this checkout. See
 | Explain, alerts, narrative reports | UNIT-TESTED, INTEGRATION-TESTED | `test_research_explain`, `_alerts` |
 | Store and journal (SQLite) | UNIT-TESTED | `test_research_store` |
 | Health check | UNIT-TESTED | `test_research_health` |
-| Real NSE data | 62 legacy bhavcopies (Q1 2022, 2023 samples); UDiFF unverified | `cli acquire-coverage` |
+| Real NSE data | 2016-2025: 2,466 of 2,466 trading days accepted (D47, D55; the four Dhanteras dates confirmed as regular sessions by D58, 2026-11-10), plus 12 excluded-session files. Legacy and UDiFF both supported (ED-20). DATA_READY not claimed (B11-R human review) | `cli eod-coverage`; `nse/docs/REAL_DATA_READINESS.md` §0B |
 | Corporate actions | Interface only; no records | B7 |
 | Historical Nifty 100 membership | Loader only; no data | B11 |
 | TradingView validation | Not started | B8, B10, B17 |
@@ -72,9 +72,9 @@ Full validation: `python3 -m nse.validation.run_all` on this checkout. See
 | ID | Module | Status | Source | Remaining dependency |
 |---|---|---|---|---|
 | P01 | NSE EOD ingestion | Implemented (legacy format; offline inbox, plan, ingest, daily update, quarantine, ledger) | `nse/eod/nse_bhavcopy.py`, `nse/research/acquisition.py` | Owner download of missing sessions (D31) |
-| P02 | UDiFF support | Detected and quarantined, never ingested | `acquisition.detect_format` | Real UDiFF sample (B18) |
+| P02 | UDiFF support | Implemented (MP1): strict loader with two verified schemas; one source per date (legacy to 2024-07-05, UDiFF from 2024-07-08) | `nse_bhavcopy`, `tests/test_nse_eod_evidence.py` | UDiFF samples after 2024-07-08 per quarter (contrarian) |
 | P03 | Normalization / quality | Implemented | `marketdata.py`, `nse_bhavcopy.py` | Real-data coverage |
-| P04 | Corporate actions | Partial: records interface, G0 MANUAL, PREVCLOSE discontinuity detection; no adjustment | `corporate_actions.py` | B7 source and convention |
+| P04 | Corporate actions | Partial: official NSE records for 189 historical members (D56; 145 covered, 2,064 events), G0 MANUAL, PREVCLOSE discontinuity detection, D52 excluded-session rule; no adjustment (D50) | `corporate_actions.py` | completeness of NSE's API (R-10) |
 | P05 | Universe management | Implemented (effective-dated) | `universe.py` | Constituent files |
 | P06 | Nifty 100 point-in-time | Blocked | `universe.py` | B11 |
 | P07 | Zone Engine | Implemented | `nse/zone-engine/` | B10 |
@@ -106,37 +106,45 @@ Full validation: `python3 -m nse.validation.run_all` on this checkout. See
 2. Candidates come only from `MtfSnapshot.eligible_after_overlay` / `manual_review_after_overlay` (`tests/test_repo.py` forbids `.eligible` elsewhere).
 3. Status is the most restrictive gate outcome (`models.derive_status`); the best status is `ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING`, always with the manual checklist. No status approves a trade.
 4. No network, broker or order code under `nse/` (D10, D17, D31, D32).
-5. Protected sources (Rulebook Markdown and PDF, Pine Script) are hash-pinned; the guard hook refuses writes.
-6. No commit, push, reset, clean or stash without owner authorisation (guard hook).
+5. Protected sources (Rulebook Markdown and PDF, Pine Script) are hash-pinned (`test_repo`, `run_all`): any change fails validation. The guard hook blocks writes it can recognise by name, glob or folder (Edit/Write paths, shell commands). It is a text matcher, so it cannot see a path reached through a separate `cd` or built from shell variables. The hash pins are the backstop (audit 2026-11-06).
+6. No commit, push, reset, clean or stash without owner authorisation. The guard hook blocks the recognisable forms, including git global options, `checkout <ref> <path>` and `switch --force`. It is not a sandbox.
 
 ## 7. Open decisions and blockers
 
 Exact texts: `nse/docs/DECISION_REGISTER.md`; consolidated list: `nse/docs/release/UNRESOLVED_DECISIONS.md`.
 
+Synchronised with `nse/docs/DECISION_LOG.md` section 1F on 2026-11-08 (the decision log is
+authoritative if this table and it ever disagree).
+
 | Item | Status |
 |---|---|
 | R1-R6 | USER_APPROVED (2026-11-02), implemented and tested |
-| RB-VERSION-1 | NEW: the root PDF and the protected Markdown are different revisions; owner to declare the authoritative one |
-| P-LOC-2 | Owner decision (price inside a tested HTF demand) |
-| D40 | PROPOSED (20 Jan 2024 session hours inferred) |
-| D41 | PROPOSED except R1-R6 |
-| B9, B12 | Owner execution model for backtests |
-| B7, B11, B18, B8, B10, B17 | Evidence needed (corporate actions, constituents, UDiFF sample, TradingView references, calendar validation) |
+| RB-VERSION-1 | USER_APPROVED 2026-11-08: the root PDF is canonical; the Markdown is the citation companion |
+| P-LOC-2, P-LOC-3, P-RISK-1 | USER_APPROVED 2026-11-08 |
+| D40 | USER_APPROVED 2026-11-08, with the escalated discrepancy D40-Q1 (20 Jan 2024) |
+| D41 | USER_APPROVED 2026-11-08 (decision log section 1F) |
+| D42-D46 | USER_STATED / USER_APPROVED 2026-11-08 (portfolio caps, Pine-only zones, point-in-time evidence, refusals) |
+| B9, B12 | USER_APPROVED 2026-11-08 (buffer tiers and sensitivity; manual Kite / GTT execution baselines) |
+| D47-D56 | USER_APPROVED 2026-11-09 (backfill, calendar, universe review, CA policy, identity, excluded sessions, Dhanteras, 2016-2020 EOD, CA collection); implemented (`IMPLEMENTATION_BLOCKERS.md` Part 11) |
+| B11-R, B11-P, B8, B10, B17 | Evidence needed: human universe review, pre-2021 membership, TradingView references (CAL-2 closed by D58, 2026-11-10) |
 | M4b, B6, B15 | WIT design and intraday data |
 
 ## 8. Roadmap
 
-See `nse/docs/release/NEXT_PHASE_ROADMAP.md`. The next five actions, in dependency order:
-1. Owner decides RB-VERSION-1 and P-LOC-2.
-2. Owner downloads the missing 2021-2025 legacy bhavcopies (plan: `cli acquire-plan`) and one UDiFF sample; ingest with `acquire-ingest`.
-3. Owner supplies Nifty 100 constituent history (B11) and corporate-action records (B7).
+Milestones: `docs/PRODUCT_ROADMAP.md` and `docs/MILESTONE_STATUS.md` (from 2026-11-08). The
+2026-11-02 list in `nse/docs/release/NEXT_PHASE_ROADMAP.md` remains as a dated snapshot.
+The next actions, in dependency order (step 1 of the earlier list, the RB-VERSION-1 and
+P-LOC-2 decisions, was completed on 2026-11-08):
+1. (done 2026-11-08)
+2. (done 2026-11-09: EOD 2016-2025, D47 and D55)
+3. A human reviews `nse/data/universe/nifty100_review.csv` row by row (B11-R, D53). Corporate actions and identity are done (D56).
 4. Record TradingView references for an agreed symbol set (B8, B10) and run `refcheck`.
 5. Owner supplies a backtest execution model (B9, B12); run walk-forward on point-in-time scans.
 
 ## 9. Architecture
 
-`nse/docs/release/ARCHITECTURE.md` describes the implemented modules and their
-dependency graph.
+`docs/ARCHITECTURE.md` (living, enforced by `python3 -m nse.validation.architecture`).
+`nse/docs/release/ARCHITECTURE.md` is the 2026-11-02 snapshot.
 
 ## 10. Evidence standards
 
@@ -155,6 +163,7 @@ historical-data-ready, not backtest-validated, not paper-trading-ready, not live
 |---|---|
 | 2026-11-02 | Initial master status baseline prepared from available project reports and conversation context. |
 | 2026-11-02 | Repository-verified rewrite after the integrated build: acquisition, instruments, risk, X/14 display, backtest extensions, scenario library, decision replay, dashboard, explain/alerts/narrative, store/journal, health; RB-VERSION-1 found; quantity rounding defect fixed. |
+| 2026-11-08 | Foundation milestone (Master Prompt 0): enforceable architecture, toolchain, run manifests, agent and skills governance (`docs/MILESTONE_STATUS.md`); section 7 synchronised with the decision log. No trading behaviour changed. |
 
 ## 13. Maintenance
 

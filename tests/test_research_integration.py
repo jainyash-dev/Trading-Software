@@ -192,7 +192,8 @@ class RealNseQ1Of2022(unittest.TestCase):
             scan = read_json(os.path.join(tmp, "scan.json"))
             self.assertEqual([s["symbol"] for s in scan["symbols"]], ["INFY", "TCS"])
             for s in scan["symbols"]:
-                self.assertEqual(s["provenance"]["source"], "NSE_CM_BHAVCOPY_LEGACY")
+                # the label describes the loaded dataset (MP1: legacy to 2024-07-05, UDiFF after)
+                self.assertIn("NSE_CM_BHAVCOPY_LEGACY", s["provenance"]["source"].split("+"))
                 self.assertIn(m.CORPORATE_ACTIONS_UNVERIFIED, s["limitations"])
                 for c in s["candidates"]:
                     self.assertNotEqual(c["status"], m.ACTIONABLE)

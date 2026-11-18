@@ -589,6 +589,196 @@ QA, 2026-11-08).
 - Tests: `test_research_dataset_eligibility`
 - Reversible: yes. Deleting the module removes the label. Scanner statuses are unchanged.
 
+### ED-50. Reproducible P0 certification build; PREVCLOSE does not show a price-scale event
+- Category C (GTF P0, gtf-p0-data-certification sections 12-14). Status `AUTO_APPROVED`. 2026-11-12.
+- Problem: `classify_symbol_date` and `certify_members` had no production caller. The 2026-11-11 counts (123,778 excluded member-dates), `P0_RESEARCH_ELIGIBILITY_MATRIX.csv` and `P0_EXCLUSION_SUMMARY.csv` were produced outside any committed tool, and that matrix records price continuity as `NOT_RESCANNED_THIS_PASS`.
+- Decision: `nse/research/p0_certification.py` derives every gate for every Nifty 100 member-date 2020-12-31..2025-12-31 from the files on disk and classifies it with `dataset_eligibility`. It writes `P0_CERTIFIED_RESEARCH_UNIVERSE.csv`, `P0_RESEARCH_EXCLUSION_REGISTER.csv` (one row per run of identical gates), `P0_MEMBERSHIP_REFERENCE_HISTORY.csv` and `P0_CERTIFICATION_SUMMARY.json` (input hashes, reconciliation) in `docs/product-discovery/p0/`, and optionally the per-symbol-date matrix (kept out of git under `nse/output/`). Outputs carry no timestamp; a rebuild on the same inputs was byte-identical.
+- Gate rules that are new here:
+  - Corporate action: no saved response proves the API's completeness (R-10), so `COVERED_WITH_VERIFIED_EVENTS` is reported as `EVENTS_VERIFIED_COMPLETENESS_NOT_PROVED` and does not pass. The build never emits `COVERED_NO_EVENTS_PROVED`. This is stricter than `dataset_eligibility`'s passing set, which is unchanged for a future source that proves completeness.
+  - Price continuity, per step: a recorded price-scale action in the step (looked up under every symbol the verified instrument records link, because NSE files events under the current symbol), an ISIN change, a PREVCLOSE break, or a session range wholly outside 15% of the prior close each fail. The 15% band is a screen: it names no event and no ratio.
+  - GTF: `NOT_EVALUATED_IN_P0`, fail closed. The pipeline is not run per member-date.
+- Evidence for the price rule: every recorded split, bonus, rights issue and demerger with an EQ row on both sides in 2020-12-01..2025-12-31 (55 events, 32 legacy and 23 UDiFF files) has PREVCLOSE equal to the unadjusted prior close. Example: TATASTEEL 1:10 split, `cm28JUL2022bhav.csv.zip`, PREVCLOSE 959.4, open 98.1. A PREVCLOSE-only check called that step continuous; the regression test is `test_a_split_with_an_intact_prevclose_chain_is_not_continuous`.
+- Result on the 2026-11-12 inputs: 123,778 member-dates, 0 certified, label `NO_CERTIFIED_SYMBOL_DATES` on all 1,234 sessions. 72,662 member-dates pass membership; every member-date fails the corporate-action gate. One unexplained scale gap (ADANIENSOL 2024-11-21, range 697.25..724.00 against 871.55) stays excluded pending investigation; it is not called an error or a corporate action.
+- Limitations: the gate is per step, so a study over a window needs every step in it to pass. A small event (a rights issue moves the price a few percent) is not visible to the screen. A break across the seven held Muhurat or shortened sessions is not D52 (D52 requires that no file is held) and fails closed.
+- Alternatives considered: trusting the PREVCLOSE chain (rejected on the 55-event evidence); passing `COVERED_WITH_VERIFIED_EVENTS` as the eligibility module allows (rejected: a non-empty body does not prove completeness, P0 master prompt Part 8); writing over the untracked 38 MB matrix (rejected: kept, now superseded).
+- Affected files: `nse/research/p0_certification.py`, `tests/test_research_p0_certification.py`, `nse/validation/architecture.py`, `nse/validation/run_all.py`, the four outputs above.
+- Tests: `test_research_p0_certification` (19 unit tests on SYNTHETIC rows plus 4 consistency checks on the committed outputs).
+- Not changed: the scanner, G0, `corporate_actions.load_coverage`, `dataset_eligibility`, any methodology gate. R-12 records the scanner consequence.
+- Reversible: yes.
+- Superseded in part by ED-51 (2026-11-13): the GTF gate is no longer evaluated by the P0 build (D63).
+
+### ED-51. P0 build: six data gates and corporate-action evidence tiers (D62, D63)
+- Category C. Status `AUTO_APPROVED`, implementing owner decisions D62 and D63. 2026-11-13.
+- Decision:
+  - `dataset_eligibility.DATA_GATES` names the six data gates. `classify_symbol_date` and `certify_members` take an optional `required_gates`. The default is still all seven gates, so every existing caller and test is unchanged. An unknown or empty list is refused. This is the one classifier, not a second gate architecture.
+  - `p0_certification` (build 1.1.0) classifies with `required_gates=DATA_GATES`. Every output row carries `certification_scope=P0_DATA` and `gtf_trade_eligibility=NOT_EVALUATED_NOT_A_P0_GATE`.
+  - `corporate_actions.evidence_tier(body_status, price_integrity_passed)` returns `CA_RESPONSE_PRESENT_NOT_COMPLETE` for a hash-verified, non-empty body with no unparsed price subject on a symbol-date whose EOD and price-continuity gates pass, and `CORPORATE_ACTIONS_UNVERIFIED` otherwise. It never returns `CA_COMPLETENESS_VERIFIED`: no source proves completeness. The tier sits beside the gate and never changes it. Every row keeps the `CORPORATE_ACTIONS_UNVERIFIED` limitation.
+  - `research_use`: `CERTIFIED_P0_DATA` only when every data gate passes. `EXPLORATORY_ONLY_NOT_CERTIFIED` when only the corporate-action gate fails and the tier is the weaker one. `EXCLUDED` otherwise. Exploratory rows appear only in the git-ignored matrix and in the summary counts, never in the certified file.
+- Integrity is not completeness. Integrity means these bytes are the saved response, it is not empty, and it parsed. Completeness means the API listed every event in the window. Only completeness can pass the gate.
+- Result on the 2026-11-13 inputs: 123,778 member-dates; 0 certified; 108,325 carry `CA_RESPONSE_PRESENT_NOT_COMPLETE`; 68,143 are exploratory-only; 72,173 fail only the corporate-action gate.
+- Tests: `test_research_dataset_eligibility.DataGateScope`, `test_research_p0_certification.EvidenceTier` and `CommittedOutputs`.
+- Reversible: yes.
+
+### ED-53. Corrections from the independent review of the P0 build (2026-11-13)
+- Category C. Status `AUTO_APPROVED`. The review was a separate read-only agent, which traced 7 sample records from source to output. It found no wrongly certified record. These are minimal corrections, not a rewrite.
+- F1 (in a committed output): register runs were keyed on the symbol's own member-dates, so a run spanned sessions on which the symbol was not a member, and its evidence cited the wrong period (BANKBARODA, PNB, JIOFIN, JINDALSTEL, ZYDUSLIFE). Runs now use the window's session index, and the key includes the membership period, the evidence tier and the research use. The register gained `membership_period_from`, `corporate_action_evidence_tier`, `research_use` and `limitations`. 1,662 rows became 1,667.
+- F2: a second `coverage.csv` row for one symbol silently replaced the first and could hide an unparsed subject. It is now refused.
+- F3: a date the calendar cannot classify dropped out of the build, and a step across it could pass. Such a member-date now gets a row with calendar `UNRESOLVED`, and a step across it is `CALENDAR_UNRESOLVED_ON_STEP` (D54). There are none in the window today.
+- F4: `dataset_eligibility` still passed `COVERED_WITH_VERIFIED_EVENTS`, which is the D62 middle tier. The corporate-action gate now passes only `CA_COMPLETENESS_VERIFIED` or `COVERED_NO_EVENTS_PROVED`. `required_gates` must include all six data gates. This is stricter; no current output changes.
+- F5: `member_dates_equal_certified_plus_excluded` was a tautology. It is replaced by an independent count from `Universe.members`, plus a check that every excluded date is in exactly one register row. New tests cover `identity_value`, `corporate_action_bodies` (hash mismatch, `[]`, retry, duplicate, unparsed) and the register across gaps.
+- F7: `inputs_sha256` now includes a digest of every saved corporate-action response and the builder's own source.
+- F8: `scale_gap` delegates to `corporate_actions.price_scale_gap` (one definition, ED-52).
+- Not changed (recorded): `linked` symbols come from `instruments.history` over all records. That fails closed today because `identity_value` rejects an unverified record (F8). There is no synthetic end-to-end `build()` fixture yet (F5).
+- Result: certified 0 and every gate count unchanged; the rebuild is byte-identical.
+- Tests: `test_research_p0_certification` (34 tests), `test_research_dataset_eligibility` (adds F4 cases).
+- Reversible: yes.
+
+### ED-54. Milestone 1: verified-rename policy, completeness register, CSV screen, end-to-end fixture (2026-11-15)
+- Category C. Status `AUTO_APPROVED`. Implements D51, D62 and D63 and closes review residual REV-1. No owner decision is made here.
+- Verified-rename policy (`nse/research/instruments.py`):
+  - `rename_links()` publishes every SYMBOL_CHANGE record with its evidence file, hash, line and status.
+  - `verified_rename_names()` joins tickers only through VERIFIED records along a single-ISIN chain.
+  - `verified_rename_into(records, symbol, after, on_or_before)` is the dated join for one step. Two candidates are ambiguous and give none.
+  - The P0 builder uses only these. The prior close of a step may sit under another ticker only on the step of that verified rename. Before, `instruments.history()` linked over all records, including unverified rows and later renames.
+- Completeness register (`nse/research/corporate_actions.py`, D62, OD-CA-1):
+  - `nse/data/corporate_actions/completeness.csv` (`COMPLETENESS_COLUMNS`). A row proves a window only when its cited source hashes to the recorded SHA-256 and `owner_decision` is a decision id (`D<n>`). Any other row is ignored. A malformed file is refused.
+  - With a proved window, a hash-verified response with no unparsed subject gives `CA_COMPLETENESS_VERIFIED`, and `[]` gives `COVERED_NO_EVENTS_PROVED`. Without one, nothing passes.
+  - The file does not exist; 0 windows.
+  - The builder (1.2.0) reports `completeness_register` and `rename_links` in the summary and fingerprints the register in `inputs_sha256`.
+- User CSV inputs (`marketdata.from_csv`) run the same R-12 price-scale screen as official archives, whatever the file states about adjustment. The scanner holds G0 on the finding. There is no source-specific bypass.
+- Tests:
+  - `test_research_p0_build_e2e`: synthetic end-to-end `build()` through every gate state, determinism, and refusal of a tampered archive, a duplicate coverage row or an unreadable register. 11 tests.
+  - `test_research_identity_policy`: 10 tests.
+  - `test_research_p0_certification.CompletenessRegister`: 5 tests.
+  - `test_research_price_scale_r12`: 25 tests, including 5:1 split, bonus 1:2, consecutive events, a mis-dated action, duplicate actions, missing evidence and user CSV.
+- Result on real data: the certified file, register, history and matrix were byte-identical to build 1.1.0's. The summary changed only by its version, input fingerprint and two new keys. None of these outputs is committed. Certified 0, because the register is empty.
+- Measured, not changed: the 15% band. Over 123,352 member steps with no recorded action, false positives are 1 / 3 / 4 / 21 / 97 at 15 / 12 / 10 / 8 / 5%. Recorded events missed at 15% are 26 of 125 (all rights issues, 3 small bonuses, 4 demergers, 6 unparsed). No price-only rule separates them from ordinary moves.
+- Reversible: yes.
+
+### ED-55. Milestone 1 independent review: latent fail-open paths closed (2026-11-15)
+- Category C. Status `AUTO_APPROVED`. Fail-closed hardening only; no gate is relaxed and no owner decision is made.
+- The review was a separate read-only agent. It checked all 123,778 rows and all 1,667 register intervals, and re-derived all six gates on a 60-row random sample from raw files (`random.Random(20261115)`): 0 mismatches. It found no wrongly certified row, and 0 rows are certified. It ran 33 adversarial probes and found 5 medium latent fail-open paths. Corrections, builder 1.3.0:
+  - M-1: a saved body is JSON-parsed. Anything other than a list of objects with a text `subject` is `MALFORMED_RESPONSE` and never reaches the middle tier.
+  - M-2: an empty body that exists only in `raw/` is hash-verified against `collection_log.jsonl`. Disagreeing retries are `CONFLICTING_RESPONSES`. An unverified body never passes, even with a register window.
+  - M-3: an empty body of a ticker joined by a verified rename is `EMPTY_RESPONSE_RENAMED_TICKER` and never passes, because NSE files events under the current ticker (ED-39). 6,432 member-dates on 10 tickers were relabelled; all already failed.
+  - M-4: a completeness-register row counts only when its `owner_decision` is owner-approved (the log's approved status) in DECISION_LOG.md and its source is not a saved API response.
+  - M-5: a step containing an excluded session fails even when PREVCLOSE happens to equal the prior regular close (`STEP_ACROSS_EXCLUDED_SESSION`). HDFCBANK 2024-03-04 and TATACONSUM 2024-05-21 moved from exploratory to excluded.
+  - L-1: renames under two ISINs on one ticker join nothing, and a step's rename join needs the record's ISIN to equal the period's.
+  - L-3: the input fingerprint includes the deciding modules, the collection log and the decision log.
+  - L-4: the builder refuses a universe file that differs from a fresh ledger conversion.
+  - L-5: a stronger e2e overlap check.
+- Result: certified 0, exploratory 73,366, price-gate failures 1,132, register 1,671 rows. Two rebuilds are byte-identical.
+- Second review round, builder 1.4.0 (the same reviewer re-ran its probes against 1.3.0 and reported residual and new latent paths). Corrections:
+  - N-1 and R-1: `rename_state()` classifies a ticker from ALL SYMBOL_CHANGE records as NONE, CURRENT, OLD or AMBIGUOUS. Only NONE and CURRENT can pass the corporate-action gate. An empty body of any renamed ticker never passes. An OLD or AMBIGUOUS ticker's response is `RESPONSE_OF_RENAMED_AWAY_TICKER`. An AMBIGUOUS ticker's price gate is `AMBIGUOUS_RENAME_HISTORY`.
+  - R-2: a decision qualifies for the completeness register only when it is owner-approved (the log's approved status) and its DECISION_LOG entry carries a completeness acceptance marker naming the source and windows. A general approval (D57, D62...) never qualifies. Today none qualifies. **Superseded for marker shape by ED-56 / D66:** the qualifying marker is now `- **Completeness window accepted:**` with two source hashes and a reconciliation hash; the legacy single-hash `- **Completeness source accepted:**` never qualifies.
+  - R-3: a register source is refused when its bytes match any saved API response or its content has the API's shape.
+  - N-2: the real build refuses to run when the ledger check cannot be made.
+  - N-3: a price-type entry with an unreadable ex-date or a non-EQ series counts as unparsed, and an empty subject is malformed. All 2,326 real entries are EQ with readable ex-dates.
+  - L-3: `membership.py` is fingerprinted.
+- Real-data effect of the second round: none. Certified file, register, history and matrix are byte-identical to 1.3.0.
+- Third review round, builder 1.5.0:
+  - N-3b: the unparsed-entry count now uses the parser's own predicates, with no stripping or defaulting. A price-type or unrecognised entry the parser drops is always counted.
+  - R2-A and R2-B: a decision qualifies only through a marker bullet inside its own entry, `- **Completeness source accepted:** <sha256> <SYMBOL> <from>..<to>[; ...]`. A register row must match one item exactly: bytes, symbol and window. This also closes R3-A, other forms of the same data, because the owner names the exact bytes.
+  - R2-C: the ledger check is required whenever the real universe file is used, however its path was passed.
+  - O-2: a renamed-away or ambiguous ticker's response earns no exploratory tier.
+  - Real-data effect: none. Row-level outputs are byte-identical to 1.4.0. Tests: 178 across the seven P0 modules.
+- Tests: `test_research_p0_build_e2e` (12), `test_research_p0_certification`, `test_research_identity_policy`, `test_research_corporate_actions`, `test_research_dataset_eligibility`, `test_research_price_scale_r12` and `test_research_membership`: 177 together.
+- Reversible: yes.
+
+### ED-52. R-12: G0 holds on an unexplained price-scale gap (D64)
+- Category C. Status `AUTO_APPROVED`, implementing owner decision D64. 2026-11-13.
+- Wrong assumption found: `marketdata.from_bhavcopy` labelled a PREVCLOSE break "possible unadjusted corporate action", and R-10 relied on that break to reveal an event the API omits. NSE prints the unadjusted prior close on an ex-date (ED-50), so a split or bonus never produces that break. The existing synthetic test models a split as an adjusted PREVCLOSE; the real files do not. Consequence before this change: a symbol whose hash-verified, non-empty response omits a split passed G0's coverage check, and the raw scale break reached zone detection with G0 `PASS`.
+- Decision:
+  - `corporate_actions.price_scale_gaps()` screens each held EQ session. A session whose whole range lies more than `SCALE_GAP_BAND` (15%) from the last held close is a `PRICE_SCALE_GAP`. `price_scale_gap()` is the single definition of the band test.
+  - `marketdata.from_bhavcopy` emits a `PRICE_SCALE_GAP` finding.
+  - `scanner.scan_symbol`: a gap inside the replayed history becomes a detected discontinuity, unless a recorded price-scale action has its ex-date in the same step (then `CORPORATE_ACTION_IN_HISTORY` already holds G0, and an INFO finding records the match). D52 does not explain a scale gap.
+  - `qualification._g0` counts `PRICE_SCALE_GAP` with `PREVCLOSE_DISCONTINUITY` as `PRICE_DISCONTINUITY_IN_HISTORY`, so G0 is `MANUAL` and the status can never be actionable.
+  - Raw OHLC is not adjusted. No zone, freshness or qualification rule changed. Backtest and decision replay use the same `scan_symbol`.
+- Limitations: an event smaller than the band (rights, a small demerger) is visible only through a recorded action. User CSV inputs (`marketdata.from_csv`) are not screened; they already carry `PRICE_ADJUSTMENT_UNKNOWN` unless stated. A genuine market move of more than 15% across the whole session (ADANIENSOL 2024-11-21) also holds G0. That is fail-closed by design.
+- Tests: `test_research_price_scale_r12` (10 tests: the TATASTEEL 2022-07-28 shape, bonus, large and small demerger, rights, band edges, G0 with and without recorded actions and with verified coverage, prefix invariance).
+- Affected files: `nse/research/corporate_actions.py`, `nse/research/marketdata.py`, `nse/research/scanner.py`, `nse/research/qualification.py`, `tests/test_research_price_scale_r12.py`, `nse/validation/run_all.py`.
+- Reversible: yes.
+
+### ED-54. Journal reservations, prints and charges share one SQLite write transaction
+- Category C. Status `AUTO_APPROVED`. 2026-11-13. GTF P1 application hardening. Not an owner decision and not a methodology change. Renumbered from a colliding "ED-51" draft id; ED-51 remains the P0 data-gates entry.
+- Problem: `journal_add` checked the one-order rule and then inserted in a later deferred transaction, so two connections could both reserve one zone. A `TRIGGERED` event was already counted inside `BEGIN IMMEDIATE` (ED-46). Partial fills had no row of their own, and a missing charge was indistinguishable from zero.
+- Decision:
+  - `journal_add`, `journal_order_submitted`, `journal_event` and `journal_execution` take `BEGIN IMMEDIATE` before the reservation, the monthly count or the open-position count, and commit the decision with the insert. A refused body rolls back. Closing the connection before commit leaves no row.
+  - Open-position refusal uses the peak open count at the fill time and every later TRIGGERED/EXIT time (`_peak_open_from`), so a backdated fill cannot sit under later opens and exceed the cap.
+  - After `journal_orders` submission, a missing calendar refuses the fill (`ORDER_EXPIRY_UNRESOLVED`). A configured but unloadable calendar raises on the desk path. Missing calendar never extends a submitted order.
+  - There is no permanent unique index on the zone. A plan that was never submitted and is `CANCELLED` still releases the zone (ED-3). A submitted order, an expiry, a stop-out or a close does not.
+  - Migration 4 adds `journal_executions`, `journal_charges` and `journal_idempotency`. The first ENTRY print inserts the one `TRIGGERED` event. Later prints of that order are not a second trade and not a second position (RB 2140). Unfilled quantity is not a fill. A legacy `TRIGGERED` with no prints remains a fill of the whole planned quantity.
+  - Charges are stored only from an owner-entered amount or from `charges.quote` on a dated schedule the caller supplies. The module contains no brokerage, STT, exchange, SEBI, GST or stamp rate. Absent charges stay `ABSENT`. Schedule output is `ESTIMATED`. Owner-entered lines are `ACTUAL`. `gross_pnl` stays gross. `actual_net_pnl` is set only when every closed trade in the month has actual lines.
+  - A repeated event with the same body, or the same `request_key`, returns the first result. Plan approval passes `request_key` `approve:<plan_id>` so a retry after a lost response does not create a second journal entry.
+  - Platform backup uses the SQLite backup API, refuses to overwrite an existing copy or the live file, and `restore_copy` checks integrity and row counts in a new directory. It does not swap the live database. The copy does not include `nse/data/eod/raw/`. No backup schedule is installed.
+- Alternatives considered: a unique index on `(symbol, zone_id, trade_type)` (rejected: a cancelled unsubmitted plan could not release the zone); hardcoding a Zerodha card (rejected: no dated source is in the repository); treating one `TRIGGERED` price as the partial-fill list (rejected: the prints cannot be reconstructed).
+- Affected files: `nse/research/store.py`, `nse/research/charges.py`, `platform/gtf_platform/integration/desk.py`, `platform/gtf_platform/routes.py`, the web hash query reader, and the tests named in the P1 report.
+- Reversible: yes. The migration is additive. Removing the call sites restores the previous journal calls. Existing journals keep their rows.
+
+### ED-56. Dual-source corporate-action completeness gate (D66 / OD-CA-1 Option A)
+- Category C. Status `AUTO_APPROVED`. Implements owner decision D66. 2026-11-15. Not an owner decision and not a methodology change.
+- Problem: the completeness register (ED-54/ED-55) could mark a symbol/date window complete from one hash-verified non-API source plus a matching single-hash acceptance line. D66 requires two independent official sources reconciled event-by-event.
+- Decision:
+  - `COMPLETENESS_COLUMNS` now carries `source_a`/`source_b` paths and hashes plus `reconciliation_file`/`reconciliation_sha256`.
+  - Acceptance marker is `- **Completeness window accepted:** <sha_a> <sha_b> <recon_sha> <SYMBOL> <from>..<to>`. The legacy single-hash marker never qualifies.
+  - `sources_independent` requires distinct hashes, distinct non-identical files, and refuses saved API responses.
+  - `load_reconciliation` requires schema `gtf.ca_reconciliation.v1`, status `RECONCILED`, empty `unresolved`, and every event `MATCH` or `EQUIVALENT`.
+  - A single source, even hash-verified and individually approved, never establishes completeness.
+- Not changed: D62 evidence tiers; acquisition of any source; approval of any specific completeness row (still owner-reserved); certified count remains 0 until real dual-source evidence and per-window approvals exist.
+- Builder version: 1.6.0. Tests: `CompletenessRegister` dual-source adversarial cases; e2e fixture updated to two sources + reconciliation.
+- Reversible: yes.
+
+### ED-57. ENG-1: fractional face-value split ratios (VBL 2024-09-12)
+- Category C. Status `AUTO_APPROVED`, implementation **authorised by the owner in D67** (2026-11-15). Earlier the same day it was recorded as `PROPOSED` (held); the original text is kept below.
+- Implemented semantics (documented before the code change):
+  - Face values are parsed from the subject text with `decimal.Decimal`, then `fractions.Fraction`. No float is used in parsing (see the precision note below for `load()`).
+  - SPLIT: factor = old/new and must be > 1. CONSOLIDATION: factor = new/old and must be > 1. The row is `(action, ratio_from, ratio_to)` = old:new **share counts**: SPLIT `(factor.denominator, factor.numerator)`, CONSOLIDATION `(factor.numerator, factor.denominator)`, always integers in lowest terms. Whole-number factors give the same rows as before on every held subject (`10 -> 2` is `SPLIT 1:5`; `1 -> 10` is `CONSOLIDATION 10:1`). Exception, fail-closed direction: a face value written with a trailing or leading point ("10.", ".5") used to be accepted and is now unparsed. No held subject has one. VBL `5 -> 2` is `SPLIT 2:5`.
+  - Fail closed (`UNPARSED_PRICE_ACTION`): an equal face value (factor 1; previously emitted `SPLIT 1:1`), a zero or negative value, a direction that contradicts the action word (a "split" to a larger face value), an unreadable number (previously `float()` could raise), or a ratio term above 10,000.
+  - Abbreviated "Fv Splt Frm Rs a To Re b" follows the same rule.
+- Changed regression expectations (three; the first draft of this entry disclosed only one and the independent review found the other two):
+  1. `test_the_ten_unparsed_subjects_do_not_become_ratios` (`tests/test_research_corporate_actions.py`): the VBL subject left the must-not-parse list; `ExactFaceValueRatio` asserts exactly `SPLIT 2:5`. The other five subjects in that test still must not parse.
+  2. `CorporateActionStoreD50.test_combined_or_unclear_price_events_are_never_guessed` (`tests/test_research_data.py`): the synthetic subject "From Rs 10/- Per Share To Rs 3/- Per Share" was asserted unparsed; it now reads exactly as `SPLIT 3:10`. The other four subjects (combined "And", "Scheme Of Arrangement", "Bonus issue", combined rights+bonus) stay `UNPARSED_PRICE_EVENT`; unparsed count 5 -> 4.
+  3. `CorporateActionStoreD50.test_abbreviated_splits_and_unknown_subjects_are_never_skipped`: the synthetic "Fv Splt Frm Rs 10 To Rs 3" now reads `SPLIT 3:10` (still never skipped); "Capital Restructuring" stays unparsed.
+  Rationale: a fully stated face-value change gives an exact share ratio, so reading it is not a guess (D56 forbids guessing, not exact reading). The inputs of the tests were not changed. These expectation changes need the owner's review under D67 ("review the existing regression test and its changed expectation") and were sent back to the independent reviewer.
+- Hardening after review: `face_value_ratio` accepts only plain decimal text (`\d+(\.\d+)?`). Exponent notation, signs, `Infinity`/`NaN` and non-string input return None. Held-data parity was re-run after hardening: 2,064 of 2,064 rows identical to the stored `actions.csv`.
+- Precision of the "no float" claim: no float is used in **parsing** or in the stored text. `Action.ratio_from`/`ratio_to` are typed float and `load()` reads them with `float()`. The values are small integers, so they are exact, and nothing reads them arithmetically (R-12).
+- Effect on tiers (review finding): VBL's raw body now has 0 unparsed subjects. In the builder VBL's response status can move from `UNPARSED_EVENT` to a parsed-response status, which can move VBL symbol-dates from `CORPORATE_ACTIONS_UNVERIFIED` to the exploratory tier `CA_RESPONSE_PRESENT_NOT_COMPLETE` (D62). That tier never certifies; the certified count is unaffected.
+- Not changed: OHLC (never adjusted), the classification of any non-face-value event, D66, the certified count.
+- Correction (2026-11-15, same day): an earlier version of this entry said the builder would reclassify VBL from the raw body. That was wrong: the builder counts parsed and unparsed events from the stored `nse/data/corporate_actions/actions.csv`. Verification and change made:
+  - All 2,064 rows were re-derived from the 189 held raw bodies with the new parser. Exactly **one** row differed (VBL 2024-09-12 `UNPARSED_PRICE_EVENT 0:0` -> `SPLIT 2:5`); 2,063 rows were byte-identical (whole-number backward compatibility on all held data).
+  - That single line was updated (`recorded_on` 2026-11-15; the note says it was reclassified by ED-57). `actions.csv` SHA-256 `749757252b68...` -> `ec50d805d07a...`.
+  - `conversion_report.json`: the VBL entry moved from `unparsed` (10 -> 9) to a new `reclassified_ed57` record; SHA-256 -> `a9f5612bd981...`.
+- Original proposal text follows.
+- Problem: `_part_row` emits SPLIT/CONSOLIDATION only for whole-number factors. VBL's "From Rs 5/- Per Share To Rs 2/- Per Share" (factor 2.5) falls through to `UNPARSED_PRICE_ACTION`, although its terms are fully stated and the bhavcopy step (1,569.15 -> 645.60) is consistent with them.
+- Proposal: represent the factor as a reduced integer fraction parsed from the decimal text (`Fraction(old)/Fraction(new)` = 5/2 -> `("SPLIT", 2, 5)`), matching the existing BONUS convention `(b, a+b)`. Nothing outside `corporate_actions.py` reads the ratio values, and OHLC is never adjusted (R-12).
+- Why held: it changes the expectation of `test_the_ten_unparsed_subjects_do_not_become_ratios` (VBL is one of the ten) and the classification of a recorded event. The owner's 2026-11-15 instructions authorised ED entries but said that retrieval work does "not authorize ... changing parser behaviour". Needs explicit owner go-ahead and independent review before it is implemented.
+- Effect if implemented: VBL 2024-09-12 moves from `UNPARSED_EVENT` to `PRICE_SCALE_EVENT_ON_STEP:SPLIT`. The certified count is unchanged (D66).
+- Reversible: yes.
+
+### ED-58. ENG-2: per-row text in `P0_MEMBERSHIP_BACKLOG.csv`
+- Category C. Status `AUTO_APPROVED`. Implemented 2026-11-15. Documentation only.
+- Problem: the two `G-BASELINE-2020-12-31` insufficient rows carried one group-level `reason`/`missing_evidence` text, so the GRASIM row's reason described BAJFINANCE (Batch 11).
+- Decision: split the existing text per symbol; no wording added or removed beyond the split. Only physical lines 2-3 changed (verified); the other 131 lines are byte-identical. SHA-256 before `bbaaa727134fb8b5148d02f04efe54466ea577444be4b42fa8cab3f33a91d0e7`, after `6fe5e18931d7d35a08d7b3511becebad51cca8f5d84dfaff112e39673aeeb458`. Status fields unchanged; no ledger decision touched.
+- Reversible: yes (pre-change copy kept in the session scratchpad).
+
+### ED-59. ENG-3: provenance fields in the corporate-action source ledger
+- Category C. Status `AUTO_APPROVED`. Implemented 2026-11-15 as a process/document change (no code).
+- Problem: `sources_independent()` proves byte-distinctness, not provenance independence (Batch 7 F-1). Two files from the same publisher pass the code check.
+- Decision: `docs/product-discovery/p0/P0_CA_SOURCE_LEDGER.csv` carries `publisher` and `upstream_chain` for every source. A pair whose publishers coincide (for example NSE/CML and NSE/FAOP) is not proposed to the owner as Source A/B. The owner's dual-hash marker remains the control point.
+- Not changed: builder code, completeness schema, D66.
+- Reversible: yes.
+
+### ED-60. ENG-4: regression test for a CONFLICT event with an empty `unresolved` list
+- Category C. Status `AUTO_APPROVED`. Implemented 2026-11-15.
+- Test: `CompletenessRegister.test_a_conflict_event_fails_closed_even_with_empty_unresolved` (`tests/test_research_p0_certification.py`). A reconciliation that says `RECONCILED` with `unresolved: []` but carries an event with status `CONFLICT`, `MISSING_IN_A`, `MISSING_IN_B`, empty or unknown is refused. A positive control (`MATCH`) is accepted, so the path is exercised. No production code changed; behaviour already failed closed.
+- Reversible: yes.
+
+### ED-61. ENG-5: acceptance-mode validation before any certification claim
+- Category C. Status `AUTO_APPROVED`. 2026-11-15.
+- Decision: `python3 -m nse.validation.run_all --acceptance` (missing local prerequisites FAIL instead of SKIP) is run with `--out` pointing outside the repository before any final P0 claim. Its side effects were inspected: it sets `NSE_PHASE1_ACCEPTANCE=1` and writes only the `--out` report.
+- Result: recorded in `docs/product-discovery/p0/P0_OWNER_INSTRUCTIONS_EXECUTION_REPORT.md` with the preserved log and report.
+- Reversible: yes.
+
 ## Risk register
 
 | ID | Risk | Severity | Current control | Owner of next step |
@@ -604,3 +794,4 @@ QA, 2026-11-08).
 | R-9 | A Muhurat or DR session without a held file leaves a PREVCLOSE discontinuity for every stock. ~~NSE publishes no Muhurat bhavcopy~~ Corrected 2026-11-09: NSE serves them for 2016-2025, and they are now held (ED-34) | Low (fail-closed) | Owner decision D52 (ED-33): explained only under strict conditions; unobserved sessions make G1 MANUAL | none |
 | R-10 | NSE's corporate-action API has undocumented completeness; an event it omits is invisible except through a PREVCLOSE discontinuity | Medium | The detection finding is always kept. Coverage changes G0 only through the narrow D52 rule: excluded sessions with no held file, no missing trading day, action records present and none in the gap (ED-33). Everywhere else a discontinuity keeps G0 MANUAL | owner: an independent CA source, if one is wanted |
 | R-11 | Legacy layout variants on unsampled dates (2 of 1,242 in 2016-2020) | Low (fail-closed) | Exact variants only (ED-38); anything else is quarantined | engineering |
+| R-12 | R-10's control assumes an omitted event shows as a PREVCLOSE discontinuity. It does not for price-scale events: on 55 of 55 recorded 2021-2025 ex-dates NSE printed the unadjusted prior close (ED-50). A symbol whose non-empty corporate-action body omits a split passes the G0 coverage check, and the raw scale break reaches zone detection undetected | Medium after ED-52 (was High) | ED-52: G0 holds on a whole-range gap over 15% unless a recorded action explains it. Residual: an omitted event smaller than the band, and user CSV inputs | engineering: an omitted small event needs a completeness source (OD-CA-1) |

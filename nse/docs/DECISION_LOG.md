@@ -876,12 +876,13 @@ All `USER_APPROVED`, 2026-11-09, recorded in the owner's terms. Implementation: 
   - missing or ambiguous evidence stays DATA_INSUFFICIENT or MANUAL.
 
 ### D57. Local-first web application
-- **Status:** `USER_APPROVED` (owner instruction, 2026-11-09).
-- **Decision:** The GTF Trading Intelligence Platform is a local-first web application opened in a browser. It is not a Tauri, Electron, or AppKit application.
-- **Initial deployment:** one Mac. The API and the UI bind to loopback only. No public exposure. No cloud service is required for core use. No paid provider is enabled by this decision.
-- **Later deployment:** frontend and backend may be hosted on cloud infrastructure. Environment-specific configuration stays outside business logic. Persistence and provider interfaces stay replaceable. This decision does not authorise creating that infrastructure or spending on it.
-- **Session:** HttpOnly cookie, `SameSite=Strict`, host and origin checks, and a custom request header. The session value is not placed in localStorage, a URL, browser logs, or frontend source. The withdrawn Tauri inherited-token design is not reused.
-- **Unchanged:** the research pipeline remains the only eligibility authority. Live fills, journal mutations, and unresolved trade-plan identity keep their existing restrictions. No broker integration.
+- **Status:** `USER_APPROVED` (owner instruction, 2026-11-09). **Historical record preserved.**
+- **Commercial production supersession (2026-11-18):** For commercial production architecture, **OD-BP-001** is the newer controlling owner decision and explicitly supersedes D57. D57 is not deleted. Local-first loopback remains a development, testing, migration or engineering baseline where useful; it is not the target commercial production deployment model. See OD-BP-001 below and [ADR_OD-BP-001.md](../../docs/product-blueprint/ADR_OD-BP-001.md).
+- **Decision (historical text, 2026-11-09):** The GTF Trading Intelligence Platform is a local-first web application opened in a browser. It is not a Tauri, Electron, or AppKit application.
+- **Initial deployment (historical):** one Mac. The API and the UI bind to loopback only. No public exposure. No cloud service is required for core use. No paid provider is enabled by this decision.
+- **Later deployment (historical):** frontend and backend may be hosted on cloud infrastructure. Environment-specific configuration stays outside business logic. Persistence and provider interfaces stay replaceable. This decision does not authorise creating that infrastructure or spending on it.
+- **Session (still applicable to local/dev mode):** HttpOnly cookie, `SameSite=Strict`, host and origin checks, and a custom request header. The session value is not placed in localStorage, a URL, browser logs, or frontend source. The withdrawn Tauri inherited-token design is not reused.
+- **Unchanged:** the research pipeline remains the only eligibility authority. Live fills, journal mutations, and unresolved trade-plan identity keep their existing restrictions. No broker integration. Desktop shells remain excluded.
 - **Records:** [API contracts](../../docs/architecture/API_CONTRACTS.md) section 1, [system architecture](../../docs/architecture/SYSTEM_ARCHITECTURE.md) process model, AR-2 and AR-3 in [decisions](../../docs/product/DECISIONS_AND_OPEN_QUESTIONS.md).
 
 ### D58. CAL-2: Dhanteras dates confirmed as regular equity sessions (option A)
@@ -907,6 +908,77 @@ All `USER_APPROVED`, 2026-11-09, recorded in the owner's terms. Implementation: 
 - **Approved:** the symbol and the direction of the ten `change:E03:` rows transcribed from `ind_prs23082021.pdf` page 5 section 3 (NIFTY 100). Page 1 dates the change effective 30 September 2021. Exclusions: ABBOTINDIA, ALKEM, MRF, PETRONET, UBL. Inclusions: BANKBARODA, CHOLAFIN, JINDALSTEL, PIIND, SAIL. The review stores this as `mapping_approval` `APPROVED`, reviewer `Yash Jain`, `reviewed_on` `2026-11-11`.
 - **Not approved:** the membership period those rows would start or end. In particular the open periods BANKBARODA `INE028A01039` from 2021-09-30 and CHOLAFIN `INE121A01024` from 2021-09-30 are not certified. `decision` stays blank. Mapping approval does not verify a period.
 
+### D62. Corporate-action evidence tiers (OD-CA-1, partial)
+- **Status:** `USER_APPROVED` (owner, session instruction 2026-11-13, Decision 1).
+- **Approved:** three evidence levels: `CA_COMPLETENESS_VERIFIED`, `CA_RESPONSE_PRESENT_NOT_COMPLETE` and `CORPORATE_ACTIONS_UNVERIFIED`. A non-empty, hash-verified response that parsed (no unparsed price subject), on a symbol-date that passes the price-integrity checks, may carry the second, weaker tier. That tier may be used only for clearly labelled exploratory research.
+- **Not approved:** the weaker tier does not pass the corporate-action certification gate, does not enter the certified research universe, and does not remove `CORPORATE_ACTIONS_UNVERIFIED` from a record. Completeness is not inferred from previous-close checks. No existing certification requirement is weakened. No claim of complete historical corporate-action coverage. Response integrity is not response completeness.
+- **Implemented by:** ED-51.
+
+### D63. P0 data certification uses six data gates
+- **Status:** `USER_APPROVED` (owner, session instruction 2026-11-13, Decision 2).
+- **Approved:** P0 data certification is independent of GTF strategy qualification. The certification builder evaluates six data gates: membership, security identity, trading calendar, raw OHLC integrity (EOD), corporate-action coverage, price continuity. It does not run the trading qualification pipeline for every historical member-date. No duplicate gate architecture.
+- **Not approved:** a data-certified symbol-date is not GTF trade eligibility, and outputs must say so. Candidates still come only from the canonical pipeline. Nothing here changes a qualification gate, a zone rule or a risk limit.
+- **Implemented by:** ED-51.
+
+### D64. R-12 investigation and fix authorised; T-001 batch 2 held
+- **Status:** `USER_APPROVED` (owner, session instruction 2026-11-13, Decisions 3 and 4).
+- **Approved:** a separate R-12 batch. Prevent unexplained corporate-action-related price discontinuities from silently entering GTF zone detection, fail closed where the price history cannot be resolved, keep raw unadjusted OHLC, add split, bonus, rights and demerger regressions using the TATASTEEL 1:10 example. Keep R-12 separate from the certification-builder and T-001 changes.
+- **Not approved:** any change to the Rulebook, the Pine Script, unrelated methodology, or zone eligibility rules. No T-001 batch 2 decision is written: the 17 rows wait for an explicit owner answer, and the recommendation to accept is not authorisation.
+- **Implemented by:** ED-52.
+- **Superseded in part (2026-11-13):** the batch 2 hold ended with D65. The rest of D64 stands.
+
+### D65. T-001 batch 2: 17 membership rows accepted
+- **Status:** `USER_APPROVED` (owner, session instruction 2026-11-13; reviewer recorded as `Yash Jain`, following batch 1).
+- **Approved:** `decision` `ACCEPTED` on exactly the 17 rows of the five evidence cards in `docs/product-discovery/p0/P0_T001_BATCH2_OWNER_PACKAGE.md`:
+  - G-E04, all 10 rows, effective 2022-03-31;
+  - G-E05, all 4 rows, effective 2022-08-08;
+  - `change:I-2022-04-20-JUBLFOOD:ISIN_CHANGE:JUBLFOOD:INE797F01020`;
+  - `change:I-2022-07-29-TATASTEEL:ISIN_CHANGE:TATASTEEL:INE081A01020`;
+  - `change:I-2022-09-14-BAJAJFINSV:ISIN_CHANGE:BAJAJFINSV:INE918I01026`.
+  The owner wrote "ACCEPT"; the ledger's schema token is `ACCEPTED`.
+- **Not approved:** any other row or group; GRASIM, BAJFINANCE, the dummy seats and the other insufficient-evidence groups; any change to count or mapping approvals; corporate-action completeness (OD-CA-1 stays open). Membership acceptance does not certify a member-date.
+- **Result:** 140 rows `ACCEPTED`, 131 blank. 85 of 185 periods verified (14 more). 0 member-dates certified.
+
+### D66. OD-CA-1: corporate-action completeness acceptance standard (Option A)
+- **Status:** `USER_APPROVED` (owner, session instruction 2026-11-15).
+- **Approved:** corporate-action completeness for a symbol and date window requires two independent official sources, reconciled event by event. Both sources must have verified SHA-256 hashes. Their provenance and independence must be established. The reconciliation must identify missing, additional, conflicting and differently represented events. The owner approval for each completeness window must explicitly identify the symbol, the date window, both source hashes and the reconciliation record. Any unresolved discrepancy, missing source, hash mismatch, insufficient coverage, ambiguous provenance or unparsed event fails closed. A single source, even if hash-verified and individually approved, never establishes corporate-action completeness.
+- **Not approved:** acquiring or downloading any source; any particular source file or completeness record; any `completeness.csv` row; certification of any historical member-date. D62's three evidence tiers are unchanged.
+
+### D67. Queue V3 answers: 91 membership rows accepted; identity kept unjoined; ED-57 authorised
+- **Status:** `USER_APPROVED` (owner, session instructions 2026-11-15; reviewer recorded as `Yash Jain`, following D65).
+- **Approved:**
+  - Q3: `decision` `ACCEPTED` on exactly the 91 evidence-sufficient rows of `docs/product-discovery/p0/P0_MEMBERSHIP_OWNER_DECISION_FILE_PROPOSED.csv` (named `P0_MEMBERSHIP_DECISION_FILE_PROPOSED.csv` in the instruction; it is the only proposal file), after the pre-write checks in `P0_91_MEMBERSHIP_DECISION_AUDIT.md` passed.
+  - Q5 BAJFINANCE and Q6 GRASIM: Option 1, keep the old and new ISINs unjoined; no listing end; no identity-record change. NSE/CML/33154 and NSE/CML/33327 are held as evidence only.
+  - Q4: the seven optional rows (JIOFIN, ITCHOTELS x2, ENRIN x2, TMCV x2) are deferred.
+  - Q2: a BSE enquiry only (no purchase, subscription, payment, commitment or bulk acquisition).
+  - Q11: retrieval of the official CGPOWER 2016 scheme terms only (no inferred ratio, price adjustment, parser change or exception closure).
+  - ED-57: exact-rational support for fractional face-value splits (VBL 2024-09-12), with tests and independent review.
+- **Not approved:** Q7 (OD-PX-4), Q8 (OWN-1), Q9 (OD-PX-3), Q10 (OD-MEM-2/3), Q12 (TV-1), Q13 (R-5) remain pending. Any corporate-action completeness window, any `completeness.csv` row, any production rebuild, P5, broker work. Membership acceptance does not certify a member-date.
+- **Result:** 231 rows `ACCEPTED`, 40 blank. Certified member-dates remain 0 (D66).
+- **Disclosure recorded after the write (independent review, 2026-11-15):** one of the 91 rows, `change:I-2024-09-12-VBL:ISIN_CHANGE:VBL:INE200M01039`, carries a contrary advisory verdict in `P0_MEMBERSHIP_ROW_RECOMMENDATIONS.csv` (`INSUFFICIENT_EVIDENCE`). The reason given is that the cited NSE API record's own `isin` field is the older INE200M01013, while the bhavcopies show INE200M01021 -> INE200M01039. ED-37 does not use that field ("it often holds an older ISIN"). The INE200M01013 -> INE200M01021 step is itself an accepted row (`change:I-2023-06-15-VBL`). The acceptance proposal did not disclose this verdict. The row was written because D67 names the exact 91 rows. The owner may revisit this row; see `P0_91_MEMBERSHIP_DECISION_AUDIT.md`.
+
+### D68. Queue V4 answers: D66 source enquiries; OD-PX-4 declined; dummy seats Option A; ED-57 expectations approved
+- **Status:** `USER_APPROVED` (owner, session instruction 2026-11-15).
+- **Approved:**
+  - D66 source path, Decision 1: a **written enquiry only** to BSE about corporate-action event coverage, historical periods, event types, provenance and upstream sources, independence from NSE data, sample records, and subscription and licensing terms. No purchase.
+  - D66 source path, Decision 2: a **free CDSL coverage test** on the 15 known in-window splits, documenting notices found and not found, event types, historical availability, ISIN-change requirements and limitations. The test is not proof of complete corporate-action coverage.
+  - Q7 (OD-PX-4): **DECLINED.** The 700 shortened-session price exceptions stay excluded until an adequately supported rule exists.
+  - Q10 (OD-MEM-2/3): **Option A.** Dummy seats are excluded from security-level calculations; index counts are reported separately.
+  - ED-57: the two changed synthetic test expectations ("Rs 10 -> Rs 3" read exactly as `SPLIT 3:10`) are approved.
+  - `change:I-2024-09-12-VBL:ISIN_CHANGE:VBL:INE200M01039`: **keep ACCEPTED**, retaining the disclosure of the contrary advisory verdict (D67).
+  - Q8: BRITANNIA 2021-05-25 and TVSMOTOR 2025-08-25 stay unparsed. Q9: ADANIENSOL 2024-11-21 stays excluded. CGPOWER demerger representation rule: deferred.
+- **Not approved / pending:** Q12 (TradingView exports) and Q13 (R-5 precedence wording) stay pending. No BSE purchase or subscription. **No certification approval**: D66 and every other applicable gate must pass independently first. No completeness window, `completeness.csv` row or approval marker.
+
+### OD-BP-001. Commercial production architecture is browser-based cloud SaaS (supersedes D57 for production)
+- **Status:** `USER_APPROVED` (product owner, 2026-11-18).
+- **Decision:** For GTF commercial production architecture, OD-BP-001 supersedes D57. The commercial GTF product shall be a browser-based, cloud-hosted, multi-tenant SaaS web application. Customers access GTF through supported web browsers. A desktop application or mandatory desktop installation is not part of the commercial product scope.
+- **Local-first retention:** Local-first / loopback execution may be retained as a development, testing, migration or engineering baseline. It is not the target commercial production deployment model. Remaining local-first requirements are classified as development/testing compatibility requirements, not commercial production architecture requirements.
+- **Confirmed product boundaries:** NSE cash equities; initial research universe Nifty 100; individual traders; positional and swing trading; cloud-hosted browser SaaS; manual execution through external broker platforms; tenant-isolated customer data; broker order routing not authorised; desktop shells excluded from the commercial product.
+- **Architectural implications (target, not a technology lock):** browser React/TypeScript frontend; cloud-hosted backend APIs; multi-tenant identity and authorisation; tenant-isolated customer data; shared market reference data where legally permitted; managed production database; background workers; secure object storage; cloud networking, TLS and edge protection; monitoring and observability; backup, recovery and deployment processes; subscription and entitlement enforcement. Specific technologies and providers remain subject to architecture review and separate approval.
+- **Does not authorise:** cloud infrastructure purchases; deployment or migration; database migration; API or schema changes; external provider commitments; broker integration or order execution; removal of local development/testing capabilities; any change to D66 or historical data certification; any change to Rulebook or research-engine decisions. D57 historical text is preserved, not rewritten away.
+- **Implementation authorisation:** No commercial cloud implementation is authorised by this decision alone. The W0 foundation specifications (MS-016, MS-017, MS-018 and related foundation specs) are **authorised for specification only**. Cloud spending, provider selection and production deployment require separate approvals.
+- **Records:** [ADR_OD-BP-001.md](../../docs/product-blueprint/ADR_OD-BP-001.md), [00_MASTER_PRODUCT_BLUEPRINT.md](../../docs/product-blueprint/00_MASTER_PRODUCT_BLUEPRINT.md), [13_OWNER_DECISION_REGISTER.md](../../docs/product-blueprint/13_OWNER_DECISION_REGISTER.md), [07_TECHNOLOGY_DECISION_REGISTER.md](../../docs/product-blueprint/07_TECHNOLOGY_DECISION_REGISTER.md).
+
 **Standing instruction (2026-11-09):**
 - DATA_READY is not claimed until the acceptance criteria pass.
 - Engineering completion, data readiness and research validation are kept distinct.
@@ -925,6 +997,10 @@ All `USER_APPROVED`, 2026-11-09, recorded in the owner's terms. Implementation: 
 | D59 | ED-47 | provisional membership research from 2020-12-31; not certified |
 | D60 | ED-48 | 25 count rows: `count_approval` APPROVED; `decision` blank; no period verified |
 | D61 | ED-48 | 10 E03 rows: `mapping_approval` APPROVED; `decision` blank; no period verified |
+| D62 | ED-51 | 108,325 member-dates `CA_RESPONSE_PRESENT_NOT_COMPLETE`; exploratory-only 68,143 at D62, 73,368 after D65; 0 certified |
+| D63 | ED-51 | builder evaluates six data gates; `gtf_trade_eligibility` NOT_EVALUATED on every output row |
+| D64 | ED-52 | G0 holds on an unexplained price-scale gap; batch 2 rows held until D65 |
+| D65 | ledger, no ED | 17 rows `ACCEPTED` 2026-11-13; 85 of 185 periods verified; 0 certified |
 
 Details: `IMPLEMENTATION_BLOCKERS.md` Part 11.
 

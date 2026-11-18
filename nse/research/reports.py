@@ -79,7 +79,13 @@ def _cell(v):
 
 
 def candidate_rows(result):
+    """One row per candidate. limitations carries the scan's and the symbol's as well as the
+    candidate's own, so a CSV row alone never hides UNIVERSE_UNVERIFIED or similar (audit
+    2026-11-06, Agent 6 #6)."""
     rows = []
+    outer = {}
+    for s in result.symbols:
+        outer[s.symbol] = set(result.limitations or []) | set(s.limitations or [])
     for c in result.candidates():
         g = {x.gate: x.outcome for x in c.gates}
         g3 = c.gate("G3").evidence
@@ -98,7 +104,8 @@ def candidate_rows(result):
                "entry_min": c.levels["entry"][0], "entry_max": c.levels["entry"][1],
                "target": (g7.get("target") or {}).get("proximal"), "rr_min": rr[0], "rr_max": rr[1],
                "status_reasons": c.status_reasons, "manual_review": c.manual_review,
-               "manual_checks": [x["code"] for x in c.manual_checks], "limitations": c.limitations,
+               "manual_checks": [x["code"] for x in c.manual_checks],
+               "limitations": sorted(set(c.limitations) | outer.get(c.symbol, set(result.limitations or []))),
                "pre_entry_score": (c.zone.get("pre_entry_score") or {}).get("display")}
         row.update(g)
         rows.append(row)

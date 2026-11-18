@@ -3,17 +3,20 @@ and ingests them (D31: local files only; nothing here fetches, schedules or cont
 broker, D10, D17).
 
   Provider / LocalInboxProvider   where a session's downloaded files are found
-  detect_format(path)             LEGACY_BHAVCOPY | UDIFF_UNVERIFIED | UNKNOWN
+  detect_format(path)             LEGACY_BHAVCOPY | UDIFF_BHAVCOPY | UNKNOWN
   plan(calendar, start, end, manifest_path, raw_dir) -> rows, one per session
   ingest(paths, raw_dir, manifest_path, quarantine_dir, ledger_path, ...) -> outcomes
   daily_update(session_date, provider, calendar, ...) -> one status (+ alert)
   coverage(plan_rows) -> counts, first/last held date, missing sessions
 
 Rules:
-  - Only the legacy bhavcopy archive (cmDDMMMYYYYbhav.csv.zip) is ingested: it is the
-    only verified format (B18, EOD_FORMAT_EVIDENCE.md). A UDiFF file is recognised by its
-    header but NEVER ingested: it is quarantined with FORMAT_UNVERIFIED_B18. Format
-    detection is a triage label only; acceptance is the strict nse_bhavcopy parse.
+  - Two verified formats are ingested, as archives only: the legacy bhavcopy
+    (cmDDMMMYYYYbhav.csv.zip) and the UDiFF bhavcopy (BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000
+    .csv.zip), EOD_FORMAT_EVIDENCE.md sections 5 and 9. Format detection is a triage label
+    only; acceptance is the strict nse_bhavcopy parse, which accepts only the verified
+    schema versions. A verified file in the format NOT selected for its trade date
+    (nse_bhavcopy.selected_format, ED-20: legacy up to 2024-07-05, UDiFF from 2024-07-08)
+    is quarantined with FORMAT_NOT_SELECTED_FOR_DATE, so one session never has two sources.
   - Source files are copied, never moved or deleted. A held raw file is never
     overwritten: a second file for a held session with a different SHA-256 is a revision
     and is quarantined (REVISED_FILE_QUARANTINED) for the owner to judge.
@@ -37,7 +40,7 @@ ALREADY ON LOCAL DISK, in the provider's own delivery folder, plus the provenanc
 (source page, download date, status) the owner records for ingest(). Its files then pass
 the same detect_format / strict parse / quarantine path as a manual download. A provider
 must not add network code to nse/ (tests/test_repo.py forbids it) and must not deliver a
-format other than the verified legacy archive until B18 is closed for that format.
+format other than the two verified archive formats.
 """
 
 import datetime
@@ -53,7 +56,8 @@ from nse.research.deps import bhavcopy, calendar as cal_mod, EOD_MANIFEST, EOD_R
 
 # formats (detect_format)
 LEGACY_BHAVCOPY = "LEGACY_BHAVCOPY"
-UDIFF_UNVERIFIED = "UDIFF_UNVERIFIED"
+UDIFF_BHAVCOPY = "UDIFF_BHAVCOPY"
+UDIFF_UNVERIFIED = UDIFF_BHAVCOPY            # former name, kept for callers and old ledger readers
 UNKNOWN = "UNKNOWN"
 UDIFF_LEADING_COLUMNS = ("TradDt", "BizDt", "Sgmt")    # first columns of a UDiFF CM bhavcopy
 
@@ -79,7 +83,8 @@ REVISED_FILE_QUARANTINED = "REVISED_FILE_QUARANTINED"
 SOURCE_NOT_FOUND = "SOURCE_NOT_FOUND"
 
 # quarantine reasons
-FORMAT_UNVERIFIED_B18 = "FORMAT_UNVERIFIED_B18"
+FORMAT_UNVERIFIED_B18 = "FORMAT_UNVERIFIED_B18"   # used before ED-20; appears only in old ledgers
+FORMAT_NOT_SELECTED_FOR_DATE = "FORMAT_NOT_SELECTED_FOR_DATE"
 FORMAT_UNKNOWN = "FORMAT_UNKNOWN"
 PARSE_FAILED = "PARSE_FAILED"
 NOT_AN_ARCHIVE = "NOT_AN_ARCHIVE"
@@ -101,8 +106,13 @@ class AcquisitionError(ValueError):
 
 
 def legacy_name(session_date):
-    """cmDDMMMYYYYbhav.csv.zip, the name of the real archives in nse/data/eod/raw."""
+    """cmDDMMMYYYYbhav.csv.zip, the legacy archive name for a date."""
     return "cm%02d%s%04dbhav.csv.zip" % (session_date.day, _MONTHS[session_date.month - 1], session_date.year)
+
+
+def expected_name(session_date):
+    """The archive name NSE serves for the format selected for this date (ED-20)."""
+    return bhavcopy.official_name(session_date)
 
 
 def sha256_file(path):
@@ -126,8 +136,8 @@ class Provider(object):
 
 
 class LocalInboxProvider(Provider):
-    """A folder the owner downloads into. A session's file is the legacy archive named by
-    the NSE convention for that date; any other file in the folder is not offered."""
+    """A folder the owner downloads into. A session's file is the archive named by the NSE
+    convention for the format selected for that date; any other file is not offered."""
     name = "local_inbox"
     kind = "LOCAL_FILES"
 
@@ -135,7 +145,7 @@ class LocalInboxProvider(Provider):
         self.inbox_dir = inbox_dir
 
     def list_available(self, session_date):
-        path = os.path.join(self.inbox_dir, legacy_name(session_date))
+        path = os.path.join(self.inbox_dir, expected_name(session_date))
         return [path] if os.path.isfile(path) else []
 
 
@@ -144,10 +154,10 @@ class LocalInboxProvider(Provider):
 def _header_format(first_line):
     text = first_line.decode("utf-8", "replace").lstrip("﻿").rstrip("\r\n")
     cols = tuple(c.strip() for c in text.split(","))
-    if cols == bhavcopy.LEGACY_HEADER:
+    if cols in (bhavcopy.LEGACY_HEADER, bhavcopy.LEGACY_HEADER_13):     # 13 columns: ED-38, strict parse decides
         return LEGACY_BHAVCOPY
     if cols[:len(UDIFF_LEADING_COLUMNS)] == UDIFF_LEADING_COLUMNS:
-        return UDIFF_UNVERIFIED
+        return UDIFF_BHAVCOPY
     return UNKNOWN
 
 
@@ -199,7 +209,7 @@ def _session_label(calendar, d):
 
 def _file_status(d, held, raw_dir):
     """(status, file_name, detail) for one date from the manifest and the raw folder."""
-    name = legacy_name(d)
+    name = expected_name(d)
     path = os.path.join(raw_dir, name)
     records = held.get(d.isoformat(), [])
     present = os.path.isfile(path)
@@ -234,7 +244,8 @@ def plan(calendar, start, end, manifest_path, raw_dir):
                 d += datetime.timedelta(days=1)
                 continue                     # a closed day with no file: nothing to report
         rows.append({"session_date": d.isoformat(), "calendar_status": label, "calendar_detail": why,
-                     "status": status, "file_name": name, "detail": detail})
+                     "status": status, "file_name": name, "detail": detail,
+                     "format": bhavcopy.selected_format(d), "url": bhavcopy.official_url(d)})
         d += datetime.timedelta(days=1)
     return rows
 
@@ -366,20 +377,23 @@ def _ingest_one(src, raw_dir, manifest_path, quarantine_dir, source_page, downlo
 
     fmt = detect_format(src)
     res["format"] = fmt
-    if fmt == UDIFF_UNVERIFIED:
-        return quarantine(QUARANTINED, FORMAT_UNVERIFIED_B18,
-                          "UDiFF header detected; the format is not verified (B18), never ingested")
     if fmt == UNKNOWN:
         return quarantine(QUARANTINED, FORMAT_UNKNOWN, "header is neither legacy bhavcopy nor UDiFF")
     if not name.endswith(".csv.zip"):
         return quarantine(QUARANTINED, NOT_AN_ARCHIVE,
-                          "only cmDDMMMYYYYbhav.csv.zip archives are ingested (manifest ARCHIVE rows)")
+                          "only official .csv.zip archives are ingested (manifest ARCHIVE rows)")
     try:
         f = bhavcopy.load(src)                       # strict: raises on any deviation
     except bhavcopy.BhavcopyError as e:
         return quarantine(QUARANTINED, PARSE_FAILED, "%s: %s" % (type(e).__name__, e))
     d = f.trade_date.isoformat()
     res["session_date"] = d
+    res["schema_version"] = f.schema_version
+    selected = bhavcopy.selected_format(f.trade_date)
+    if f.format != selected:
+        return quarantine(QUARANTINED, FORMAT_NOT_SELECTED_FOR_DATE,
+                          "%s is a verified %s file, but %s is the selected source for %s (ED-20); "
+                          "kept for cross-checking only" % (name, f.format, selected, d), session_date=d)
     if held.get(d):
         h = held[d][0]
         return quarantine(REVISED_FILE_QUARANTINED, REVISION_OF_HELD_SESSION,

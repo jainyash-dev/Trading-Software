@@ -99,6 +99,19 @@ def series_status(snapshot, tf):
     return out
 
 
+def _dl_hidden(snapshot, st):
+    """True when the base candles cannot show the DL untouched: an unresolved overlay flag
+    (e.g. an excluded-session touch, D30 H1, whose depth no rule interprets), or a data gap
+    or unresolved calendar date at any point after the zone formed (the overlay stops
+    gap-checking a zone once it is TESTED, and a missing session before the first PL touch
+    could equally have reached the DL; audit 2026-11-06 H1). Unknown is not untouched (D15, R6)."""
+    if st.manual_review:
+        return True
+    formed = st.creation_period_end.date()
+    return (any(g.date > formed for g in snapshot.data_gaps)
+            or any(d > formed for d in snapshot.unresolved_calendar_dates))
+
+
 def zone_views(snapshot, tf):
     """Every zone the engine found on tf with the overlay's view of it (audit view;
     never a candidate list). None when the series has no engine run."""
@@ -114,6 +127,8 @@ def zone_views(snapshot, tf):
             dl_untouched = None if (st is None or st.dl_touched_at is None) else False
         else:
             dl_untouched = st.dl_touched_at is None and z.dl_touch_index is None
+            if dl_untouched and _dl_hidden(snapshot, st):
+                dl_untouched = None
         out.append(ZoneView(
             tf=tf, zone_id=z.id, side=z.side, pattern=z.pattern, proximal=z.proximal,
             distal=z.distal, normal_distal=z.normal_distal,
@@ -124,20 +139,70 @@ def zone_views(snapshot, tf):
     return out
 
 
+@dataclass
+class PineOnlyZone:
+    """A zone Pine draws and the rulebook-strict engine does not (D12). It has no overlay
+    state, so its freshness cannot be validated independently: under D43 it can only ever
+    restrict an outcome (MANUAL), never pass one or serve as a target."""
+    tf: str
+    zone_id: str
+    side: str
+    pattern: str
+    proximal: float
+    distal: float
+    created_time: str
+    tested: Optional[bool]     # Pine recorded a PL touch; None when the record does not say
+
+    def brief(self):
+        return {"tf": self.tf, "zone_id": self.zone_id, "side": self.side, "pattern": self.pattern,
+                "proximal": self.proximal, "distal": self.distal, "created": self.created_time,
+                "pine_tested": self.tested, "source": "PINE_ONLY (D12, D43)"}
+
+
+def pine_only_zones(snapshot, tf, side):
+    """Pine-only zones of side on tf that Pine still draws at the snapshot's as_of: one whose
+    DL a completed close has broken is deleted by Pine (PS 2613-2647) and resolves a conflict
+    (RB 1313). A record without that field counts as unbroken (unknown is not broken), and
+    one without test_count has tested None (unknown is not tested)."""
+    s = snapshot.series.get(tf)
+    if s is None or s.engine is None:
+        return []
+    out = []
+    for p in s.engine.pine_only_zones:
+        if p["side"] != side or p.get("invalidated_index") is not None:
+            continue
+        tc = p.get("test_count")
+        out.append(PineOnlyZone(tf, "pine:%s:%d" % (tf, p["created_index"]), p["side"], p["pattern"],
+                                p["proximal"], p["distal"], s.candles[p["created_index"]].end.isoformat(),
+                                None if tc is None else tc > 0))
+    return out
+
+
 # --- location / curve ------------------------------------------------------------------
 
 def build_curve(views, price, loc_highs):
     """Curve boundaries for the current price (RB 1586-1590): nearest FRESH demand below
     and FRESH supply above. A tested zone is skipped (RB 1587, situation 3); a zone of
-    unknown freshness stops the search, because it may be the true boundary."""
-    out = {"price": price, "bottom": None, "top": None, "skipped_tested": [], "issues": []}
+    unknown freshness stops the search, because it may be the true boundary (P-LOC-3).
+    Price inside a TESTED Monthly demand redraws the curve from the next fresh Monthly
+    demand below (P-LOC-2, owner-approved 2026-11-08; RB 1621). Price inside a tested zone
+    of another timeframe, or a tested supply, stays MANUAL (P-LOC-2 covers Monthly demand)."""
+    out = {"price": price, "bottom": None, "top": None, "skipped_tested": [], "issues": [],
+           "redrawn_past": []}
     demand = [v for v in views if v.side == "demand" and v.active]
     supply = [v for v in views if v.side == "supply" and v.active]
 
+    inside_fresh = any(v.distal <= price <= v.proximal and v.freshness == m.Z_FRESH for v in demand)
     for v in demand:
         if v.distal <= price <= v.proximal:            # price inside an HTF demand zone
             if v.freshness == m.Z_FRESH:
                 out["bottom"] = v
+            elif v.freshness == m.Z_TESTED and v.tf == "M":
+                # P-LOC-2: the tested zone is no longer a boundary; the search below decides
+                # (a fresh zone also holding price stays the bottom)
+                out["skipped_tested"].append(v.zone_id)
+                if not inside_fresh:
+                    out["redrawn_past"].append(v.zone_id)
             elif v.freshness == m.Z_TESTED:
                 out["issues"].append("PRICE_INSIDE_TESTED_HTF_DEMAND %s (VLOC needs a fresh zone, RB 1587, 1597)" % v.zone_id)
             else:

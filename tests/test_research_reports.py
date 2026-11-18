@@ -2,6 +2,7 @@
 
 import csv
 import datetime
+import hashlib
 import io
 import json
 import os
@@ -61,9 +62,13 @@ class Universe(unittest.TestCase):
         tmp = tempfile.mkdtemp()
         try:
             p = os.path.join(tmp, "u.csv")
+            sha = {}
+            for name in ("x.pdf", "y.pdf"):
+                write(os.path.join(tmp, name), "SYNTHETIC " + name)
+                sha[name] = hashlib.sha256(("SYNTHETIC " + name).encode("utf-8")).hexdigest()
             write(p, self.HEADER +
-                  "AAA,EQ,,NIFTY 100,2020-01-01,2022-06-30,NSE Indices notice X,x.pdf,%s,2026-10-29,\n" % ("a" * 64) +
-                  "BBB,EQ,,NIFTY 100,2022-07-01,,NSE Indices notice Y,y.pdf,%s,2026-10-29,\n" % ("b" * 64) +
+                  "AAA,EQ,,NIFTY 100,2020-01-01,2022-06-30,NSE Indices notice X,x.pdf,%s,2026-10-29,\n" % sha["x.pdf"] +
+                  "BBB,EQ,,NIFTY 100,2022-07-01,,NSE Indices notice Y,y.pdf,%s,2026-10-29,\n" % sha["y.pdf"] +
                   "CCC,EQ,,NIFTY 100,2020-01-01,,,,,2026-10-29,unsourced\n")
             u = universe.load(p)
             self.assertEqual([r.symbol for r in u.members(D(2022, 6, 30))], ["AAA", "CCC"])
@@ -71,11 +76,27 @@ class Universe(unittest.TestCase):
             self.assertEqual(u.limitations(D(2022, 7, 1)), [m.UNIVERSE_UNVERIFIED])      # CCC has no source
             u.rows = [r for r in u.rows if r.symbol != "CCC"]
             self.assertEqual(u.limitations(D(2022, 7, 1)), [])
+            # a hash string that does not match its file no longer verifies the row (audit 2026-11-06)
+            write(os.path.join(tmp, "y.pdf"), "edited after recording")
+            self.assertEqual(universe.load(p).limitations(D(2022, 7, 1)), [m.UNIVERSE_UNVERIFIED])
             write(p, "symbol\nAAA\n")
             with self.assertRaises(universe.UniverseError):
                 universe.load(p)
         finally:
             shutil.rmtree(tmp)
+
+    def test_a_date_with_no_member_is_never_a_verified_universe(self):
+        # PROMPT-01 audit: before a file's first period members() is empty and all([]) made
+        # the universe look verified; unknown membership is UNIVERSE_UNVERIFIED
+        u = universe.Universe("NIFTY 100", [universe.Membership("AAA", "EQ", D(2021, 1, 1), None, True, "SYNTHETIC")])
+        self.assertEqual(u.limitations(D(2021, 6, 1)), [])                       # a verified member
+        self.assertEqual(u.limitations(D(2018, 6, 1)), [m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW,
+                                                       m.UNIVERSE_UNVERIFIED])   # D59, and no member yet
+        self.assertNotIn(m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW, u.limitations(universe.PROVISIONAL_MEMBERSHIP_START))
+        self.assertIn(m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW,
+                      u.limitations(universe.PROVISIONAL_MEMBERSHIP_START - datetime.timedelta(days=1)))
+        self.assertNotIn(m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW,
+                         universe.adhoc(["AAA"]).limitations(D(2016, 1, 1)))
 
     def test_adhoc_universe_is_unverified_and_non_members_are_reported(self):
         u = universe.adhoc(["aaa", "AAA", " bbb "])
@@ -83,8 +104,43 @@ class Universe(unittest.TestCase):
         self.assertEqual(u.limitations(D(2025, 1, 1)), [m.UNIVERSE_UNVERIFIED])
         cs = R.random_walk(1, 300)
         res = scanner.scan([R.daily_input("ZZZ", cs)], scanner.ScanConfig(as_of=cs[-1].end), universe=u)
-        self.assertEqual(res.symbols[0].status, scanner.SYMBOL_NOT_IN_UNIVERSE)
+        status = {s.symbol: s.status for s in res.symbols}
+        self.assertEqual(status["ZZZ"], scanner.SYMBOL_NOT_IN_UNIVERSE)
+        # members without any input are reported, never dropped (survivorship, 2026-11-08)
+        self.assertEqual((status["AAA"], status["BBB"]), (scanner.SYMBOL_DATA_INSUFFICIENT,) * 2)
+        self.assertTrue(res.symbols[0].reasons[0].startswith("NO_INPUT_FOR_UNIVERSE_MEMBER"))
+        self.assertEqual([s.symbol for s in res.symbols], ["AAA", "BBB", "ZZZ"])
         self.assertIn(m.UNIVERSE_UNVERIFIED, res.limitations)
+
+    def test_overlapping_membership_periods_are_refused(self):
+        import tempfile
+        tmp = tempfile.mkdtemp()
+        try:
+            path = os.path.join(tmp, "u.csv")
+            with open(path, "w") as fh:
+                fh.write(",".join(universe.COLUMNS) + "\n")
+                fh.write("AAA,EQ,,NIFTY 100,2022-01-01,2022-06-30,,,,,SYNTHETIC\n")
+                fh.write("AAA,EQ,,NIFTY 100,2022-06-30,,,,,,SYNTHETIC\n")   # shares 30 Jun (inclusive ends)
+            with self.assertRaisesRegex(universe.UniverseError, "overlapping"):
+                universe.load(path)
+            with open(path, "w") as fh:
+                fh.write(",".join(universe.COLUMNS) + "\n")
+                fh.write("AAA,EQ,,NIFTY 100,2022-01-01,2022-06-29,,,,,SYNTHETIC\n")
+                fh.write("AAA,EQ,,NIFTY 100,2022-06-30,,,,,,SYNTHETIC\n")
+            self.assertEqual(len(universe.load(path).members(D(2022, 6, 30))), 1)
+        finally:
+            shutil.rmtree(tmp)
+
+    def test_scan_level_limitations_reach_every_candidate_csv_row(self):
+        # audit 2026-11-06 (Agent 6 #6): candidates.csv rows used to omit UNIVERSE_UNVERIFIED
+        cs = R.long_mit_candles()
+        cfg = scanner.ScanConfig(as_of=cs[-1].end, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0)
+        res = scanner.scan([R.daily_input("SYN", cs)], cfg, universe=universe.adhoc(["SYN"]))
+        rows = reports.candidate_rows(res)
+        self.assertTrue(rows)
+        for r in rows:
+            self.assertIn(m.UNIVERSE_UNVERIFIED, r["limitations"])
+        self.assertIn(m.UNIVERSE_UNVERIFIED, reports.candidates_csv(res))
 
 
 class Serialisation(unittest.TestCase):

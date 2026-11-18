@@ -171,7 +171,171 @@ SOURCE_FILES = {
     "NSE/CMTR/65587": "CMTR65587.pdf",
     "NSE/CMTR/65729": "CMTR65729.pdf",
     "NSE/CMTR/70319": "CMTR70319.pdf",
+    # the three circulars NSE/MSD/60340 withdrew; held since 2026-11-09 (D40 evidence trail)
+    "NSE/MSD/59999": "MSD59999.pdf",
+    "NSE/MSD/60300": "MSD60300.pdf",
+    "NSE/MSD/60318": "MSD60318.pdf",
 }
+
+# --- 2016-2020 (D48, owner 2026-11-09): official CM circulars, transcribed from the rendered
+# pages; every date independently re-checked against each circular's extracted text (MP1) ---
+_BASE_HOLIDAYS_2016_2020 = {
+    "NSE/CMTR/31297": ({   # 2016: 15 weekday rows + 4 Saturday/Sunday rows, one page
+        D(2016, 1, 26): ('Tuesday', 'Republic Day'),
+        D(2016, 3, 7): ('Monday', 'Mahashivratri'),
+        D(2016, 3, 24): ('Thursday', 'Holi'),
+        D(2016, 3, 25): ('Friday', 'Good Friday'),
+        D(2016, 4, 14): ('Thursday', 'Dr. Baba Saheb Ambedkar Jayanti'),
+        D(2016, 4, 15): ('Friday', 'Ram Navami'),
+        D(2016, 4, 19): ('Tuesday', 'Mahavir Jayanti'),
+        D(2016, 7, 6): ('Wednesday', 'Id-Ul-Fitr (Ramzan ID)'),
+        D(2016, 8, 15): ('Monday', 'Independence Day'),
+        D(2016, 9, 5): ('Monday', 'Ganesh Chaturthi'),
+        D(2016, 9, 13): ('Tuesday', 'Bakri ID'),
+        D(2016, 10, 11): ('Tuesday', 'Dasera'),
+        D(2016, 10, 12): ('Wednesday', 'Moharram'),
+        D(2016, 10, 31): ('Monday', 'Diwali-Balipratipada'),
+        D(2016, 11, 14): ('Monday', 'Gurunanak Jayanti'),
+        D(2016, 5, 1): ('Sunday', 'Maharashtra Day'),
+        D(2016, 10, 2): ('Sunday', 'Mahatma Gandhi Jayanti'),
+        D(2016, 10, 30): ('Sunday', 'Diwali-Laxmi Pujan*'),
+        D(2016, 12, 25): ('Sunday', 'Christmas'),
+    }, (15, 4)),
+    "NSE/CMTR/33746": ({   # 2017: 13 weekday rows + 5 Saturday/Sunday rows, one page
+        D(2017, 1, 26): ('Thursday', 'Republic Day'),
+        D(2017, 2, 24): ('Friday', 'Mahashivratri'),
+        D(2017, 3, 13): ('Monday', 'Holi'),
+        D(2017, 4, 4): ('Tuesday', 'Ram Navami'),
+        D(2017, 4, 14): ('Friday', 'Good Friday / Dr.Baba Saheb Ambedkar Jayanti'),
+        D(2017, 5, 1): ('Monday', 'Maharashtra Day'),
+        D(2017, 6, 26): ('Monday', 'Id-Ul-Fitr (Ramzan ID)'),
+        D(2017, 8, 15): ('Tuesday', 'Independence Day'),
+        D(2017, 8, 25): ('Friday', 'Ganesh Chaturthi'),
+        D(2017, 10, 2): ('Monday', 'Mahatama Gandhi Jayanti'),
+        D(2017, 10, 19): ('Thursday', 'Diwali-Laxmi Pujan*'),
+        D(2017, 10, 20): ('Friday', 'Diwali-Balipratipada'),
+        D(2017, 12, 25): ('Monday', 'Christmas'),
+        D(2017, 4, 9): ('Sunday', 'Mahavir Jayanti'),
+        D(2017, 9, 2): ('Saturday', 'Bakri ID'),
+        D(2017, 9, 30): ('Saturday', 'Dasera'),
+        D(2017, 10, 1): ('Sunday', 'Moharram'),
+        D(2017, 11, 4): ('Saturday', 'Gurunanak Jayanti'),
+    }, (13, 5)),
+    "NSE/CMTR/36475": ({   # 2018: 16 weekday rows + 3 Saturday/Sunday rows, one page
+        D(2018, 1, 26): ('Friday', 'Republic Day'),
+        D(2018, 2, 13): ('Tuesday', 'Mahashivratri'),
+        D(2018, 3, 2): ('Friday', 'Holi'),
+        D(2018, 3, 29): ('Thursday', 'Mahavir Jayanti'),
+        D(2018, 3, 30): ('Friday', 'Good Friday'),
+        D(2018, 5, 1): ('Tuesday', 'Maharashtra Day'),
+        D(2018, 8, 15): ('Wednesday', 'Independence Day'),
+        D(2018, 8, 22): ('Wednesday', 'Bakri ID'),
+        D(2018, 9, 13): ('Thursday', 'Ganesh Chaturthi'),
+        D(2018, 9, 20): ('Thursday', 'Moharram'),
+        D(2018, 10, 2): ('Tuesday', 'Mahatama Gandhi Jayanti'),
+        D(2018, 10, 18): ('Thursday', 'Dasera'),
+        D(2018, 11, 7): ('Wednesday', 'Diwali-Laxmi Pujan*'),
+        D(2018, 11, 8): ('Thursday', 'Diwali-Balipratipada'),
+        D(2018, 11, 23): ('Friday', 'Gurunanak Jayanti'),
+        D(2018, 12, 25): ('Tuesday', 'Christmas'),
+        D(2018, 3, 25): ('Sunday', 'Ram Navami'),
+        D(2018, 4, 14): ('Saturday', 'Dr.Baba Saheb Ambedkar Jayanti'),
+        D(2018, 6, 16): ('Saturday', 'Id-Ul-Fitr (Ramzan ID)'),
+    }, (16, 3)),
+    "NSE/CMTR/39612": ({   # 2019: 15 weekday rows + 4 Saturday/Sunday rows, one page
+        D(2019, 3, 4): ('Monday', 'Mahashivratri'),
+        D(2019, 3, 21): ('Thursday', 'Holi'),
+        D(2019, 4, 17): ('Wednesday', 'Mahavir Jayanti'),
+        D(2019, 4, 19): ('Friday', 'Good Friday'),
+        D(2019, 5, 1): ('Wednesday', 'Maharashtra Day'),
+        D(2019, 6, 5): ('Wednesday', 'Id-Ul-Fitr (Ramzan ID)'),
+        D(2019, 8, 12): ('Monday', 'Bakri Id'),
+        D(2019, 8, 15): ('Thursday', 'Independence Day'),
+        D(2019, 9, 2): ('Monday', 'Ganesh Chaturthi'),
+        D(2019, 9, 10): ('Tuesday', 'Moharram'),
+        D(2019, 10, 2): ('Wednesday', 'Mahatma Gandhi Jayanti'),
+        D(2019, 10, 8): ('Tuesday', 'Dasera'),
+        D(2019, 10, 28): ('Monday', 'Diwali-Balipratipada'),
+        D(2019, 11, 12): ('Tuesday', 'Gurunanak Jayanti'),
+        D(2019, 12, 25): ('Wednesday', 'Christmas'),
+        D(2019, 1, 26): ('Saturday', 'Republic Day'),
+        D(2019, 4, 13): ('Saturday', 'Ram Navami'),
+        D(2019, 4, 14): ('Sunday', 'Dr.Baba Saheb Ambedkar Jayanti'),
+        D(2019, 10, 27): ('Sunday', 'Diwali-Laxmi Pujan*'),
+    }, (15, 4)),
+    "NSE/CMTR/42877": ({   # 2020: 12 weekday rows + 7 Saturday/Sunday rows, one page
+        D(2020, 2, 21): ('Friday', 'Mahashivratri'),
+        D(2020, 3, 10): ('Tuesday', 'Holi'),
+        D(2020, 4, 2): ('Thursday', 'Ram Navami'),
+        D(2020, 4, 6): ('Monday', 'Mahavir Jayanti'),
+        D(2020, 4, 10): ('Friday', 'Good Friday'),
+        D(2020, 4, 14): ('Tuesday', 'Dr.Baba Saheb Ambedkar Jayanti'),
+        D(2020, 5, 1): ('Friday', 'Maharashtra Day'),
+        D(2020, 5, 25): ('Monday', 'Id-Ul-Fitr (Ramzan ID)'),
+        D(2020, 10, 2): ('Friday', 'Mahatma Gandhi Jayanti'),
+        D(2020, 11, 16): ('Monday', 'Diwali-Balipratipada'),
+        D(2020, 11, 30): ('Monday', 'Gurunanak Jayanti'),
+        D(2020, 12, 25): ('Friday', 'Christmas'),
+        D(2020, 1, 26): ('Sunday', 'Republic Day'),
+        D(2020, 8, 1): ('Saturday', 'Bakri Id'),
+        D(2020, 8, 15): ('Saturday', 'Independence Day'),
+        D(2020, 8, 22): ('Saturday', 'Ganesh Chaturthi'),
+        D(2020, 8, 30): ('Sunday', 'Moharram'),
+        D(2020, 10, 25): ('Sunday', 'Dasera'),
+        D(2020, 11, 14): ('Saturday', 'Diwali-Laxmi Pujan*'),
+    }, (12, 7)),
+}
+_AMENDMENT_HOLIDAYS_2016_2020 = {
+    D(2019, 4, 29): ('NSE/CMTR/40536', 'Monday'),
+    D(2019, 10, 21): ('NSE/MSD/42319', 'Monday'),
+}
+# no 2016-2020 amendment removes or moves a base holiday (REMOVED_BY_AMENDMENT unchanged)
+_SESSIONS_2016_2020 = {
+    (D(2016, 10, 30), 'MUHURAT_SESSION'): ('NSE/CMTR/33424', '18:30', '19:30', cal_mod.EXCLUDED_MUHURAT),
+    (D(2017, 10, 19), 'MUHURAT_SESSION'): ('NSE/CMTR/35993', '18:30', '19:30', cal_mod.EXCLUDED_MUHURAT),
+    (D(2018, 11, 7), 'MUHURAT_SESSION'): ('NSE/CMTR/39216', '17:30', '18:30', cal_mod.EXCLUDED_MUHURAT),
+    (D(2019, 10, 27), 'MUHURAT_SESSION'): ('NSE/CMTR/42483', '18:15', '19:15', cal_mod.EXCLUDED_MUHURAT),
+    (D(2020, 2, 1), 'SPECIAL_SESSION'): ('NSE/CMTR/43290', '09:15', '15:30', cal_mod.NORMAL_SPECIAL),
+    (D(2020, 11, 14), 'MUHURAT_SESSION'): ('NSE/CMTR/46230', '18:15', '19:15', cal_mod.EXCLUDED_MUHURAT),
+}
+# Dhanteras "extended live trading" days: regular equity hours plus a Gold ETF / SGB-only
+# evening extension. UNRESOLVED until owner decision D58 (CAL-2 option A, 2026-11-10)
+# confirmed the equity session as a regular 09:15-15:30 session (NORMAL_SPECIAL).
+DHANTERAS_SESSIONS = {
+    (D(2016, 10, 28), 'SPECIAL_SESSION'): ('NSE/CMTR/33442', '09:15', '15:30', cal_mod.NORMAL_SPECIAL),
+    (D(2017, 10, 17), 'SPECIAL_SESSION'): ('NSE/CMTR/36003', '09:15', '15:30', cal_mod.NORMAL_SPECIAL),
+    (D(2018, 11, 5), 'SPECIAL_SESSION'): ('NSE/CMTR/39215', '09:15', '15:30', cal_mod.NORMAL_SPECIAL),
+    (D(2019, 10, 25), 'SPECIAL_SESSION'): ('NSE/CMTR/42455', '09:15', '15:30', cal_mod.NORMAL_SPECIAL),
+}
+_SESSIONS_2016_2020.update(DHANTERAS_SESSIONS)
+# rows still UNRESOLVED in the real tables: none since D58 (the mechanism is tested on
+# synthetic tables in test_nse_calendar)
+UNRESOLVED_SESSIONS = {}
+_SOURCE_FILES_2016_2020 = {
+    'NSE/CMTR/31297': 'CMTR31297.pdf',
+    'NSE/CMTR/33424': 'CMTR33424.pdf',
+    'NSE/CMTR/33442': 'CMTR33442.pdf',
+    'NSE/CMTR/33746': 'CMTR33746.pdf',
+    'NSE/CMTR/35993': 'CMTR35993.pdf',
+    'NSE/CMTR/36003': 'CMTR36003.pdf',
+    'NSE/CMTR/36475': 'CMTR36475.pdf',
+    'NSE/CMTR/39215': 'CMTR39215.pdf',
+    'NSE/CMTR/39216': 'CMTR39216.pdf',
+    'NSE/CMTR/39612': 'CMTR39612.pdf',
+    'NSE/CMTR/40536': 'CMTR40536.pdf',
+    'NSE/MSD/42319': 'MSD42319.pdf',
+    'NSE/CMTR/42403': 'CMTR42403.pdf',
+    'NSE/CMTR/42455': 'CMTR42455.pdf',
+    'NSE/CMTR/42483': 'CMTR42483.pdf',
+    'NSE/CMTR/42877': 'CMTR42877.pdf',
+    'NSE/CMTR/43290': 'CMTR43290.pdf',
+    'NSE/CMTR/46230': 'CMTR46230.pdf',
+}
+BASE_HOLIDAYS.update(_BASE_HOLIDAYS_2016_2020)
+AMENDMENT_HOLIDAYS.update(_AMENDMENT_HOLIDAYS_2016_2020)
+SESSIONS.update(_SESSIONS_2016_2020)
+SOURCE_FILES.update(_SOURCE_FILES_2016_2020)
+
 Q1_2022 = (D(2022, 1, 3), D(2022, 3, 31))
 Q1_2022_EOD_FILES = 61
 
@@ -202,9 +366,9 @@ class Tables(unittest.TestCase):
         c = cal_mod.NseCalendar.load(CAL_DIR)
         self.assertEqual(sorted(c.sources), sorted(SOURCE_FILES))
         expected = sum(len(h) for h, _ in BASE_HOLIDAYS.values()) - len(REMOVED_BY_AMENDMENT) \
-            + len(AMENDMENT_HOLIDAYS) + len(SESSIONS)
+            + len(AMENDMENT_HOLIDAYS) + len(SESSIONS) + len(UNRESOLVED_SESSIONS)
         self.assertEqual(len(c.events), expected)
-        self.assertEqual(expected, 105)
+        self.assertEqual(expected, 211)          # 105 for 2021-2025 + 106 for 2016-2020 (D48)
 
     def test_base_holidays_match_each_circular(self):
         for ref, (printed, (weekday_rows, weekend_rows)) in BASE_HOLIDAYS.items():
@@ -232,12 +396,16 @@ class Tables(unittest.TestCase):
         self.assertIn("2023-06-28", note)
 
     def test_no_row_is_unresolved_or_unsourced(self):
-        self.assertEqual([r["date"] for r in self.events if r["status"] != "CONFIRMED"], [])
+        # D48: unresolved dates stay explicitly flagged. The four 2016-2019 Dhanteras days were
+        # the only ones until owner decision D58 confirmed them (CAL-2 option A); none remain.
+        self.assertEqual([(D.fromisoformat(r["date"]), r["event"]) for r in self.events if r["status"] != "CONFIRMED"],
+                         sorted(UNRESOLVED_SESSIONS))
         self.assertEqual([r["date"] for r in self.events if not r["source_ref"]], [])
 
     def test_session_rows_match_their_notices(self):
         kinds = {s["source_ref"]: s["kind"] for s in self.sources}
-        rows = {(D.fromisoformat(r["date"]), r["event"]): r for r in self.events if r["event"] != "HOLIDAY"}
+        rows = {(D.fromisoformat(r["date"]), r["event"]): r for r in self.events
+                if r["event"] != "HOLIDAY" and r["status"] == "CONFIRMED"}
         self.assertEqual(sorted(rows), sorted(SESSIONS))
         for key, (ref, start, end, _) in SESSIONS.items():
             r = rows[key]
@@ -261,6 +429,40 @@ class Tables(unittest.TestCase):
             [row] = [r for r in self.events if r["date"] == d]
             self.assertIn("not one continuous session", row["note"], d)
 
+    def test_dhanteras_days_are_regular_equity_sessions_d58(self):
+        # D58 (CAL-2 option A): exactly these four rows were confirmed; the equity session is
+        # regular (09:15-15:30, NORMAL_SPECIAL, candles built) and the note keeps the Gold
+        # ETF / SGB-only extension, which builds no candle
+        c = cal_mod.NseCalendar.load(CAL_DIR)
+        for (d, event), (ref, start, end, st) in DHANTERAS_SESSIONS.items():
+            [row] = [r for r in self.events if r["date"] == d.isoformat()]
+            self.assertEqual((row["event"], row["source_ref"], row["session_start"], row["session_end"],
+                              row["status"]), (event, ref, start, end, "CONFIRMED"), d)
+            self.assertIn("Gold ETF and Sovereign Gold Bonds only", row["note"], d)
+            self.assertIn("Regular Market Timing (there is no change to this)", row["note"], d)
+            self.assertIn("D58", row["note"], d)
+            self.assertEqual(c.session_type(d), cal_mod.NORMAL_SPECIAL, d)
+            self.assertTrue(c.is_trading_day(d), d)
+        # the extension never becomes a separate or excluded session on these dates
+        for (d, _) in DHANTERAS_SESSIONS:
+            self.assertEqual([r["event"] for r in self.events if r["date"] == d.isoformat()], ["SPECIAL_SESSION"], d)
+
+    def test_d40_twentieth_january_is_one_primary_session_not_the_withdrawn_dr_plan(self):
+        # D40 factual correction (REAL_DATA_READINESS.md section 1): NSE/MSD/59999 planned a
+        # primary/DR two-window session for 20 Jan 2024; NSE/MSD/60340 withdrew it (and its
+        # updates 60300, 60318) before the day. The two-window sessions are 2 Mar / 18 May.
+        by = {s["source_ref"]: s for s in self.sources}
+        for ref in ("NSE/MSD/59999", "NSE/MSD/60300", "NSE/MSD/60318"):
+            self.assertEqual((by[ref]["kind"], by[ref]["applicable_year"]), ("SESSION_NOTICE", "2024"), ref)
+            self.assertFalse([r for r in self.events if r["source_ref"] == ref], ref)   # withdrawn: no event cites it
+        [row] = [r for r in self.events if r["date"] == "2024-01-20"]
+        self.assertEqual((row["event"], row["source_ref"]), ("SPECIAL_SESSION", "NSE/MSD/60340"))
+        self.assertIn("did not take place", row["note"])
+        self.assertIn("no switch-over", row["note"])
+        for d, ref in (("2024-03-02", "NSE/MSD/60677"), ("2024-05-18", "NSE/MSD/61893")):
+            [row] = [r for r in self.events if r["date"] == d]
+            self.assertEqual((row["event"], row["source_ref"]), ("SHORTENED_SESSION", ref), d)
+
     def test_provenance_fields(self):
         by = {s["source_ref"]: s for s in self.sources}
         self.assertEqual({k: v["file_name"] for k, v in by.items()}, SOURCE_FILES)
@@ -276,7 +478,7 @@ class Tables(unittest.TestCase):
                              % (series, number))
             self.assertRegex(s["sha256"], r"^[0-9a-f]{64}$")
         self.assertEqual(sorted(s["applicable_year"] for s in self.sources if s["kind"] == "BASE"),
-                         ["2021", "2022", "2023", "2024", "2025"])     # the whole D29 window
+                         [str(y) for y in range(2016, 2026)])     # the D29 window extended by D48
 
     def test_every_event_cites_a_source_for_its_own_year(self):
         years = {s["source_ref"]: int(s["applicable_year"]) for s in self.sources}
@@ -297,11 +499,11 @@ class RealCalendar(unittest.TestCase):
     def test_every_circular_is_hash_verified(self):
         self.assertEqual({r: s.file_status for r, s in self.cal.sources.items()},
                          {r: cal_mod.VERIFIED for r in SOURCE_FILES})
-        self.assertEqual(self.cal.covered_years, [2021, 2022, 2023, 2024, 2025])
+        self.assertEqual(self.cal.covered_years, list(range(2016, 2026)))      # D29 + D48
         self.assertIsNone(self.cal.sources["NSE/CMTR/50560"].downloaded_on)
 
     def test_years_outside_the_d29_window_are_not_covered(self):
-        for d in (D(2020, 12, 31), D(2026, 1, 1)):
+        for d in (D(2015, 12, 31), D(2026, 1, 1)):           # D29 window extended to 2016 by D48
             with self.assertRaises(cal_mod.CalendarCoverageError):
                 self.cal.session_type(d)
 
@@ -318,7 +520,8 @@ class RealCalendar(unittest.TestCase):
         cases.update({d: st for (d, _), (_, _, _, st) in SESSIONS.items()})
         for d, st in cases.items():
             self.assertEqual(self.cal.session_type(d), st, d)
-        self.assertEqual(sorted(self.cal.flagged_dates()), sorted(d for d, _ in SESSIONS))
+        # flagged dates list every non-holiday event for review, the unresolved ones included (D48)
+        self.assertEqual(sorted(self.cal.flagged_dates()), sorted(d for d, _ in list(SESSIONS) + list(UNRESOLVED_SESSIONS)))
 
     def test_bakri_id_2023_follows_the_amendment(self):
         self.assertEqual(self.cal.session_type(D(2023, 6, 28)), cal_mod.NORMAL)
@@ -385,6 +588,47 @@ class RealCalendar(unittest.TestCase):
         self.assertEqual((s.excluded_candles, s.data_gaps, s.unresolved_calendar_dates), ([], [], []))
         self.assertIsNone(s.series["W"].truncated_at)
         self.assertEqual(s.series["W"].candles[-1].period_key, "2023-W26")
+
+
+class ReadinessAfterD58(unittest.TestCase):
+    """The readiness register must describe the calendar as it is after owner decision D58
+    (CAL-2 option A): no UNRESOLVED row, no pending CAL-2 decision, and a trading-day count
+    that equals the real calendar's. Calendar facts alone never make data or research ready."""
+
+    @classmethod
+    def setUpClass(cls):
+        missing = [f for f in SOURCE_FILES.values() if not os.path.isfile(os.path.join(CIRCULARS, f))]
+        require_local(not missing, "official NSE circulars in nse/data/calendar/circulars/ (git-ignored)")
+        cls.cal = cal_mod.NseCalendar.load(CAL_DIR)
+        import sys
+        sys.path.insert(0, ROOT)
+        from nse.research import readiness
+        cls.rows = {r["id"]: r for r in readiness.report()}
+
+    def test_calendar_entry_is_current(self):
+        row = self.rows["calendar"]
+        text = " ".join([row["reference_validated"]] + list(row["requires_human_decision"]) + list(row["limits"]))
+        self.assertNotIn("UNRESOLVED (CAL-2", text)
+        self.assertFalse([x for x in row["requires_human_decision"] if "CAL-2" in x or "Dhanteras" in x])
+        self.assertIn("D58", row["reference_validated"])
+        self.assertIn("no UNRESOLVED row", row["reference_validated"])
+        # the stated count is the real calendar's count of 2016-2025 trading days
+        days, d = 0, D(2016, 1, 1)
+        while d <= D(2025, 12, 31):
+            days += self.cal.is_trading_day(d)
+            d += datetime.timedelta(days=1)
+        self.assertEqual(days, 2466)
+        self.assertIn("all 2,466 official trading-day EOD files", row["reference_validated"])
+        # ...and that claim is only true while no real row is UNRESOLVED
+        self.assertEqual([r for r in read("events.csv") if r["status"] != "CONFIRMED"], [])
+
+    def test_calendar_decision_does_not_make_anything_ready(self):
+        # D58 closes a calendar question only: nothing becomes externally validated and the
+        # universe stays blocked on the human review (B11-R), so DATA_READY stays unclaimed
+        self.assertFalse(self.rows["calendar"]["externally_validated"])
+        self.assertFalse([r for r in self.rows.values() if r["externally_validated"]])
+        self.assertTrue(self.rows["universe"]["blocked"])
+        self.assertTrue(any("B11-R" in x for x in self.rows["universe"]["requires_human_decision"]))
 
 
 if __name__ == "__main__":

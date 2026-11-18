@@ -7,8 +7,11 @@ not approved for use) or NOT_EVALUATED (an earlier gate stopped the evaluation).
 Unknown is never PASS.
 """
 
+import datetime
+import hashlib
+import os
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 PIPELINE_VERSION = "1.0.0"
 
@@ -76,8 +79,56 @@ CORPORATE_ACTIONS_UNVERIFIED = "CORPORATE_ACTIONS_UNVERIFIED"  # B7
 SESSION_TIMES_ASSUMED = "SESSION_TIMES_ASSUMED"               # audit L7
 TRADINGVIEW_PARITY_UNVERIFIED = "TRADINGVIEW_PARITY_UNVERIFIED"  # B8, B10
 UNIVERSE_UNVERIFIED = "UNIVERSE_UNVERIFIED"                   # B11 / D1 constituent file
+MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW = "MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW"  # D59
+IDENTITY_UNVERIFIED = "IDENTITY_UNVERIFIED"                   # B11 instrument records (ED-21)
+EXCLUDED_SESSION_UNOBSERVED = "EXCLUDED_SESSION_UNOBSERVED"   # D33 + D52: excluded session, no EOD file held
+HISTORY_STARTS_AFTER_UNRESOLVED_DATE = "HISTORY_STARTS_AFTER_UNRESOLVED_DATE"   # D54, ED-44
 PRICE_ADJUSTMENT_UNKNOWN = "PRICE_ADJUSTMENT_UNKNOWN"         # user CSV input
 NOT_EXTERNALLY_VALIDATED = "NOT_EXTERNALLY_VALIDATED"
+# an ignored in-progress candle has already reached the zone's proximal line: freshness
+# after it is unknown until the candle completes (D23, spec 6.2); G1 MANUAL, never PASS
+INCOMPLETE_CANDLE_TOUCH = "INCOMPLETE_CANDLE_TOUCH"
+
+
+
+def source_verified(csv_path, source, source_file, source_sha256):
+    """A record's provenance counts as verified only when its source is named and the file
+    it cites exists (relative to the CSV's folder, or absolute) and hashes to the recorded
+    SHA-256. A well-formed hash string alone proves nothing (audit 2026-11-06)."""
+    sha = (source_sha256 or "").strip().lower()
+    if not (source or "").strip() or not (source_file or "").strip() or len(sha) != 64:
+        return False
+    path = source_file.strip()
+    if not os.path.isabs(path):
+        path = os.path.join(os.path.dirname(os.path.abspath(csv_path)), path)
+    if not os.path.isfile(path):
+        return False
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest() == sha
+
+
+# --- owner-approved portfolio policy (DECISION_LOG D42, D45, D46) -----------------------
+# USER_STATED operating constraints, not Rulebook rules (the Rulebook's own ceiling is 10
+# trades per month, RB 2392). The journal enforces them; the backtest refuses a model that
+# exceeds them (D45).
+OWNER_MAX_OPEN_POSITIONS = 10
+OWNER_MONTHLY_TRADE_CAP = 10
+OWNER_ENTRY_EXPIRY_SESSIONS = 10
+# IST has had no daylight saving since 1945, so a fixed offset is exact for every date the
+# system handles (no tzdata dependency).
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30), "IST")
+
+
+def ist_month(t):
+    """(year, month) of t in IST (D42, D46: the monthly cap counts the first fill/trigger
+    time converted to IST; the month runs from 00:00 IST on day 1). A naive time is already
+    exchange-local IST (every candle and journal time in this system is)."""
+    if t.tzinfo is not None and t.utcoffset() is not None:
+        t = t.astimezone(IST)
+    return t.year, t.month
 
 # --- always-manual checklist for an actionable candidate (spec section 8) -------------
 CHECKLIST = (

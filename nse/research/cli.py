@@ -18,50 +18,25 @@ Exit code: 0 when the scan ran (whatever the statuses), 2 on a usage or input er
 
 import argparse
 import datetime
-import glob
 import json
 import os
 import sys
+from decimal import Decimal
 
 sys.dont_write_bytecode = True        # a scan leaves no __pycache__ in the working tree
 
-from nse.research import backtest, inventory, manifest_tool, marketdata, models as m, reports, readiness, scanner, universe as uni  # noqa: E402
-from nse.research.deps import bhavcopy, calendar as cal_mod, mtf
+from nse.research import backtest, inputs as inputs_, inventory, manifest_tool, marketdata, models as m, refcheck, reports, readiness, run_manifest, scanner, universe as uni  # noqa: E402
+from nse.research.deps import bhavcopy, calendar as cal_mod
 import importlib  # noqa: E402
 
 # modules that register further subcommands through add_commands(subparsers). An import
 # error here stops the CLI: a command is never silently missing.
-COMMAND_MODULES = ("health", "acquisition", "store", "backtest", "explain", "alerts", "narrative", "decision_replay", "dashboard", "risk", "instruments", "scenarios")
+COMMAND_MODULES = ("health", "eod_coverage", "acquisition", "store", "backtest", "explain", "alerts", "narrative", "decision_replay", "dashboard", "risk", "instruments", "scenarios", "pipeline")
 
 
-def _as_of(text):
-    if "T" in text or " " in text:
-        return datetime.datetime.fromisoformat(text)
-    return datetime.datetime.combine(datetime.date.fromisoformat(text), mtf.SESSION_CLOSE)
-
-
-def _inputs(args, symbols):
-    if args.csv_dir:
-        paths = sorted(glob.glob(os.path.join(args.csv_dir, "*.csv")))
-        by_symbol = {os.path.splitext(os.path.basename(p))[0].upper(): p for p in paths}
-        wanted = symbols or sorted(by_symbol)
-        out = []
-        for s in wanted:
-            if s not in by_symbol:
-                out.append(marketdata.DailyInput(s, [], {"source": "USER_CSV"}, [],
-                                                 [marketdata.Finding(s, marketdata.ERROR, "NO_INPUT_FILE",
-                                                                     "%s.csv not in %s" % (s, args.csv_dir))]))
-            else:
-                out.append(marketdata.from_csv(by_symbol[s], s, args.source_label, args.price_adjustment))
-        return out
-    paths = sorted(glob.glob(os.path.join(args.bhavcopy_dir, "cm*bhav.csv.zip")))
-    if not paths:
-        raise SystemExit("no legacy bhavcopy archives (cm*bhav.csv.zip) in %s" % args.bhavcopy_dir)
-    manifest = bhavcopy.read_manifest(args.manifest) if args.manifest else None
-    files = bhavcopy.load_many(paths, manifest)
-    if not symbols:
-        raise SystemExit("--symbols or --universe is required with --bhavcopy-dir")
-    return [marketdata.from_bhavcopy(files, s, args.series) for s in symbols]
+# shared with every command module (nse/research/inputs.py, ED-14); names kept for callers
+_as_of = inputs_.parse_as_of
+_inputs = inputs_.from_args
 
 
 def cmd_scan(args):
@@ -75,17 +50,29 @@ def cmd_scan(args):
         universe = uni.adhoc(args.symbols.split(","))
         symbols = [r.symbol for r in universe.rows]
     calendar = cal_mod.NseCalendar.load(args.calendar) if args.calendar else None
+    acts, cov = inputs_.corporate_action_config(getattr(args, "corporate_actions", None))
     cfg = scanner.ScanConfig(as_of=as_of, trade_type=args.trade_type, calendar=calendar,
                              calendar_label=args.calendar or "NONE", risk_per_trade=args.risk_per_trade,
-                             generated_at=args.generated_at, universe_label=universe.name if universe else "ADHOC")
+                             generated_at=args.generated_at, universe_label=universe.name if universe else "ADHOC",
+                             corporate_actions=acts, corporate_action_coverage=cov)
     if args.trade_type == m.MIT:
         inputs = _inputs(args, symbols)
     else:                                       # WIT is BLOCKED (M4b): nothing is loaded
         inputs = [marketdata.DailyInput(s, [], {}, [], []) for s in (symbols or [])]
     result = scanner.scan(inputs, cfg, universe)
     written = reports.write_all(result, args.out)
+    params = {k: getattr(args, k, None) for k in ("as_of", "trade_type", "symbols", "universe", "calendar",
+                                                  "risk_per_trade", "generated_at", "series", "source_label",
+                                                  "price_adjustment", "csv_dir", "bhavcopy_dir", "manifest",
+                                                  "instruments", "corporate_actions")}
+    params = run_manifest.relative_paths(params, run_manifest.PATH_PARAMS)
+    manifest = run_manifest.build("scan", as_of, params,
+                                  run_manifest.scan_input_paths(args, [i.symbol for i in inputs],
+                                                                loads_data=args.trade_type == m.MIT),
+                                  limitations=result.limitations)
+    run_manifest.write(manifest, args.out, written)
     print(json.dumps(reports.summary(result), sort_keys=True, indent=1))
-    print("wrote %s: %s" % (args.out, ", ".join(written)))
+    print("wrote %s: %s, %s (%s)" % (args.out, ", ".join(written), run_manifest.MANIFEST_NAME, manifest["run_id"]))
     return 0
 
 
@@ -113,13 +100,24 @@ def cmd_backtest(args):
     inputs = _inputs(args, symbols)
     dates = sorted(set(c.end for i in inputs for c in i.candles if start <= c.end <= end))
     calendar = cal_mod.NseCalendar.load(args.calendar) if args.calendar else None
+    acts, cov = inputs_.corporate_action_config(getattr(args, "corporate_actions", None))
     cfg = scanner.ScanConfig(as_of=end, calendar=calendar, calendar_label=args.calendar or "NONE",
-                             risk_per_trade=args.risk_per_trade, universe_label=universe.name)
+                             risk_per_trade=args.risk_per_trade, universe_label=universe.name,
+                             corporate_actions=acts, corporate_action_coverage=cov)
     res = backtest.run(inputs, dates, cfg, model, split=_as_of(args.split) if args.split else None,
                        universe=None if universe.adhoc else universe)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "w", encoding="utf-8") as fh:
         fh.write(backtest.to_json(res) + "\n")
+    params = {k: getattr(args, k, None) for k in ("model", "start", "end", "split", "symbols", "universe", "calendar",
+                                                  "risk_per_trade", "series", "source_label", "price_adjustment",
+                                                  "csv_dir", "bhavcopy_dir", "manifest", "instruments",
+                                                  "corporate_actions")}
+    params = run_manifest.relative_paths(params, run_manifest.PATH_PARAMS)
+    folder, name = os.path.split(os.path.abspath(args.out))
+    manifest = run_manifest.build("backtest", end, params, run_manifest.scan_input_paths(args, symbols) + [args.model],
+                                  limitations=res["limitations"], assumptions=spec)
+    run_manifest.write(manifest, folder, [name], name=name + ".manifest.json")
     print(json.dumps({"signals": res["signals"], "metrics": res["metrics"], "limitations": res["limitations"]},
                      sort_keys=True, indent=1))
     return 0
@@ -141,6 +139,42 @@ def cmd_readiness(args):
     return 0
 
 
+def cmd_compare_references(args):
+    """Replay one symbol with the official calendar and compare supplied reference files.
+
+    Does not create observations, does not pass assume_regular_session, and does not
+    certify T-005. EQ rows only.
+    """
+    from nse.research.deps import bhavcopy, reference, replay_mod
+    if not args.calendar:
+        raise ValueError("compare-references requires --calendar; regular sessions are not assumed")
+    symbol = args.symbol.strip().upper()
+    calendar = cal_mod.NseCalendar.load(args.calendar)
+    manifest = bhavcopy.read_manifest(args.manifest) if args.manifest else None
+    files = bhavcopy.load_many(bhavcopy.archive_paths(args.bhavcopy_dir), manifest,
+                               keep=lambda r: r.symbol == symbol)
+    htf = tuple(x.strip() for x in args.htf.split(",") if x.strip())
+    replay = replay_mod.replay_symbol(files, symbol, htf=htf, as_of=_as_of(args.as_of) if args.as_of else None,
+                                      calendar=calendar, series="EQ", assume_regular_session=False)
+    ohlc = reference.read_ohlc_reference(args.ohlc) if args.ohlc else []
+    zones = reference.read_zone_reference(args.zones) if args.zones else []
+    trend = refcheck.read_trend_reference(args.trend) if args.trend else []
+    report = refcheck.external_comparison_report(
+        replay, ohlc, zones, trend, ohlc_tolerance=Decimal(args.ohlc_tolerance),
+        zone_tolerance=Decimal(args.zone_tolerance), trend_tolerance=Decimal(args.trend_tolerance))
+    report["symbol"] = symbol
+    report["calendar"] = args.calendar
+    text = json.dumps(report, sort_keys=True, indent=1)
+    if args.out:
+        folder = os.path.dirname(os.path.abspath(args.out))
+        if folder:
+            os.makedirs(folder, exist_ok=True)
+        with open(args.out, "w", encoding="utf-8") as fh:
+            fh.write(text + "\n")
+    print(text)
+    return 0
+
+
 def main(argv=None):
     p = argparse.ArgumentParser(prog="python3 -m nse.research.cli", description=__doc__.splitlines()[0])
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -151,9 +185,13 @@ def main(argv=None):
     g.add_argument("--symbols", help="comma-separated ad-hoc universe (UNIVERSE_UNVERIFIED)")
     g.add_argument("--universe", help="universe CSV (nse/research/universe.py format)")
     src = s.add_mutually_exclusive_group(required=True)
-    src.add_argument("--bhavcopy-dir", help="folder with legacy cm*bhav.csv.zip files")
+    src.add_argument("--bhavcopy-dir", help="folder with bhavcopy archives (legacy cm*bhav.csv.zip and UDiFF)")
     src.add_argument("--csv-dir", help="folder with one SYMBOL.csv per symbol")
     s.add_argument("--manifest", help="EOD manifest.csv (provenance check for bhavcopies)")
+    s.add_argument("--corporate-actions", help="corporate-action records CSV (corporate_actions.py format); "
+                 "coverage.csv beside it gives the verified collection windows (D50, D52)")
+    s.add_argument("--instruments", help="instrument identity records CSV (instruments.py format); "
+                 "omitted -> IDENTITY_UNVERIFIED, ISIN changes still checked")
     s.add_argument("--series", default="EQ")
     s.add_argument("--source-label", default="USER_CSV")
     s.add_argument("--price-adjustment", default="UNKNOWN", choices=("UNKNOWN", "NONE", "ADJUSTED"))
@@ -183,6 +221,10 @@ def main(argv=None):
     bs.add_argument("--bhavcopy-dir")
     bs.add_argument("--csv-dir")
     b.add_argument("--manifest")
+    b.add_argument("--corporate-actions", help="corporate-action records CSV (corporate_actions.py format); "
+                 "coverage.csv beside it gives the verified collection windows (D50, D52)")
+    b.add_argument("--instruments", help="instrument identity records CSV (instruments.py format); "
+                 "omitted -> IDENTITY_UNVERIFIED, ISIN changes still checked")
     b.add_argument("--series", default="EQ")
     b.add_argument("--source-label", default="USER_CSV")
     b.add_argument("--price-adjustment", default="UNKNOWN", choices=("UNKNOWN", "NONE", "ADJUSTED"))
@@ -200,6 +242,22 @@ def main(argv=None):
     mf.set_defaults(func=cmd_manifest_rows)
     r = sub.add_parser("readiness", help="print the capability readiness table")
     r.set_defaults(func=cmd_readiness)
+    cr = sub.add_parser("compare-references",
+                        help="compare OHLC, zone and SMA-50 reference files with an EQ replay (does not certify T-005)")
+    cr.add_argument("--symbol", required=True)
+    cr.add_argument("--bhavcopy-dir", required=True)
+    cr.add_argument("--manifest", help="EOD manifest.csv")
+    cr.add_argument("--calendar", required=True, help="official calendar folder; required, never assume_regular_session")
+    cr.add_argument("--as-of", help="optional replay cutoff")
+    cr.add_argument("--htf", default="D,W,M,Q,HY,Y")
+    cr.add_argument("--ohlc", help="OHLC reference CSV; omitted means that evidence is absent")
+    cr.add_argument("--zones", help="zone reference CSV")
+    cr.add_argument("--trend", help="SMA-50 reference CSV")
+    cr.add_argument("--ohlc-tolerance", default="0")
+    cr.add_argument("--zone-tolerance", default="0")
+    cr.add_argument("--trend-tolerance", default="0")
+    cr.add_argument("--out", help="write the JSON report here; observations are not written back")
+    cr.set_defaults(func=cmd_compare_references)
     for name in COMMAND_MODULES:      # each module registers its own subcommands
         importlib.import_module("nse.research." + name).add_commands(sub)
     args = p.parse_args(argv)

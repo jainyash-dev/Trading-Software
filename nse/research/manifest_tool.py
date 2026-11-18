@@ -1,7 +1,7 @@
-"""Manifest rows for newly downloaded legacy bhavcopy archives (D31: the user downloads;
-nothing is fetched here).
+"""Manifest rows for newly downloaded bhavcopy archives, legacy or UDiFF (D31: the user
+downloads; nothing is fetched here).
 
-For each cmDDMMMYYYYbhav.csv.zip it computes, from the bytes on disk, the ARCHIVE row and
+For each cmDDMMMYYYYbhav.csv.zip or BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip it computes, from the bytes on disk, the ARCHIVE row and
 the ARCHIVE_MEMBER row that nse_bhavcopy.load_many(paths, manifest) requires (size and
 SHA-256 of both), after the strict loader has parsed the file. What only the user knows is
 passed in and never inferred: the source page, the download date (YYYY-MM-DD or UNKNOWN;
@@ -40,9 +40,11 @@ def rows_for(paths, manifest_path, source_page, downloaded_on, provenance_status
     for p in sorted(paths):
         name = os.path.basename(p)
         if not name.endswith(".csv.zip"):
-            raise ManifestError("%s: only legacy cmDDMMMYYYYbhav.csv.zip archives are supported (UDiFF: B18)" % name)
+            raise ManifestError("%s: only official .csv.zip archives (legacy or UDiFF) are supported" % name)
         f = bhavcopy.load(p)                      # strict parse; raises on any deviation
         d = f.trade_date.isoformat()
+        if f.format != bhavcopy.selected_format(f.trade_date):
+            raise ManifestError("%s: %s is not the format selected for %s (ED-20)" % (name, f.format, d))
         if name in held_names or f.source.member_name in held_names:
             raise ManifestError("%s: already in the manifest" % name)
         if d in held_dates or d in seen:

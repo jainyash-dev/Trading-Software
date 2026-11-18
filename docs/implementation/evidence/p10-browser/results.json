@@ -1,0 +1,722 @@
+{
+  "cfg": {
+    "scan_key": "scan-browser-syn",
+    "dataset_id": "075f5f789000b2945a48eb1c89109f883ca0394c1d92c05fac89609fad284909",
+    "as_of": "2024-02-02T15:30:00",
+    "zone_id": "demand-1250-1251",
+    "last": "2024-02-02",
+    "first": "2019-04-01",
+    "setup_dataset_id": "2e1dcd2db0767ad71b3f602061e37c2282492bbcb9e284f75882e9ea9944255a",
+    "walk_job": "job-c0c8b2c86e4f0d4a",
+    "walk_scan": "scan-702b319bf20f2eda"
+  },
+  "steps": [
+    {
+      "step": "seed: owner settings",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "step": "seed: plan draft from stored candidate",
+      "ok": true,
+      "plan_id": "plan-6240dcdfd2334225",
+      "combinations": 0
+    },
+    {
+      "step": "seed: approve with every checklist item answered (no order)",
+      "ok": true,
+      "entry_id": 1,
+      "authorises_order": false
+    },
+    {
+      "step": "seed: journal order reference and entry print (owner-typed facts)",
+      "ok": true,
+      "order": 200,
+      "execution": 200,
+      "note": 200,
+      "qty": 181,
+      "price": 160.44
+    },
+    {
+      "step": "seed: second draft left in DRAFT",
+      "ok": true,
+      "status": 201,
+      "plan_id": "plan-06e14d365d204cb5"
+    },
+    {
+      "step": "seed: real-pipeline MIT scan on WALK + missing NOPE",
+      "ok": true,
+      "status": 202,
+      "states": [
+        "VALIDATING",
+        "RUNNING",
+        "SUCCEEDED_COMPLETE"
+      ],
+      "job_id": "job-c0c8b2c86e4f0d4a",
+      "result_ref": "scan-702b319bf20f2eda"
+    },
+    {
+      "step": "seed: ingest stored scan into opportunities",
+      "ok": true,
+      "status": 201
+    },
+    {
+      "step": "seed: watchlist",
+      "ok": true,
+      "status": 201
+    },
+    {
+      "step": "dark: overview",
+      "ok": true,
+      "h1": [
+        "Market Overview"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-overview.png"
+    },
+    {
+      "step": "dark: watchlists",
+      "ok": true,
+      "h1": [
+        "Watchlists"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-watchlists.png"
+    },
+    {
+      "step": "dark: analysis-D",
+      "ok": true,
+      "h1": [
+        "SYN analysis"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-analysis-D.png"
+    },
+    {
+      "step": "dark: analysis-W",
+      "ok": true,
+      "h1": [
+        "SYN analysis"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-analysis-W.png"
+    },
+    {
+      "step": "dark: analysis-noscan",
+      "ok": true,
+      "h1": [
+        "Stock Analysis"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-analysis-noscan.png"
+    },
+    {
+      "step": "dark: scanner",
+      "ok": true,
+      "h1": [
+        "Opportunity Scanner"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-scanner.png"
+    },
+    {
+      "step": "dark: opportunities",
+      "ok": true,
+      "h1": [
+        "Opportunities"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-opportunities.png"
+    },
+    {
+      "step": "dark: history",
+      "ok": true,
+      "h1": [
+        "Scan History"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-history.png"
+    },
+    {
+      "step": "dark: plans",
+      "ok": true,
+      "h1": [
+        "Trade Plans"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-plans.png"
+    },
+    {
+      "step": "dark: portfolio",
+      "ok": true,
+      "h1": [
+        "Portfolio"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-portfolio.png"
+    },
+    {
+      "step": "dark: risk",
+      "ok": true,
+      "h1": [
+        "Risk Overview"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-risk.png"
+    },
+    {
+      "step": "dark: journal",
+      "ok": true,
+      "h1": [
+        "Trading Journal"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-journal.png"
+    },
+    {
+      "step": "dark: backtest",
+      "ok": true,
+      "h1": [
+        "Backtesting"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-backtest.png"
+    },
+    {
+      "step": "dark: analytics",
+      "ok": true,
+      "h1": [
+        "Strategy Analytics"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-analytics.png"
+    },
+    {
+      "step": "dark: reports",
+      "ok": true,
+      "h1": [
+        "Research Reports"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-reports.png"
+    },
+    {
+      "step": "dark: assistant",
+      "ok": true,
+      "h1": [
+        "AI Research Assistant"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-assistant.png"
+    },
+    {
+      "step": "dark: paper",
+      "ok": true,
+      "h1": [
+        "SIMULATED shadow / paper"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-paper.png"
+    },
+    {
+      "step": "dark: data",
+      "ok": true,
+      "h1": [
+        "Data Health"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-data.png"
+    },
+    {
+      "step": "dark: jobs",
+      "ok": true,
+      "h1": [
+        "Jobs and Monitoring"
+      ],
+      "theme": "dark",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/dark-jobs.png"
+    },
+    {
+      "step": "dark: settings",
+      "ok": true,
+      "h1": [
+        "Settings"
+      ],
+      "theme": "dark",
+      "certified_badges": 1,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/dark-settings.png"
+    },
+    {
+      "step": "light: overview",
+      "ok": true,
+      "h1": [
+        "Market Overview"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-overview.png"
+    },
+    {
+      "step": "light: watchlists",
+      "ok": true,
+      "h1": [
+        "Watchlists"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-watchlists.png"
+    },
+    {
+      "step": "light: analysis-D",
+      "ok": true,
+      "h1": [
+        "SYN analysis"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-analysis-D.png"
+    },
+    {
+      "step": "light: analysis-W",
+      "ok": true,
+      "h1": [
+        "SYN analysis"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-analysis-W.png"
+    },
+    {
+      "step": "light: analysis-noscan",
+      "ok": true,
+      "h1": [
+        "Stock Analysis"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-analysis-noscan.png"
+    },
+    {
+      "step": "light: scanner",
+      "ok": true,
+      "h1": [
+        "Opportunity Scanner"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-scanner.png"
+    },
+    {
+      "step": "light: opportunities",
+      "ok": true,
+      "h1": [
+        "Opportunities"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-opportunities.png"
+    },
+    {
+      "step": "light: history",
+      "ok": true,
+      "h1": [
+        "Scan History"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-history.png"
+    },
+    {
+      "step": "light: plans",
+      "ok": true,
+      "h1": [
+        "Trade Plans"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-plans.png"
+    },
+    {
+      "step": "light: portfolio",
+      "ok": true,
+      "h1": [
+        "Portfolio"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-portfolio.png"
+    },
+    {
+      "step": "light: risk",
+      "ok": true,
+      "h1": [
+        "Risk Overview"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-risk.png"
+    },
+    {
+      "step": "light: journal",
+      "ok": true,
+      "h1": [
+        "Trading Journal"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-journal.png"
+    },
+    {
+      "step": "light: backtest",
+      "ok": true,
+      "h1": [
+        "Backtesting"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-backtest.png"
+    },
+    {
+      "step": "light: analytics",
+      "ok": true,
+      "h1": [
+        "Strategy Analytics"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-analytics.png"
+    },
+    {
+      "step": "light: reports",
+      "ok": true,
+      "h1": [
+        "Research Reports"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-reports.png"
+    },
+    {
+      "step": "light: assistant",
+      "ok": true,
+      "h1": [
+        "AI Research Assistant"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-assistant.png"
+    },
+    {
+      "step": "light: paper",
+      "ok": true,
+      "h1": [
+        "SIMULATED shadow / paper"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-paper.png"
+    },
+    {
+      "step": "light: data",
+      "ok": true,
+      "h1": [
+        "Data Health"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-data.png"
+    },
+    {
+      "step": "light: jobs",
+      "ok": true,
+      "h1": [
+        "Jobs and Monitoring"
+      ],
+      "theme": "light",
+      "certified_badges": 0,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": true,
+      "shot": "shots/light-jobs.png"
+    },
+    {
+      "step": "light: settings",
+      "ok": true,
+      "h1": [
+        "Settings"
+      ],
+      "theme": "light",
+      "certified_badges": 1,
+      "unnamed_buttons": 0,
+      "unlabelled_inputs": 0,
+      "overflow_x": false,
+      "fixture_banner": false,
+      "shot": "shots/light-settings.png"
+    },
+    {
+      "step": "G: theme switch from header persists across reload",
+      "ok": true,
+      "after_click": "light",
+      "at_dom_content_loaded": "light",
+      "after_reload": "light"
+    },
+    {
+      "step": "G: deep link, back and forward",
+      "ok": true,
+      "back": [
+        "#/risk",
+        "Risk Overview"
+      ],
+      "back2": [
+        "#/portfolio",
+        "Portfolio"
+      ],
+      "forward": [
+        "#/risk",
+        "Risk Overview"
+      ],
+      "active_nav": "Risk Overview",
+      "reloaded": [
+        "#/risk",
+        "Risk Overview"
+      ]
+    },
+    {
+      "step": "A: search -> analyse -> choose stored scan -> chart",
+      "ok": true,
+      "search_results": 11,
+      "search_message": null,
+      "chooser": true,
+      "opened": [
+        "#/analysis?symbol=SYN&scan=scan-702b319bf20f2eda&fixtures=1",
+        "SYN analysis"
+      ],
+      "shot": "shots/journey-a-opened-from-chooser.png"
+    },
+    {
+      "step": "C: approve dialog appears before approval (draft plan)",
+      "ok": true,
+      "dialog": [
+        "Approve SYN plan",
+        "",
+        "Approval records the plan in the research journal with buffer index 0. No order is sent and authorises_order stays false. You place any order yourself in Kite."
+      ],
+      "closed_on_escape": true,
+      "shot": "shots/journey-c-approve-confirmation.png"
+    },
+    {
+      "step": "D: portfolio -> journal record link",
+      "ok": true,
+      "hash": "#/journal?entry=1",
+      "detail": "Trade detail 1"
+    },
+    {
+      "step": "responsive laptop 1024px",
+      "ok": true,
+      "overview_overflow_x": false,
+      "analysis_overflow_x": false,
+      "shots": [
+        "shots/responsive-laptop-overview.png",
+        "shots/responsive-laptop-analysis.png"
+      ]
+    },
+    {
+      "step": "responsive tablet 768px",
+      "ok": true,
+      "overview_overflow_x": false,
+      "analysis_overflow_x": false,
+      "shots": [
+        "shots/responsive-tablet-overview.png",
+        "shots/responsive-tablet-analysis.png"
+      ]
+    },
+    {
+      "step": "responsive mobile 390px",
+      "ok": true,
+      "overview_overflow_x": false,
+      "analysis_overflow_x": false,
+      "shots": [
+        "shots/responsive-mobile-overview.png",
+        "shots/responsive-mobile-analysis.png"
+      ]
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+}

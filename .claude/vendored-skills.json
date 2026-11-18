@@ -1,0 +1,55 @@
+{
+ "_about": "Third-party skills vendored verbatim. Every file is hash-pinned; tests/test_claude_hooks.py fails if one changes. Registry: docs/SKILLS_REGISTRY.md. Do not edit these files; re-vendor from upstream instead.",
+ "skills": {
+  "apple-design": {
+   "commit": "c8a79627b59d72d764d6ab6f2c87c09a48169833",
+   "files": {
+    "LICENSE": "4ff5bdb7887ec1435c9cab0e8d1a7caee704d894d65c2a008ccc68b1cc2f260b",
+    "SKILL.md": "77bb63b7043bb93aca2ff4ab040c249484eef35682bb6ff7163433c31d30adc7"
+   },
+   "license": "MIT",
+   "license_file": "LICENSE (upstream repository root, copied verbatim)",
+   "path": "skills/apple-design",
+   "upstream": "https://github.com/emilkowalski/skills",
+   "vendored_on": "2026-11-08"
+  },
+  "break-ui": {
+   "commit": "c8a79627b59d72d764d6ab6f2c87c09a48169833",
+   "files": {
+    "CATALOG.md": "7358efcc6bb48e35187be1c064cf60022dcb18c72c18fab58b606dfc5f421f15",
+    "LICENSE": "4ff5bdb7887ec1435c9cab0e8d1a7caee704d894d65c2a008ccc68b1cc2f260b",
+    "SKILL.md": "e7eec1d70ac56a04255e9c0dbe98084ea3d544cc04aaad34f32c95d6fa9dff5e"
+   },
+   "license": "MIT",
+   "license_file": "LICENSE (upstream repository root, copied verbatim)",
+   "path": "skills/break-ui",
+   "upstream": "https://github.com/emilkowalski/skills",
+   "vendored_on": "2026-11-08"
+  },
+  "emil-design-eng": {
+   "commit": "c8a79627b59d72d764d6ab6f2c87c09a48169833",
+   "files": {
+    "LICENSE": "4ff5bdb7887ec1435c9cab0e8d1a7caee704d894d65c2a008ccc68b1cc2f260b",
+    "SKILL.md": "965cc3108047a1f68e504977ae7816c66115b202a32e7509c0b8305314839c54"
+   },
+   "license": "MIT",
+   "license_file": "LICENSE (upstream repository root, copied verbatim)",
+   "path": "skills/emil-design-eng",
+   "upstream": "https://github.com/emilkowalski/skills",
+   "vendored_on": "2026-11-08"
+  },
+  "review-animations": {
+   "commit": "c8a79627b59d72d764d6ab6f2c87c09a48169833",
+   "files": {
+    "LICENSE": "4ff5bdb7887ec1435c9cab0e8d1a7caee704d894d65c2a008ccc68b1cc2f260b",
+    "SKILL.md": "5f9fb98b69cace7107af8b393a4196fd42fa42d98bce0e5afc1f866ff3b8a41c",
+    "STANDARDS.md": "8f5fe3f5a04537556dd4e6a37f7a8d6f616d840eb80f2f68b5b594febb170657"
+   },
+   "license": "MIT",
+   "license_file": "LICENSE (upstream repository root, copied verbatim)",
+   "path": "skills/review-animations",
+   "upstream": "https://github.com/emilkowalski/skills",
+   "vendored_on": "2026-11-08"
+  }
+ }
+}

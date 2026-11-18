@@ -23,7 +23,12 @@ Usage (from the repository root):
 
 import argparse
 import json
+import os
 import sys
+
+# the one status derivation (nse.research.models.derive_status), not a copy of it
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..")))
+from nse.research import models  # noqa: E402
 
 BUY, WAIT, AVOID, INSUFFICIENT = "BUY CANDIDATE", "WAIT", "AVOID", "INSUFFICIENT DATA"
 STATUS_CAP = {
@@ -43,13 +48,28 @@ ALLOWED = {
 STRENGTH = {BUY: 3, WAIT: 2, INSUFFICIENT: 1, AVOID: 0}
 
 
+def _derived_cap(c):
+    """(cap, problem): the cap of the status the gate outcomes give. A recorded status that
+    differs, or gates that cannot be read, cap at INSUFFICIENT DATA: an edited or mixed
+    scan.json must not raise the council's ceiling (audit 2026-11-06, Agent 3 D3)."""
+    try:
+        derived = models.derive_status([models.GateResult(g["gate"], g["outcome"]) for g in c["gates"]])
+    except (KeyError, TypeError, ValueError) as e:
+        return INSUFFICIENT, "GATES_UNREADABLE: %s" % e
+    if derived != c.get("status"):
+        return INSUFFICIENT, "STATUS_INCONSISTENT_WITH_GATES: recorded %s, gates give %s" % (c.get("status"), derived)
+    return STATUS_CAP[derived], None
+
+
 def _candidate(c):
     gates = {g["gate"]: g["outcome"] for g in c["gates"]}
     g7 = next(g for g in c["gates"] if g["gate"] == "G7")["evidence"]
+    cap, problem = _derived_cap(c)
     return {
         "zone_id": c["zone"]["zone_id"], "tf": c["zone"]["tf"], "proximal": c["zone"]["proximal"],
         "distal": c["zone"]["distal"], "created": c["zone"]["created_time"], "core": c["zone"]["core"],
-        "overlay_status": c["zone"]["overlay_status"], "status": c["status"], "verdict_cap": STATUS_CAP[c["status"]],
+        "overlay_status": c["zone"]["overlay_status"], "status": c["status"], "verdict_cap": cap,
+        "status_problem": problem,
         "gates": gates,
         "not_passed": {g["gate"]: g["reasons"][:3] for g in c["gates"] if g["outcome"] != "PASS"},
         "manual_review": c["manual_review"], "manual_checks": [x["code"] for x in c["manual_checks"]],

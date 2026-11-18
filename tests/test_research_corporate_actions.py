@@ -7,7 +7,9 @@ raw responses are present.
 import csv
 import datetime
 import hashlib
+import json
 import os
+import shutil
 import tempfile
 import unittest
 
@@ -93,7 +95,86 @@ class HeldResponses(unittest.TestCase):
             "Annual General Meeting/Dividend - Rs 2.50 Per Share/Bonus 1:10 (Revised)",
             "Rights - 4:25 Fully Paid Up Shares @ Premium Rs 500/- Per Share / 2:25 Partly Paid Up Shares @ Premium Rs 605/- Per Share",
             "Scheme Of Arrangement - Bonus Ncrps 4:1",
-            "Face Value Split (Sub-Division) - From Rs 5/- Per Share To Rs 2/- Per Share",
         )
         for subject in subjects:
             self.assertIsNone(ca._subject_rows(subject), subject)
+        # ED-57 (D67): the VBL 2024-09-12 subject left this list. Its terms are stated in full and
+        # now parse exactly; ExactFaceValueRatio below asserts the precise row.
+
+
+class ExactFaceValueRatio(unittest.TestCase):
+    """ED-57: face-value changes as exact old:new share counts; no float; ambiguity fails closed."""
+
+    VBL = "Face Value Split (Sub-Division) - From Rs 5/- Per Share To Rs 2/- Per Share"
+
+    def test_vbl_fractional_split_is_exactly_two_to_five(self):
+        self.assertEqual(ca._subject_rows(self.VBL), [("SPLIT", 2, 5)])
+
+    def test_whole_number_ratios_are_unchanged(self):
+        cases = {
+            "Face Value Split (Sub-Division) - From Rs 10/- Per Share To Rs 2/- Per Share": [("SPLIT", 1, 5)],
+            "Face Value Split (Sub-Division) - From Rs 10/- Per Share To Re 1/- Per Share": [("SPLIT", 1, 10)],
+            "Face Value Split From Rs 10 To Re 2": [("SPLIT", 1, 5)],
+            "Fv Splt Frm Rs 10 To Re 1": [("SPLIT", 1, 10)],
+            "Face Value Consolidation From Re 1 To Rs 10": [("CONSOLIDATION", 10, 1)],
+            "Bonus 1:1/Face Value Split (Sub-Division) - From Rs 10/- Per Share To Rs 2/- Per Share":
+                [("BONUS", 1, 2), ("SPLIT", 1, 5)],
+        }
+        for subject, rows in cases.items():
+            self.assertEqual(ca._subject_rows(subject), rows, subject)
+
+    def test_other_fractional_ratios_are_exact_and_in_lowest_terms(self):
+        self.assertEqual(ca.face_value_ratio("SPLIT", "10", "3"), ("SPLIT", 3, 10))
+        self.assertEqual(ca.face_value_ratio("SPLIT", "2.5", "1"), ("SPLIT", 2, 5))
+        self.assertEqual(ca.face_value_ratio("SPLIT", "10", "4"), ("SPLIT", 2, 5))
+        self.assertEqual(ca.face_value_ratio("CONSOLIDATION", "2", "5"), ("CONSOLIDATION", 5, 2))
+        # 0.1 is exact here; a float path would give 10.000000000000002-style factors.
+        self.assertEqual(ca.face_value_ratio("SPLIT", "1", "0.1"), ("SPLIT", 1, 10))
+        for kind, a, b in (("SPLIT", "10", "3"), ("SPLIT", "1", "0.1"), ("CONSOLIDATION", "2", "5")):
+            row = ca.face_value_ratio(kind, a, b)
+            self.assertTrue(all(isinstance(x, int) for x in row[1:]), row)
+
+    def test_invalid_or_ambiguous_ratios_fail_closed(self):
+        for kind, a, b in (("SPLIT", "10", "10"),        # no change: ambiguous
+                           ("SPLIT", "2", "10"),         # "split" to a larger face value
+                           ("CONSOLIDATION", "10", "2"),  # "consolidation" to a smaller one
+                           ("SPLIT", "0", "1"), ("SPLIT", "10", "0"),
+                           ("SPLIT", "1.2.3", "1"), ("SPLIT", ".", "1"), ("SPLIT", "", "1"),
+                           ("SPLIT", "10001", "1"), ("RIGHTS", "10", "2"),
+                           # direct-caller hardening (independent review): no exponent/sign/inf/nan/non-str
+                           ("SPLIT", "1e3", "1"), ("SPLIT", "Infinity", "1"), ("SPLIT", "NaN", "1"),
+                           ("SPLIT", "-10", "2"), ("SPLIT", "10.", "2"), ("SPLIT", 10, "2"), ("SPLIT", None, "2")):
+            self.assertIsNone(ca.face_value_ratio(kind, a, b), (kind, a, b))
+        for subject in ("Face Value Split (Sub-Division) - From Rs 10/- Per Share To Rs 10/- Per Share",
+                        "Face Value Split (Sub-Division) - From Rs 2/- Per Share To Rs 10/- Per Share",
+                        "Face Value Split From Rs 1.2.3 To Re 1"):
+            self.assertIsNone(ca._subject_rows(subject), subject)   # whole subject stays UNPARSED
+
+    def test_serialisation_round_trip_and_reconciliation_key(self):
+        tmp = tempfile.mkdtemp()
+        try:
+            body = [{"symbol": "VBL", "series": "EQ", "subject": self.VBL, "exDate": "12-Sep-2024",
+                     "recDate": "12-Sep-2024", "isin": "INE200M01021"}]
+            src = os.path.join(tmp, "ca_VBL.json")
+            with open(src, "w", encoding="utf-8") as fh:
+                json.dump(body, fh)
+            rows, unparsed, skipped = ca.from_nse_json(src, tmp, "2026-11-15")
+            self.assertEqual((unparsed, skipped), ([], []))
+            self.assertEqual([(r["action"], r["ratio_from"], r["ratio_to"]) for r in rows], [("SPLIT", "2", "5")])
+            out = os.path.join(tmp, "actions.csv")
+            with open(out, "w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, fieldnames=ca.COLUMNS)
+                w.writeheader()
+                w.writerows(rows)
+            loaded = ca.load(out)
+            self.assertEqual([(a.action, a.ratio_from, a.ratio_to) for a in loaded], [("SPLIT", 2.0, 5.0)])
+            self.assertEqual(loaded[0].to_dict()["ratio"], "2:5")
+            self.assertIn(loaded[0], ca.in_history(loaded, "VBL", datetime.date(2024, 1, 1), datetime.date(2024, 12, 31)))
+        finally:
+            shutil.rmtree(tmp)
+        key = ca.event_key("SPLIT", "2024-09-12", "2", "5")
+        self.assertEqual(key, "SPLIT|2024-09-12|2:5")
+        same = ca.reconcile_event_keys([key], [ca.event_key("split", "2024-09-12", 2, 5)])
+        self.assertEqual((same["matched"], same["only_a"], same["only_b"]), ([key], [], []))
+        differ = ca.reconcile_event_keys([key], [ca.event_key("SPLIT", "2024-09-12", "1", "2")])
+        self.assertEqual(differ["matched"], [])   # a different ratio is a discrepancy, never a match

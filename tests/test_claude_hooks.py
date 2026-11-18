@@ -28,6 +28,13 @@ def run(script, payload, **env):
     return p.returncode, p.stderr
 
 
+def frontmatter_of(path):
+    with open(path, encoding="utf-8") as fh:
+        text = fh.read()
+    fm = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    return (fm.group(1) if fm else ""), text
+
+
 def bash(cmd, **env):
     return run("guard.py", {"tool_name": "Bash", "tool_input": {"command": cmd}}, **env)[0]
 
@@ -64,6 +71,32 @@ class Guard(unittest.TestCase):
                                           "tool_input": {"file_path": os.path.join(ROOT, ".git", "config")}})[0], 2)
         self.assertEqual(run("guard.py", {"tool_name": "Edit",
                                           "tool_input": {"file_path": os.path.join(ROOT, "nse", "research", "x.py")}})[0], 0)
+
+    def test_globs_options_and_ref_checkouts_cannot_bypass_the_guard(self):
+        # audit 2026-11-06 (Agent 6 #3): each of these used to be ALLOWED
+        for cmd in ("echo x > nse/sources/Demand*.pine", "sed -i '' s/a/b/ nse/sources/*.pine",
+                    "python3 -c \"import glob; open(glob.glob('nse/sources/*.md')[0],'a').write('x')\"",
+                    "find nse/sources -name '*.md' -exec truncate -s0 {} +", "git checkout HEAD -- nse/sources",
+                    "git checkout main -- nse/research/models.py"):
+            self.assertEqual(bash(cmd, NSE_ALLOW_GIT_WRITE="1"), 2, cmd)
+        for cmd in ("git -c user.name=x commit -m y", "git --git-dir=.git commit -m y", "git -c a=b push"):
+            self.assertEqual(bash(cmd), 2, cmd)
+        # reading stays allowed, including a case-insensitive grep of the Rulebook
+        for cmd in ('grep -i "fresh" "%s"' % RULEBOOK, "grep -n PL nse/sources/*.md", "ls nse/sources",
+                    "wc -l nse/sources/*.pine", "git show HEAD:nse/research/models.py", "git checkout -b x"):
+            self.assertEqual(bash(cmd), 0, cmd)
+
+    def test_review_gaps_and_false_positives(self):
+        # Agent 6 review M2 (2026-11-06): ref checkouts without --, reset --merge/--keep, switch -f
+        for cmd in ("git checkout HEAD~1 tests/test_repo.py", "git reset --merge HEAD~1", "git reset --keep HEAD",
+                    "git switch -f main", "git switch --discard-changes main"):
+            self.assertEqual(bash(cmd, NSE_ALLOW_GIT_WRITE="1"), 2, cmd)
+        # read-only work that writes only outside the repository stays allowed
+        for cmd in ("ls nse/sources > /tmp/x", "shasum -a 256 nse/sources/* | tee /tmp/h",
+                    "git checkout main", "git checkout -b x origin/x", "git switch main"):
+            self.assertEqual(bash(cmd), 0, cmd)
+        # but a redirect into the repository still blocks
+        self.assertEqual(bash("ls nse/sources > nse/sources/list.txt"), 2)
 
     def test_blocks_recursive_deletes_and_broker_calls(self):
         for cmd in ("rm -rf nse/data", "rm -r tests", "rm -rf .git", "pip install kiteconnect",
@@ -105,9 +138,32 @@ class Settings(unittest.TestCase):
         for tool in ("Bash", "Edit", "Write"):
             self.assertIn(tool, pre)
 
+    def test_vendored_skills_are_byte_identical_to_their_pinned_upstream(self):
+        # third-party skills are kept verbatim (docs/SKILLS_REGISTRY.md); any edit, added or
+        # missing file fails, so a local change can never pass as upstream content
+        import hashlib
+        with open(os.path.join(ROOT, ".claude", "vendored-skills.json"), encoding="utf-8") as fh:
+            vendored = json.load(fh)["skills"]
+        self.assertTrue(vendored)
+        for s, rec in vendored.items():
+            folder = os.path.join(ROOT, ".claude", "skills", s)
+            self.assertEqual(sorted(os.listdir(folder)), sorted(rec["files"]), s)
+            for f, digest in rec["files"].items():
+                with open(os.path.join(folder, f), "rb") as fh:
+                    self.assertEqual(hashlib.sha256(fh.read()).hexdigest(), digest, "%s/%s" % (s, f))
+            self.assertRegex(rec["commit"], r"^[0-9a-f]{40}$", s)
+            self.assertTrue(rec["upstream"].startswith("https://github.com/"), s)
+            self.assertIn("LICENSE", rec["files"], s)
+            fm, _ = frontmatter_of(os.path.join(folder, "SKILL.md"))
+            self.assertIn("name: %s\n" % s, fm + "\n", s)
+            # a vendored skill must never carry write permission over the protected sources
+            self.assertNotIn("nse/sources", open(os.path.join(folder, "SKILL.md"), encoding="utf-8").read(), s)
+
     def test_skills_and_agents_have_frontmatter_and_a_runnable_check(self):
         base = os.path.join(ROOT, ".claude")
-        skills = sorted(os.listdir(os.path.join(base, "skills")))
+        with open(os.path.join(base, "vendored-skills.json"), encoding="utf-8") as fh:
+            vendored = set(json.load(fh)["skills"])
+        skills = sorted(s for s in os.listdir(os.path.join(base, "skills")) if s not in vendored)
         self.assertTrue(skills)
         for s in skills:
             with open(os.path.join(base, "skills", s, "SKILL.md"), encoding="utf-8") as fh:

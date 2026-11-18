@@ -20,8 +20,9 @@ EXCLUDED_GTF = "EXCLUDED_GTF"
 
 MEMBERSHIP_VERIFIED = "VERIFIED"
 IDENTITY_RESOLVED = "RESOLVED"
-CA_COVERED_EVENTS = "COVERED_WITH_VERIFIED_EVENTS"
-CA_COVERED_NONE = "COVERED_NO_EVENTS_PROVED"
+CA_COVERED_EVENTS = "COVERED_WITH_VERIFIED_EVENTS"   # NOT passing (D62): events parsed, completeness unproved
+CA_COVERED_NONE = "COVERED_NO_EVENTS_PROVED"         # a source proves the window and the absence of events
+CA_COMPLETE = "CA_COMPLETENESS_VERIFIED"             # D62: a source proves the window complete
 CALENDAR_TRADING_DAY = "TRADING_DAY"
 EOD_ACCEPTED = "ACCEPTED"
 PRICE_CONTINUOUS = "CONTINUOUS"
@@ -35,7 +36,8 @@ LABEL_FULL = "COMPLETE_NIFTY100"
 _GATES = (
     ("membership", frozenset({MEMBERSHIP_VERIFIED}), EXCLUDED_MEMBERSHIP),
     ("identity", frozenset({IDENTITY_RESOLVED}), EXCLUDED_IDENTITY),
-    ("corporate_action", frozenset({CA_COVERED_EVENTS, CA_COVERED_NONE}), EXCLUDED_CORPORATE_ACTION),
+    # D62: response integrity is not completeness; only proved completeness passes
+    ("corporate_action", frozenset({CA_COMPLETE, CA_COVERED_NONE}), EXCLUDED_CORPORATE_ACTION),
     ("calendar", frozenset({CALENDAR_TRADING_DAY}), EXCLUDED_CALENDAR),
     ("eod", frozenset({EOD_ACCEPTED}), EXCLUDED_EOD),
     ("price_continuity", frozenset({PRICE_CONTINUOUS}), EXCLUDED_PRICE),
@@ -43,12 +45,18 @@ _GATES = (
 )
 
 
+# The six data gates of the P0 data certification (owner decision D63). P0 data
+# certification does not require the GTF gate; a data-certified symbol-date is not a
+# GTF trade-eligible one. Without required_gates every gate below is required, as before.
+DATA_GATES = ("membership", "identity", "corporate_action", "calendar", "eod", "price_continuity")
+
+
 def passing_gates():
     """One passing value per gate, for tests and for a caller that has proved each one."""
     return {
         "membership": MEMBERSHIP_VERIFIED,
         "identity": IDENTITY_RESOLVED,
-        "corporate_action": CA_COVERED_EVENTS,
+        "corporate_action": CA_COMPLETE,
         "calendar": CALENDAR_TRADING_DAY,
         "eod": EOD_ACCEPTED,
         "price_continuity": PRICE_CONTINUOUS,
@@ -56,17 +64,22 @@ def passing_gates():
     }
 
 
-def classify_symbol_date(symbol, trade_date, isin, gates, evidence=""):
+def classify_symbol_date(symbol, trade_date, isin, gates, evidence="", required_gates=None):
     """One symbol on one date. `gates` maps each gate name to its status string.
 
     The first failed gate in `_GATES` order is the blocking gate. Every failed
     gate is named in the reason. A missing gate is UNKNOWN and fails.
+    required_gates: names from `_GATES` to evaluate (e.g. DATA_GATES); default all.
+    An unknown name is refused rather than ignored.
     """
+    required = _required(required_gates)
     symbol = (symbol or "").strip().upper()
     day = str(trade_date)
     failed = []
     seen = {}
     for name, ok, code in _GATES:
+        if name not in required:
+            continue
         value = (gates or {}).get(name) or "UNKNOWN"
         seen[name] = value
         if value not in ok:
@@ -91,7 +104,20 @@ def classify_symbol_date(symbol, trade_date, isin, gates, evidence=""):
     }
 
 
-def certify_members(rows, index_evidence_resolved=False, required_symbols=None):
+def _required(required_gates):
+    names = tuple(name for name, _, _ in _GATES)
+    if required_gates is None:
+        return frozenset(names)
+    unknown = sorted(set(required_gates) - set(names))
+    missing = sorted(set(DATA_GATES) - set(required_gates))
+    if unknown or missing:
+        # every data gate is always required: a subset cannot certify on fewer gates
+        raise ValueError("required_gates must include every gate in %s and name only gates in %s; "
+                         "unknown %s, missing %s" % (DATA_GATES, names, unknown, missing))
+    return frozenset(required_gates)
+
+
+def certify_members(rows, index_evidence_resolved=False, required_symbols=None, required_gates=None):
     """Label a set of symbol-dates that share one trade date.
 
     `index_evidence_resolved` must be supplied by a caller that has checked the
@@ -102,7 +128,7 @@ def certify_members(rows, index_evidence_resolved=False, required_symbols=None):
     for row in rows:
         classified.append(classify_symbol_date(
             row["symbol"], row["trade_date"], row.get("isin", ""), row.get("gates") or {},
-            row.get("evidence", "")))
+            row.get("evidence", ""), required_gates=required_gates))
     eligible = [r for r in classified if r["final_eligibility"] == ELIGIBLE]
     excluded = [r for r in classified if r["final_eligibility"] != ELIGIBLE]
     required = set(required_symbols) if required_symbols is not None else {r["symbol"] for r in classified}

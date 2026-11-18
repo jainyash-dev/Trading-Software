@@ -36,7 +36,7 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import List, Optional
 
-from nse.research import marketdata, models as m, scanner
+from nse.research import inputs, instruments, marketdata, models as m, scanner
 from nse.research.deps import CALENDAR_DIR, ROOT, bhavcopy, calendar as cal_mod, mtf
 
 DEFAULT_LIBRARY = os.path.join(ROOT, "nse", "scenarios")
@@ -184,11 +184,7 @@ def _list_of(v, where, check):
     return errs
 
 
-def parse_as_of(text):
-    """A date (the 15:30 close of that day) or an ISO datetime, as the scan CLI reads it."""
-    if "T" in text or " " in text:
-        return datetime.datetime.fromisoformat(text)
-    return datetime.datetime.combine(datetime.date.fromisoformat(text), mtf.SESSION_CLOSE)
+parse_as_of = inputs.parse_as_of   # the scan CLI's parser (one copy, ED-14)
 
 
 def _expected_errors(e, symbols):
@@ -418,7 +414,9 @@ def _inputs(s, base):
         if s["data_kind"] == HISTORICAL_REAL:
             man = bhavcopy.read_manifest(os.path.join(ROOT, v["manifest"])) if v.get("manifest") else None
             files = bhavcopy.load_many([os.path.join(ROOT, f["path"]) for f in v["bhavcopy"]], man)
-            out.append(marketdata.from_bhavcopy(files, sym, v.get("series", "EQ")))
+            # identity check on every bhavcopy input (ED-21)
+            out.append(instruments.apply_to_input(marketdata.from_bhavcopy(files, sym, v.get("series", "EQ")),
+                                                  files, None, v.get("series", "EQ")))
         else:
             # invented prices have no corporate actions (NONE); an owner's chart transcription is UNKNOWN
             out.append(marketdata.from_csv(os.path.join(base, v), sym,
@@ -441,9 +439,17 @@ def _calendar(name):
 def scan_scenario(s, base):
     """(inputs, ScanConfig, ScanResult) through the real scanner."""
     inputs = _inputs(s, base)
+    # A synthetic scenario states its prices have no corporate actions. That statement is a
+    # verified window, not an empty file. A historical scenario stays uncovered until a
+    # coverage file is supplied, so G0 cannot pass on an empty response (P01-H1).
+    coverage = None
+    if s["data_kind"] == SYNTHETIC:
+        span = (datetime.date(1990, 1, 1), datetime.date(2100, 1, 1))
+        coverage = {sym: [span] for sym in s["data"]}
     cfg = scanner.ScanConfig(as_of=parse_as_of(s["as_of"]), trade_type=s["trade_type"],
                              calendar=_calendar(s["calendar"]), calendar_label=s["calendar"],
-                             risk_per_trade=s["risk_per_trade"], universe_label="SCENARIO:" + s["id"])
+                             risk_per_trade=s["risk_per_trade"], universe_label="SCENARIO:" + s["id"],
+                             corporate_action_coverage=coverage)
     return inputs, cfg, scanner.scan(inputs, cfg)
 
 

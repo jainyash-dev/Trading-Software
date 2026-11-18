@@ -26,7 +26,8 @@ CAL = R.WeekdayCalendar()
 
 def scan(candles, as_of=None, trade_type=m.MIT, calendar=CAL, risk=1000.0):
     cfg = scanner.ScanConfig(as_of=as_of or candles[-1].end, trade_type=trade_type, calendar=calendar,
-                             calendar_label="TEST_WEEKDAYS", risk_per_trade=risk)
+                             calendar_label="TEST_WEEKDAYS", risk_per_trade=risk,
+                             corporate_action_coverage=R.verified_ca("SYN"))
     return scanner.scan([R.daily_input("SYN", candles)], cfg).symbols[0]
 
 
@@ -76,7 +77,8 @@ class Reference(unittest.TestCase):
         tmp = tempfile.mkdtemp()
         try:
             res = scanner.scan([R.daily_input("SYN", self.candles)],
-                               scanner.ScanConfig(as_of=self.candles[-1].end, calendar=CAL, risk_per_trade=1000.0))
+                               scanner.ScanConfig(as_of=self.candles[-1].end, calendar=CAL, risk_per_trade=1000.0,
+                                                  corporate_action_coverage=R.verified_ca("SYN")))
             reports.write_all(res, tmp)
             with open(os.path.join(tmp, "candidates.csv"), encoding="utf-8") as fh:
                 [row] = list(csv.DictReader(fh))
@@ -142,7 +144,10 @@ class Restrictions(unittest.TestCase):
         # Scenario 6: the D zone is wholly above the Monthly demand range.
         [c] = the_zone_k(1.75)
         self.assertEqual(c.status, m.MANUAL_REVIEW)
-        self.assertEqual({g: o for g, o in outcomes(c).items() if o != m.PASS}, {"G6": m.MANUAL})
+        # D43: a Pine-only Weekly supply (PL 184.91) is within 10% of ENTRY_MAX 168.6, so G5 is
+        # MANUAL as well; it never FAILs G5 and never clears it
+        self.assertEqual({g: o for g, o in outcomes(c).items() if o != m.PASS}, {"G5": m.MANUAL, "G6": m.MANUAL})
+        self.assertIn("G5:PINE_ONLY_ZONE_REVIEW", c.manual_review)
         self.assertEqual(c.gate("G6").evidence["class"], "AGGRESSIVE")
         self.assertIn("G6:AGGRESSIVE_ENTRY_REVIEW", c.manual_review)
 

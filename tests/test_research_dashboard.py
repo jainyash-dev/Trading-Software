@@ -30,7 +30,8 @@ TOUCH = [(176.0, 176.5, 159.5, 170.0), (170.0, 171.0, 169.0, 170.5)]   # low 159
 
 def cfg(as_of, trade_type=m.MIT, risk=1000.0, calendar=CAL):
     return scanner.ScanConfig(as_of=as_of, trade_type=trade_type, calendar=calendar,
-                              calendar_label="TEST_WEEKDAYS", risk_per_trade=risk)
+                              calendar_label="TEST_WEEKDAYS", risk_per_trade=risk,
+                              corporate_action_coverage=R.verified_ca("ACT", "RW", "SYN"))
 
 
 def bad_input(symbol):

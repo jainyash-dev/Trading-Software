@@ -49,7 +49,9 @@ Phase 1 correctness audit remediation (H1, H2; nse/docs/PHASE1_CORRECTNESS_AUDIT
       CALENDAR_UNRESOLVED, it is never a gap, every period containing it ends its series
       (HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR) and every zone whose formation-to-as_of
       span contains it is UNVERIFIED_SESSION. Any other calendar error (missing coverage)
-      stops the replay.
+      stops the replay, except H2a: a day of the first period before the first held candle
+      that the calendar does not cover or cannot classify marks that period partial
+      (partial_first_period).
   Without a calendar, a weekday Muhurat or shortened session looks like a normal day
   and cannot be detected; only CALENDAR_UNVALIDATED marks that limitation.
 
@@ -78,7 +80,7 @@ import json
 import math
 import os
 from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 _ZE_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "zone-engine", "zone_engine.py")
@@ -229,6 +231,21 @@ class MtfSnapshot:
     unresolved_calendar_dates: List[datetime.date]   # L10, from first candle to as_of
     series: Dict[str, HtfSeries]
     zones: Dict[str, ZoneTouchState]
+    # the ignored in-progress base candles themselves (base_tf): they never build or test
+    # a zone (D23), but a caller must not present a zone as fresh when one of them has
+    # already traded through its proximal line (incomplete_touches)
+    ignored_incomplete_candles: List[TimedCandle] = field(default_factory=list)
+
+    def incomplete_touches(self, zone):
+        """[(end, proximal touched, distal touched)] for each ignored in-progress candle
+        that reaches zone's proximal line. Evidence of a touch that the completed-candle
+        rule cannot yet count: freshness after it is unknown, never FRESH."""
+        out = []
+        for c in self.ignored_incomplete_candles:
+            pl, dl = _touches(c, zone)
+            if pl:
+                out.append((c.end, pl, dl))
+        return out
 
     def eligible_after_overlay(self, tf):
         """The Zone Engine's eligible zones on tf, minus any the overlay does not see as
@@ -458,6 +475,10 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
         as_of = max((c.end for c in candles), default=None)
     if as_of is None:
         raise ValueError("no base candles and no as_of")
+    # an incomplete candle already open at as_of but stamped with its scheduled end is the
+    # forming bar: never used for zones, but its touch evidence is kept (incomplete_touches).
+    # A COMPLETE candle ending after as_of is the future and is never read (audit 2026-11-06 H2)
+    forming = [c for c in candles if not c.complete and c.start <= as_of < c.end]
     candles = [c for c in candles if c.end <= as_of]          # step 1: nothing from the future
     _validate(candles, base_tf)
     k = len(candles)
@@ -466,6 +487,7 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
     if any(not c.complete for c in candles[:k]):
         raise ValueError("an incomplete base candle is followed by completed ones")
     ignored = [c.end for c in candles[k:]]
+    ignored_candles = list(candles[k:]) + forming
     days = _CalendarDays(calendar)
     candles, excluded = _classify(candles[:k], base_tf, calendar, days)
     tz = as_of.tzinfo
@@ -523,8 +545,12 @@ def replay(base_candles, base_tf, htf=("W", "M", "Q", "HY", "Y"), as_of=None, ca
     return MtfSnapshot(engine_version=ENGINE_VERSION, as_of=as_of, base_tf=base_tf,
                        calendar_validated=calendar is not None, limitations=limitations,
                        base_candles_used=len(candles), ignored_incomplete=ignored,
+                       ignored_incomplete_candles=ignored_candles,
                        data_gaps=gaps, excluded_candles=excluded,
                        unresolved_calendar_dates=unresolved_dates, series=series, zones=zones)
+
+
+_UNCOVERED_BEFORE_HISTORY = "UNCOVERED_BEFORE_HISTORY"      # truthy: treated as an expected session
 
 
 def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, as_of, tz):
@@ -537,6 +563,22 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
     out, reasons = [], []
     in_progress, truncated = None, None
     series_first_day = candles[0].start.date() if candles else None
+    uncovered_errors = tuple(getattr(calendar, "COVERAGE_ERRORS", ())) if calendar is not None else ()
+
+    def day_state(d):
+        # H2a: a day of the first period before the first held candle holds no data. When the
+        # calendar does not cover it (e.g. 2015-12-28 for history from 2016-01-01) or cannot
+        # classify it (an UNRESOLVED date just before a history that starts after it, ED-44),
+        # it counts as an expected session, so the first period is partial (PARTIAL_FIRST_PERIOD
+        # review); it never stops the replay or empties the series. Inside the history an
+        # UNRESOLVED day still truncates (L10).
+        if series_first_day is not None and d < series_first_day:
+            try:
+                state = expected_day(d)
+            except uncovered_errors:
+                return _UNCOVERED_BEFORE_HISTORY
+            return _UNCOVERED_BEFORE_HISTORY if state is None else state
+        return expected_day(d)
     prev_last = None
     for n, (key, cs) in enumerate(periods):
         first, last = period_bounds(tf, cs[0].start.date())
@@ -548,7 +590,7 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
                 truncated = period_key(tf, min(skipped))
                 reasons.append(_truncation_reason(min(skipped), gap_days))
                 break
-        if calendar is not None and any(expected_day(d) is None for d in _days(first, last)):
+        if calendar is not None and any(day_state(d) is None for d in _days(first, last)):
             truncated = key                                   # its sessions are unknown (L10)
             reasons.append(HTF_SERIES_TRUNCATED_AT_UNRESOLVED_CALENDAR)
             break
@@ -574,7 +616,7 @@ def _build_series(tf, candles, complete_days, gap_days, expected_day, calendar, 
         if truncated is not None:
             reasons.append(HTF_SERIES_TRUNCATED_AT_GAP)
             break
-        whole_first = [d for d in _days(first, last) if expected_day(d)]
+        whole_first = [d for d in _days(first, last) if day_state(d)]
         partial_first = n == 0 and bool(whole_first) and cs[0].start.date() > whole_first[0]
         out.append(HtfCandle(
             tf=tf, period_key=key, start=cs[0].start, end=cs[-1].end, known_at=known_at,

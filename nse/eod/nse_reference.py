@@ -39,7 +39,7 @@ import os
 import re
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 OHLC_REFERENCE_COLUMNS = (
     "symbol", "exchange", "timeframe", "bar_date", "open", "high", "low", "close",

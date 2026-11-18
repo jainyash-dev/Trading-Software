@@ -22,7 +22,7 @@ MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NO
 # a DBR shaped like the Zone Engine's own test: leg-in, base, leg-out, strong follow-through
 DBR = [("100", "101", "99", "100"), ("100", "100.5", "94", "95"), ("95", "96", "94.5", "95.2"),
        ("95.5", "102", "95.3", "101.5"), ("101.5", "105", "101", "104.5"), ("104.5", "105", "103", "104")]
-WEEK = [D(2025, 1, 6) + datetime.timedelta(days=i) for i in range(5)] + [D(2025, 1, 13)]
+WEEK = [D(2024, 1, 8) + datetime.timedelta(days=i) for i in range(5)] + [D(2024, 1, 15)]
 
 
 def stamp(d):
@@ -62,7 +62,7 @@ class DailySeries(Files):
         self.assertEqual((b.open, b.high, b.low, b.close), (Decimal("95"), Decimal("96"), Decimal("94.5"), Decimal("95.2")))
         for bar in s.bars:                                           # 95.0 == Decimal("95"), so check the type
             self.assertTrue(all(type(v) is Decimal for v in (bar.open, bar.high, bar.low, bar.close)))
-        self.assertEqual(b.source_file, "cm08JAN2025bhav.csv")
+        self.assertEqual(b.source_file, "cm10JAN2024bhav.csv")
         self.assertEqual(len(b.source_sha256), 64)
         self.assertEqual((s.price_adjustment, s.warnings), ("NONE", [rp.CORPORATE_ACTIONS_UNVERIFIED]))
         self.assertEqual([x["provenance_status"] for x in s.sources], ["NO_MANIFEST"] * 6)
@@ -174,7 +174,7 @@ class CompareOhlc(Files):
     def test_htf_rows_are_blocked_without_a_validated_calendar(self):
         res = self.compare([ohlc_line("W", WEEK[0], "100", "105", "94", "104.5")])
         c = res[("W", WEEK[0])]
-        self.assertEqual((c.status, c.classification, c.period), (rf.BLOCKED, rf.INSUFFICIENT_EVIDENCE, "2025-W02"))
+        self.assertEqual((c.status, c.classification, c.period), (rf.BLOCKED, rf.INSUFFICIENT_EVIDENCE, "2024-W02"))
 
     def test_weekly_construction_mismatch_needs_matching_daily_references(self):
         cal = type("Cal", (), {"is_trading_day": lambda self, d: d.weekday() < 5})()
@@ -214,7 +214,7 @@ class ScreenshotProvenance(Files):
         self.assertEqual(self.read(ohlc_line("D", WEEK[0], *DBR[0], src=export))[0].source, "TRADINGVIEW_EXPORT")
 
     def test_screenshots_cannot_be_zone_references(self):
-        zone = ",".join(["AAAA", "NSE", "D", "max_base=5", "demand", "DBR", "2025-01-08", "2025-01-09", "95.2", "94",
+        zone = ",".join(["AAAA", "NSE", "D", "max_base=5", "demand", "DBR", "2024-01-10", "2024-01-11", "95.2", "94",
                          "7/7", "NO", "", "", SHOT[0], "Asia/Kolkata", "OFF", "OFF", "2026-10-28", "synthetic"])
         with self.assertRaises(rf.ReferenceFormatError):
             rf.read_zone_reference(self.write_ref("z.csv", rf.ZONE_REFERENCE_COLUMNS, [zone]))

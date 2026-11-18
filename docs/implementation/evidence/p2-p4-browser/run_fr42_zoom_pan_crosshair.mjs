@@ -1,0 +1,21 @@
+// FR-4.2 evidence: zoom, pan, crosshair legend at in-viewport coordinates. FIXTURE data.
+import { createRequire } from "module"; import fs from "fs";
+const require = createRequire("/Users/yash/day-trader-skill/platform/web/package.json");
+const puppeteer = require("puppeteer-core");
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const OUT = process.argv[2];
+const browser = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: true, args: ["--no-sandbox"] });
+const page = await browser.newPage(); await page.setViewport({ width: 1440, height: 1000 });
+await page.goto("http://127.0.0.1:8899/#/analysis?scan=scan-browser-syn&symbol=SYN&fixtures=1&timeframe=D", { waitUntil: "networkidle0" });
+await page.waitForSelector("[data-testid='candle-chart'] canvas"); await sleep(800);
+const host = await page.$("[data-testid='candle-chart']"); const box = await host.boundingBox();
+const y = box.y + 250; const snap = () => host.screenshot({ encoding: "base64", clip: undefined });
+const press = (sel) => page.evaluate((s) => [...document.querySelectorAll("button")].find((b) => b.getAttribute("aria-label") === s || b.innerText.trim() === s).click(), sel);
+const s0 = await snap(); await press("Zoom in"); await press("Zoom in"); await sleep(400); const s1 = await snap();
+await page.mouse.move(box.x + 500, y); await page.mouse.down(); await page.mouse.move(box.x + 200, y, { steps: 10 }); await page.mouse.up(); await sleep(400); const s2 = await snap();
+await page.mouse.move(box.x + 400, y); await sleep(300);
+const legend = await page.evaluate(() => document.querySelector("[data-testid='candle-chart']").parentElement.firstElementChild.textContent);
+await page.screenshot({ path: `${OUT}/21-p2-zoom-pan-crosshair.png` });
+await press("Fit"); await sleep(300); const s3 = await snap();
+const r = { zoom_in_changed: s0 !== s1, pan_after_zoom_changed: s1 !== s2, fit_changed: s2 !== s3, crosshair_legend: legend };
+fs.writeFileSync(`${OUT}/../results_fr42.json`, JSON.stringify(r, null, 2)); console.log(JSON.stringify(r)); await browser.close();

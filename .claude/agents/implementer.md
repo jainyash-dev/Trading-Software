@@ -21,3 +21,8 @@ Rules:
 Finish with: `python3 -m nse.validation.run_all --group <groups you touched>` and then
 `python3 -m nse.validation.run_all --no-data`. Report the exact commands and counts, the
 files changed, and anything you could not resolve. Do not claim success without the output.
+
+Report contract (`docs/AGENT_OWNERSHIP.md`): files changed (or "none"), findings, tests run
+with exact commands and counts, unresolved risks. Label each statement FACT (reproduced or
+read in source), ASSUMPTION, RECOMMENDATION or OWNER DECISION (cite the D / ED id). Edit only
+files your brief assigns to you; if another agent owns a file you need, stop and say so.

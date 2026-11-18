@@ -101,6 +101,46 @@ class SymbolDateEligibility(unittest.TestCase):
         self.assertFalse(certified["full_index_certified"])
 
 
+class DataGateScope(unittest.TestCase):
+    """D63: P0 data certification evaluates the six data gates; the default stays all seven."""
+
+    def test_default_still_requires_the_gtf_gate(self):
+        gates = de.passing_gates()
+        del gates["gtf"]
+        self.assertEqual(de.classify_symbol_date("INFY", DAY, "INE009A01021", gates)["final_eligibility"],
+                         de.EXCLUDED_GTF)
+
+    def test_data_scope_does_not_need_the_gtf_gate_and_still_fails_closed(self):
+        gates = de.passing_gates()
+        del gates["gtf"]
+        ok = de.classify_symbol_date("INFY", DAY, "INE009A01021", gates, required_gates=de.DATA_GATES)
+        self.assertEqual(ok["final_eligibility"], de.ELIGIBLE)
+        self.assertNotIn("gtf", ok["gate_results"])
+        self.assertFalse(ok["authorises_order"])
+        gates.pop("price_continuity")
+        missing = de.classify_symbol_date("INFY", DAY, "INE009A01021", gates, required_gates=de.DATA_GATES)
+        self.assertEqual(missing["final_eligibility"], de.EXCLUDED_PRICE)
+
+    def test_parsed_events_without_proved_completeness_do_not_pass(self):
+        # review F4 / D62: COVERED_WITH_VERIFIED_EVENTS is the weaker tier, never the gate
+        for scope in (None, de.DATA_GATES):
+            row = de.classify_symbol_date("INFY", DAY, "INE009A01021",
+                                          dict(de.passing_gates(), corporate_action=de.CA_COVERED_EVENTS),
+                                          required_gates=scope)
+            self.assertEqual(row["final_eligibility"], de.EXCLUDED_CORPORATE_ACTION)
+
+    def test_an_unknown_empty_or_partial_gate_list_is_refused(self):
+        for bad in (("membership", "typo"), (), ("calendar",), de.DATA_GATES[:-1]):
+            with self.assertRaises(ValueError):
+                de.classify_symbol_date("INFY", DAY, "INE009A01021", de.passing_gates(), required_gates=bad)
+
+    def test_data_scope_never_labels_the_complete_index_without_the_flag(self):
+        res = de.certify_members([_row("INFY"), _row("TCS")], index_evidence_resolved=False,
+                                 required_gates=de.DATA_GATES)
+        self.assertEqual(res["label"], de.LABEL_SUBSET)
+        self.assertFalse(res["full_index_certified"])
+
+
 class ScanIsolation(unittest.TestCase):
     def test_unverified_grasim_does_not_make_infy_data_insufficient(self):
         # SYNTHETIC universe. INFY's period is verified. GRASIM's is not.

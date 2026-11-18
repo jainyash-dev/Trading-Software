@@ -18,7 +18,7 @@ Spec section 8 is the authority; every gate cites its section and sources. The r
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from nse.research import confluence, levels, models as m, structure, topdown, trend
+from nse.research import confluence, corporate_actions, levels, models as m, structure, topdown, trend
 from nse.research.deps import mtf, ze
 
 M4B_INTRADAY_NOT_APPROVED = ("INTRADAY_DESIGN_NOT_APPROVED: 75/125-minute session and gap design "
@@ -35,6 +35,24 @@ class SymbolContext:
     data_errors: List[str] = field(default_factory=list)   # data-quality findings of severity ERROR
     risk_per_trade: Optional[float] = None
     corporate_actions: List[dict] = field(default_factory=list)   # price-scale actions in the replayed history (B7)
+    # None: no verified coverage file. A dict is the hash-verified windows from load_coverage.
+    # An empty dict is not evidence that no corporate action occurred (P01-H1).
+    corporate_action_coverage: object = None
+    # calendar-excluded sessions (Muhurat, shortened) in the history with no candle held: their
+    # price action is unknown, so D33's EXCLUDED_SESSION_TOUCH cannot be checked (D52)
+    unobserved_excluded_sessions: List[object] = field(default_factory=list)
+
+
+def _replay_span(ctx, exec_tf):
+    """(first candle date, last completed candle date) of the execution series, or None
+    when it has no candle. G0 cannot reach PASS on an empty series: AVAILABLE requires candles."""
+    series = ctx.snapshot.series.get(exec_tf)
+    candles = getattr(series, "candles", None) or []
+    if not candles:
+        return None
+    # The last completed execution candle, not the as_of label. An as_of at noon and
+    # the previous close can describe the same candles; the coverage window follows them.
+    return candles[0].start.date(), candles[-1].end.date()
 
 
 def _g(gate, outcome, reasons=None, manual=None, evidence=None, sources=None):
@@ -113,20 +131,37 @@ def _g0(ctx, roles, exec_status):
         manual.append(m.CALENDAR_UNVALIDATED)
         reasons.append("CALENDAR_UNVALIDATED: no official calendar was supplied; missing weekdays are "
                        "unverified gaps and special sessions cannot be detected (D28)")
-    recorded = [a for a in ctx.corporate_actions if a["action"] != "PREVCLOSE_DISCONTINUITY"]
-    detected = [a for a in ctx.corporate_actions if a["action"] == "PREVCLOSE_DISCONTINUITY"]
+    # detected from the prices, not recorded: a PREVCLOSE break, or a price-scale gap (R-12)
+    detected_codes = ("PREVCLOSE_DISCONTINUITY", corporate_actions.PRICE_SCALE_GAP)
+    recorded = [a for a in ctx.corporate_actions if a["action"] not in detected_codes]
+    detected = [a for a in ctx.corporate_actions if a["action"] in detected_codes]
     for code, items in (("CORPORATE_ACTION_IN_HISTORY", recorded), ("PRICE_DISCONTINUITY_IN_HISTORY", detected)):
         if items:
             manual.append(code)
             reasons.append("%s: unadjusted prices span %s; zones, breaches and trends across it are unreliable and "
                            "nothing is adjusted (B7)"
                            % (code, ", ".join("%s %s %s" % (a["ex_date"], a["action"], a["ratio"]) for a in items)))
+    span = _replay_span(ctx, roles["execution"])
+    coverage_span = None
+    if span is not None:
+        start, end = span
+        coverage_span = [start.isoformat(), end.isoformat()]
+        if ctx.corporate_action_coverage is None:
+            manual.append("CORPORATE_ACTION_COVERAGE_UNKNOWN")
+            reasons.append("CORPORATE_ACTION_COVERAGE_UNKNOWN: no verified corporate-action coverage for %s "
+                           "from %s to %s; an empty event list is not evidence that none occurred (P01-H1)"
+                           % (ctx.symbol, start.isoformat(), end.isoformat()))
+        elif not corporate_actions.covered(ctx.corporate_action_coverage, ctx.symbol, start, end):
+            manual.append("CORPORATE_ACTION_COVERAGE_UNVERIFIED")
+            reasons.append("CORPORATE_ACTION_COVERAGE_UNVERIFIED: %s from %s to %s is outside a hash-verified "
+                           "coverage window; an empty official response is not coverage (P01-H1)"
+                           % (ctx.symbol, start.isoformat(), end.isoformat()))
     if snap.unresolved_calendar_dates:
         manual.append(mtf.CALENDAR_UNRESOLVED_DATES)
         reasons.append("CALENDAR_UNRESOLVED_DATES: %s" % ", ".join(d.isoformat() for d in snap.unresolved_calendar_dates))
     ev = {"base_candles_used": snap.base_candles_used, "data_gaps": len(snap.data_gaps),
           "excluded_candles": len(snap.excluded_candles), "ignored_incomplete": len(snap.ignored_incomplete),
-          "execution_series": exec_status}
+          "execution_series": exec_status, "corporate_action_coverage_span": coverage_span}
     return _g("G0", m.MANUAL if manual else m.PASS, reasons or ["completed candles only; execution series complete"],
               manual, ev, ["spec 8 G0", "D23", "D28", "D33", "D34"])
 
@@ -141,6 +176,28 @@ def _g1(ctx, roles, a, state, exec_candles):
           "htf_test_count": state.htf_test_count, "dl_touched": state.dl_touched_at is not None,
           "invalidated": False}
     reasons = ["fresh, unbreached demand zone per the MTF overlay (test_count 0)"]
+    # an in-progress candle is ignored for zones (D23) but has already traded into this one:
+    # freshness after it is unknown until it completes (spec 6.2), so never a plain PASS
+    touches = ctx.snapshot.incomplete_touches(z)
+    if touches:
+        ev["incomplete_candle_touches"] = [{"end": e.isoformat(), "proximal": pl, "distal": dl}
+                                           for e, pl, dl in touches]
+        return _g("G1", m.MANUAL, reasons + [
+            "%s: an in-progress candle ending %s has reached the proximal line%s; the zone is fresh only up "
+            "to the last completed candle" % (m.INCOMPLETE_CANDLE_TOUCH, touches[0][0].isoformat(),
+                                              " and the distal line" if touches[0][2] else "")],
+            [m.INCOMPLETE_CANDLE_TOUCH], ev, ["D23", "RB 264, 683-697", "R4"])
+    first = z.legin_index if z.legin_index is not None else z.start_index
+    since = exec_candles[first].start.date() if 0 <= first < len(exec_candles) else None
+    unseen = [d for d in ctx.unobserved_excluded_sessions if since is None or d >= since]
+    if unseen:
+        # D33: an excluded session that reaches the zone makes it manual; with no file held for
+        # that session the check cannot be made, so freshness across it is unknown (D52)
+        ev["unobserved_excluded_sessions"] = [d.isoformat() for d in unseen]
+        return _g("G1", m.MANUAL, reasons + [
+            "%s: %s inside the zone's span has no EOD file; whether it reached the zone is unknown (D33, D52)"
+            % (m.EXCLUDED_SESSION_UNOBSERVED, ", ".join(d.isoformat() for d in unseen))],
+            [m.EXCLUDED_SESSION_UNOBSERVED], ev, ["D33", "D52"])
     if ctx.trade_type == m.MIT:
         return _g("G1", m.PASS, reasons, evidence=ev, sources=["D2", "D3", "audit M4", "RB 264, 683-697"])
     since = len(exec_candles) - 1 - z.created_index
@@ -182,8 +239,9 @@ def _g3(ctx, roles, views, status):
           "top": curve["top"].brief() if curve["top"] else None,
           "pct_at_price": structure.curve_pct(curve, ctx.price),
           "position_at_price": sorted(pos_cmp),
-          "skipped_tested_boundaries": curve["skipped_tested"], "issues": curve["issues"]}
-    src = ["spec 7.2", "RB 1578-1628"]
+          "skipped_tested_boundaries": curve["skipped_tested"], "issues": curve["issues"],
+          "redrawn_past_tested": curve.get("redrawn_past", [])}
+    src = ["spec 7.2", "RB 1578-1628"] + (["P-LOC-2"] if curve.get("redrawn_past") else [])
     if curve["issues"] or not pos_cmp:
         return _g("G3", m.MANUAL, curve["issues"] or ["curve incomplete"], ["LOCATION_UNDETERMINED"],
                   ev, src), curve, set()
@@ -255,9 +313,25 @@ def _g5(ctx, roles, views, status, rng, exec_pl, curve):
                 elif band in ("WITHIN_5", "WITHIN_10") and out != m.FAIL:
                     out = m.MANUAL if out == m.PASS else out
                     reasons.append("WIT weekly location DZ near Monthly supply %s (RB 1402; 'near' undefined)" % v.zone_id)
+    # D43: an opposing Pine-only supply inside the conflict bands cannot be validated, so it
+    # makes G5 MANUAL; it never FAILs it and never clears it
+    pine = []
+    for tf in tuple(roles["conflict_reject"]) + tuple(roles["conflict_evidence"]):
+        if status.get(tf, {}).get("status") != structure.AVAILABLE:
+            continue                                  # already DATA_INSUFFICIENT / MANUAL above
+        for pz in structure.pine_only_zones(ctx.snapshot, tf, "supply"):
+            bands = {k: structure._band(pz, r) for k, r in refs.items()}
+            if any(b != "CLEAR" for b in bands.values()):
+                pine.append({"zone": pz.brief(), "bands": bands, "outcome": m.MANUAL})
+                reasons.append("PINE_ONLY_OPPOSING_ZONE %s supply %s: %s (cannot be validated independently; D43)"
+                               % (tf, pz.zone_id, ", ".join("%s=%s" % kv for kv in sorted(bands.items()))))
+    if pine and out == m.PASS:
+        out = m.MANUAL
     manual = ["HTF_CONFLICT_REVIEW"] if out == m.MANUAL else []
-    return _g("G5", out, reasons, manual, {"refs": refs, "findings": findings},
-              ["spec 7.4", "RB 601, 1302-1316", "RF2"])
+    if pine:
+        manual.append("PINE_ONLY_ZONE_REVIEW")
+    return _g("G5", out, reasons, manual, {"refs": refs, "findings": findings, "pine_only_findings": pine},
+              ["spec 7.4", "RB 601, 1302-1316", "RF2"] + (["D43"] if pine else []))
 
 
 def _g6(ctx, roles, views, status, z, curve, positions):
@@ -309,6 +383,20 @@ def _g7(ctx, roles, views, status, z, rng):
         return _g("G7", m.DATA_INSUFFICIENT, ["TARGET_SERIES_%s (%s)" % (status[tf]["status"], tf)],
                   evidence=ev, sources=src)
     target, issue = levels.select_target(views[tf], rng["entry"][1], z.proximal)
+    # D43: an opposing Pine-only supply above the entry and below the structural target (or
+    # anywhere above the entry when there is none) may be the real nearest target; it is
+    # never used as one, and it makes G7 MANUAL. One Pine itself recorded as touched cannot
+    # be the target (the target must be FRESH, RB 551-558; select_target skips tested zones);
+    # only that positive evidence excludes it, never the absence of a touch
+    pine = [pz for pz in structure.pine_only_zones(ctx.snapshot, tf, "supply")
+            if pz.tested is not True and pz.distal > rng["entry"][0]
+            and (target is None or pz.proximal < target.proximal)]
+    if pine:
+        src = src + ["D43"]
+        ev["pine_only_zones_below_target"] = [pz.brief() for pz in pine]
+    pine_reason = ["PINE_ONLY_OPPOSING_ZONE %s below the target: %s (cannot be validated independently; "
+                   "never an automatic target; D43)" % (tf, ", ".join(pz.zone_id for pz in pine))] if pine else []
+    pine_manual = ["PINE_ONLY_ZONE_REVIEW"] if pine else []
     ref_tf = roles["target_reference"]
     if ref_tf and status.get(ref_tf, {}).get("status") == structure.AVAILABLE:
         ref, ref_issue = levels.select_target(views[ref_tf], rng["entry"][1], z.proximal)
@@ -317,17 +405,21 @@ def _g7(ctx, roles, views, status, z, rng):
     if target is None:
         risk_max = rng["entry"][1] - min(v for pair in rng["sl"].values() for v in pair)
         ev["mathematical_2_to_1_reference"] = round(rng["entry"][1] + levels.MIN_RR * risk_max, 4)
-        return _g("G7", m.MANUAL, [issue, "2:1 mathematical target shown as a reference only (D9; RB 2268-2328)"],
-                  ["NO_STRUCTURAL_TARGET"], ev, src)
+        return _g("G7", m.MANUAL, [issue, "2:1 mathematical target shown as a reference only (D9; RB 2268-2328)"]
+                  + pine_reason, ["NO_STRUCTURAL_TARGET"] + pine_manual, ev, src)
     rr = levels.rr_range(rng, target.proximal)
     ev["target"] = target.brief()
     ev["rr"] = rr
-    if rr["status"] == levels.PASS_ALL:
-        return _g("G7", m.PASS, ["R:R >= 2 for every buffer and SL choice: %s" % rr["rr"]], evidence=ev, sources=src)
     if rr["status"] == levels.FAIL_ALL:
-        return _g("G7", m.FAIL, ["RF8: R:R < 2 for every buffer and SL choice: %s" % rr["rr"]], evidence=ev, sources=src)
-    return _g("G7", m.MANUAL, ["R:R depends on the buffer and SL choice: %s" % rr["rr"]],
-              ["RR_DEPENDS_ON_BUFFER"], ev, src)
+        return _g("G7", m.FAIL, ["RF8: R:R < 2 for every buffer and SL choice: %s" % rr["rr"]] + pine_reason,
+                  pine_manual, evidence=ev, sources=src)
+    if rr["status"] == levels.PASS_ALL and not pine:
+        return _g("G7", m.PASS, ["R:R >= 2 for every buffer and SL choice: %s" % rr["rr"]], evidence=ev, sources=src)
+    if rr["status"] == levels.PASS_ALL:
+        return _g("G7", m.MANUAL, ["R:R >= 2 for every buffer and SL choice to the structural target: %s" % rr["rr"]]
+                  + pine_reason, pine_manual, ev, src)
+    return _g("G7", m.MANUAL, ["R:R depends on the buffer and SL choice: %s" % rr["rr"]] + pine_reason,
+              ["RR_DEPENDS_ON_BUFFER"] + pine_manual, ev, src)
 
 
 def _g8(ctx, g4_trend, positions, z, g5, g7, tda_rows):
@@ -359,8 +451,11 @@ def _g8(ctx, g4_trend, positions, z, g5, g7, tda_rows):
     ec1 = m.MANUAL if tda_missing else m.PASS
     items.append({"item": "Essential Check 1: TDA complete", "result": ec1,
                   "note": "unavailable: %s" % ", ".join(tda_missing) if tda_missing else "every TDA timeframe available"})
-    items.append({"item": "Essential Checks 5-6: entry above PL, SL below DL, with buffer", "result": m.PASS,
-                  "note": "by construction of the G7 ranges"})
+    rng = levels.ranges(z.proximal, z.distal, z.normal_distal)
+    items.append({"item": "Essential Checks 5-6: entry above PL, SL below DL, with buffer",
+                  "result": m.PASS if rng.get("valid") else m.MANUAL,
+                  "note": "by construction of the G7 ranges" if rng.get("valid") else
+                          "levels invalid (%s); G7 reports them" % "; ".join(rng.get("problems") or [])})
     if ctx.risk_per_trade is None:
         items.append({"item": "Essential Check 7: position size", "result": m.MANUAL,
                       "note": "risk per trade not configured; quantity not computed"})

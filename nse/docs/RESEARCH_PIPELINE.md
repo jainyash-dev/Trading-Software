@@ -223,7 +223,8 @@ be run on real data until the items marked "needed" are in place.
 | Fills | Stop exits on touch (RB 2141); levels are fixed at the signal (RB 2139); gap fills, same-bar ordering, expiry and cancel-if-target-first are required user inputs | **Needed:** B12 choices |
 | Buffers | Entry and SL choice inside the printed ranges is a required input | **Needed:** B9 choice |
 | Costs | Percentage per side plus slippage | Flat per-order charges (for example a per-sell depository charge) are not modelled. **Needed:** official cost schedule and a decision |
-| Not modelled | Capital and concurrent positions, the 10-trades-per-month cap (RB 2392), price bands and circuit limits, liquidity versus volume, re-checking an order after its signal | Each needs a user decision before it is built |
+| Portfolio and pending orders | Monthly cap (RB 2392) and `max_open_positions` are model inputs, counted at fill; a later scan that drops the zone cancels a pending order (`CANCELLED_SETUP_INVALID`, at scan times only); with a calendar expiry counts verified sessions and missing / excluded sessions or incomplete bars end the record (D42, audit 2026-11-06) | Owner limits of 10 positions and 10-session expiry are labelled, not forced (D42) |
+| Not modelled | Capital, price bands and circuit limits, liquidity versus volume, dated cost schedules | Each needs a user decision before it is built |
 | Data | 62 legacy files held; the window needs 1,233 (`REAL_DATA_ACQUISITION_PLAN.md`) | **Needed:** download approval, UDiFF samples and loader |
 | Runtime | About 0.04 s per symbol per scan date on five years of daily data (measured): 10 symbols over two years of daily signals is about 3 minutes | Adequate |
 | Strategy | Signals follow the current PROPOSED readings (D41); P-COIN-1 sends most non-coinciding setups to MANUAL REVIEW | **Needed:** decisions in `DECISION_REVIEW.md`. Only statuses you select are traded; MANUAL_REVIEW signals have had no manual check |
@@ -245,3 +246,52 @@ be run on real data until the items marked "needed" are in place.
   Edit/Write checks Python syntax and the protected hashes. Neither runs the test suite.
 - **Bounded repair:** the orchestrator skill allows at most three repair cycles per failure
   before escalating with evidence.
+
+## 10. Research run (ED-45)
+
+`python3 -m nse.research.cli research` is the single research path. It calls `scanner.scan`
+(the only G0-G8 pathway) and then writes trade plans and a markdown report. It does not
+detect zones, rescore freshness or rewrite a candidate status. A missing portfolio count
+is `NOT_SUPPLIED`, not a pass. No quantity is selected, and the output does not authorise
+an order.
+
+```
+python3 -m nse.research.cli research --as-of 2024-06-28 --symbols INFY \
+    --bhavcopy-dir nse/data/eod/raw --manifest nse/data/eod/manifest.csv \
+    --calendar nse/data/calendar --capital 100000 --rpt-pct 1 --stage LEARNING \
+    --out nse/output/research-2024-06-28
+
+python3 -m nse.research.cli research --replay-of nse/output/research-2024-06-28 \
+    --out nse/output/research-2024-06-28-replay
+```
+
+`--as-of-list` writes one folder per date and records the invocation as `historical`.
+`--invocation scheduled` is the same function a scheduler calls. This module does not
+wait on a clock. `--journal` opens the store read-only and does not insert a journal row.
+What this run still needs from the data-readiness work is listed in
+`docs/PROMPT2_DATA_CONTRACT.md`.
+
+### Zone reference and scan completeness
+
+The engine id remains `side-startIndex-createdIndex`. The research envelope also stores
+a stable reference: symbol, timeframe, side, `start_time`, `created_time`. Defining
+properties are pattern, proximal, distal, normal distal, and zero-base.
+`compare_zone_identity` returns `SAME`, `ZONE_IDENTITY_UNRESOLVED`, or
+`ZONE_NOT_IN_SERIES`. Two zones in one scan that share the reference are
+`ZONE_IDENTITY_AMBIGUOUS`. Either unresolved state withholds the plan and the quantity.
+The candidate status is unchanged. Dataset id and bar count are not part of the reference.
+
+`completeness` is `COMPLETE` when every requested symbol has a result, `PARTIAL` when
+one was never opened, and `FAILED` when the scan has no symbol results.
+`UNIVERSE_UNVERIFIED` can still be `COMPLETE`. `full_universe_scan` is false in that
+case, and the report says so. A synthetic provenance is labelled `FIXTURE_NOT_MARKET_DATA`.
+
+### Caps, one implementation
+
+The monthly allowance is one committed `TRIGGERED` journal event in the IST month.
+An exit does not free it. The open-position slot is that same event until an exit
+strictly before the later check. A submitted order holds the zone; a research plan
+that is never submitted does not, once it is `CANCELLED`. There is no partial-fill
+event. A second `TRIGGERED` on one entry is refused. `pipeline` only reads
+`store.portfolio_at`. It does not keep a second counter, and it does not write a paper
+book. The table of events is in `docs/architecture/DOMAIN_MODEL.md`.

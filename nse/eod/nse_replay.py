@@ -30,7 +30,7 @@ import importlib.util
 import os
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _MTF_PATH = os.path.join(os.path.dirname(_HERE), "mtf-freshness", "mtf_freshness.py")

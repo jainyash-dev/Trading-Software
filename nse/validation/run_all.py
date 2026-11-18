@@ -14,7 +14,9 @@ Checks, in order:
                   calendar vs EOD reconciliation over the dates held (OPTIONAL: needs the
                   git-ignored evidence, D31)
   4. reference    INFY OHLC reference vs the replayed bhavcopies (OPTIONAL)
-  5. readiness    readiness.report() with the test modules that passed in THIS run
+  5. static lint  ruff (pyproject.toml settings) or, without ruff, pyflakes over nse/,
+                  tests/ and .claude/hooks (OPTIONAL: UNAVAILABLE when neither is installed)
+  6. readiness    readiness.report() with the test modules that passed in THIS run
 
 Results are PASS, FAIL, SKIPPED_PREREQUISITE (tests skipped for missing local evidence)
 or UNAVAILABLE (an optional check whose inputs are absent). UNAVAILABLE and skips are
@@ -26,6 +28,7 @@ with --acceptance (which always runs everything), if any evidence is missing; 0 
 import argparse
 import datetime
 import glob
+import hashlib
 import io
 import json
 import os
@@ -44,25 +47,29 @@ ACCEPTANCE_ENV = "NSE_PHASE1_ACCEPTANCE"
 
 GROUPS = (
     ("repository", ["test_repo"]),
+    ("architecture", ["test_architecture"]),
     ("zone_engine", ["test_zone_engine"]),
     ("mtf_freshness", ["test_mtf_freshness"]),
-    ("data", ["test_nse_bhavcopy", "test_nse_calendar", "test_nse_calendar_data", "test_nse_replay"]),
+    ("data", ["test_nse_bhavcopy", "test_nse_eod_evidence", "test_nse_calendar", "test_nse_calendar_data",
+              "test_nse_replay", "test_index_incl_excl", "test_research_corporate_actions"]),
     ("strategy_gates", ["test_research_gates", "test_research_confluence"]),
     ("lookahead", ["test_research_lookahead"]),
-    ("integration", ["test_research_integration", "test_research_e2e"]),
+    ("integration", ["test_research_integration", "test_research_e2e", "test_research_pipeline"]),
     ("adversarial", ["test_research_adversarial"]),
-    ("reports", ["test_research_reports"]),
-    ("data_readiness", ["test_research_data"]),
-    ("backtest", ["test_research_backtest"]),
+    ("reports", ["test_research_reports", "test_research_run_manifest"]),
+    ("data_readiness", ["test_research_data", "test_research_eod_coverage", "test_research_price_scale_r12"]),
+    ("backtest", ["test_research_backtest", "test_research_execution_policy"]),
     ("acquisition", ["test_research_acquisition"]),
     ("store", ["test_research_store"]),
     ("research_assistant", ["test_research_explain", "test_research_alerts"]),
     ("dashboard", ["test_research_dashboard"]),
-    ("risk_instruments", ["test_research_risk", "test_research_instruments"]),
+    ("risk_instruments", ["test_research_risk", "test_research_instruments", "test_research_membership",
+                          "test_research_dataset_eligibility", "test_research_p0_certification",
+                          "test_research_p0_build_e2e", "test_research_identity_policy"]),
     ("scenarios", ["test_research_scenarios"]),
     ("health", ["test_research_health"]),
     ("hooks", ["test_claude_hooks"]),
-    ("council", ["test_llm_council"]),
+    ("council", ["test_llm_council", "test_project_council_skill"]),
     ("validation_framework", ["test_validation_runner"]),
     ("legacy_day_trader_skills", ["test_alerts", "test_analyst", "test_broker", "test_budget", "test_entry",
                                   "test_exit", "test_news", "test_pelosi", "test_risk", "test_scanner",
@@ -134,7 +141,8 @@ def run_group(name, modules):
     other_skips = [s for s in skips if not why_is_prereq(s[1])]
     failed = res.failures + res.errors
     status = PASS
-    if failed or load_errors or other_skips or res.unexpectedSuccesses:
+    # a required group that ran nothing proves nothing (audit 2026-11-06, Agent 6 #7)
+    if failed or load_errors or other_skips or res.unexpectedSuccesses or res.testsRun == 0:
         status = FAIL
     elif prereq:
         status = SKIPPED
@@ -152,15 +160,18 @@ def why_is_prereq(reason):
 
 # a file on a Muhurat or shortened session is expected evidence (D30 excludes the session
 # from candles; the replay classifies it), not a disagreement with the calendar
-RECONCILIATION_PROBLEMS = ("missing_eod_on_trading_day", "eod_on_closed_day", "outside_coverage", "unresolved")
-RECONCILIATION_INFO = ("eod_on_excluded_session",)
+RECONCILIATION_PROBLEMS = ("missing_eod_on_trading_day", "eod_on_closed_day", "outside_coverage")
+# a file on an excluded session is held in its own role (ED-34); an UNRESOLVED calendar date is
+# an owner-recorded open question (CAL-2, D54), not a calendar-vs-EOD disagreement: it is listed
+# here and fails only a required window that contains it
+RECONCILIATION_INFO = ("eod_on_excluded_session", "unresolved")
 
 
 def check_local_data(window=None):
     from nse.research.deps import CALENDAR_DIR, EOD_MANIFEST, EOD_RAW_DIR, bhavcopy, calendar
     out = {"name": "local_data", "required": False, "details": {}}
     circ = os.path.join(CALENDAR_DIR, "circulars")
-    zips = sorted(glob.glob(os.path.join(EOD_RAW_DIR, "cm*bhav.csv.zip")))
+    zips = bhavcopy.archive_paths(EOD_RAW_DIR)
     if not os.path.isdir(circ) or not zips:
         out["status"] = FAIL if window is not None else UNAVAILABLE    # a required window cannot be unavailable
         out["details"]["missing"] = [p for p, ok in ((circ, os.path.isdir(circ)), (EOD_RAW_DIR, bool(zips))) if not ok]
@@ -172,7 +183,7 @@ def check_local_data(window=None):
     if cal.unverified_sources:
         problems.append("calendar sources not hash-verified: %s" % ", ".join(s.source_ref for s in cal.unverified_sources))
     try:
-        files = bhavcopy.load_many(zips, bhavcopy.read_manifest(EOD_MANIFEST))
+        files = bhavcopy.load_many(zips, bhavcopy.read_manifest(EOD_MANIFEST), keep=lambda r: False)   # dates only (ED-41)
     except bhavcopy.BhavcopyError as e:
         problems.append("EOD archives fail the strict loader with the manifest: %s" % e)
         files = []
@@ -218,13 +229,16 @@ def check_reference():
     from nse.research.deps import EOD_MANIFEST, EOD_RAW_DIR, REFERENCE_DIR, bhavcopy, reference, replay_mod
     out = {"name": "reference_comparison", "required": False, "details": {}}
     ref = os.path.join(REFERENCE_DIR, "INFY", "ohlc_reference.csv")
-    zips = sorted(glob.glob(os.path.join(EOD_RAW_DIR, "cm*2022bhav.csv.zip")))
+    # the INFY reference covers Q1 2022 only; compare exactly that quarter (MP1: the raw folder
+    # now holds 2021-2025, and "cm*2022" would match the whole year)
+    zips = sorted(p for p in glob.glob(os.path.join(EOD_RAW_DIR, "cm*2022bhav.csv.zip"))
+                  if bhavcopy.name_info(os.path.basename(p))[0] <= datetime.date(2022, 3, 31))
     if not os.path.isfile(ref) or not zips:
         out["status"] = UNAVAILABLE
         out["details"]["missing"] = [p for p, ok in ((ref, os.path.isfile(ref)), (EOD_RAW_DIR, bool(zips))) if not ok]
         return out
     refs = reference.read_ohlc_reference(ref)
-    files = bhavcopy.load_many(zips, bhavcopy.read_manifest(EOD_MANIFEST))
+    files = bhavcopy.load_many(zips, bhavcopy.read_manifest(EOD_MANIFEST), keep=lambda r: r.symbol == "INFY")
     rp = replay_mod.replay_symbol(files, "INFY", htf=("D", "W", "M"), assume_regular_session=True)
     results = reference.compare_ohlc(refs, rp)
     summ = reference.coverage_summary(results)
@@ -233,8 +247,83 @@ def check_reference():
     out["details"]["sources"] = sorted(set(r.source for r in refs))
     out["details"]["note"] = ("Yahoo Finance republishes NSE data: a MATCH shows the replay reproduces published "
                               "prices, not independent validation. No TradingView reference is recorded.")
-    out["status"] = FAIL if summ["counts"].get(reference.MISMATCH) else PASS
-    out["problems"] = ["OHLC mismatches: %d" % summ["counts"][reference.MISMATCH]] if out["status"] == FAIL else []
+    # the evidence files the rows cite must still hash to what was recorded (audit
+    # 2026-11-06, Agent 5): a well-formed hash string alone is not provenance
+    evidence = _evidence_hashes(refs)
+    out["details"]["evidence_files"] = evidence
+    problems = []
+    if summ["counts"].get(reference.MISMATCH):
+        problems.append("OHLC mismatches: %d" % summ["counts"][reference.MISMATCH])
+    if evidence["mismatch"]:
+        problems.append("evidence files whose SHA-256 differs from the recorded value: %s"
+                        % ", ".join(evidence["mismatch"]))
+    if problems:
+        out["status"] = FAIL
+    elif evidence["missing"] or not summ["complete"]:
+        out["status"] = UNAVAILABLE                  # evidence not all present: never a plain PASS
+        out["details"]["unavailable_because"] = (["evidence files absent: %s" % ", ".join(evidence["missing"])]
+                                                 if evidence["missing"] else []) + \
+            ([] if summ["complete"] else ["reference comparison incomplete"])
+    else:
+        out["status"] = PASS
+    out["problems"] = problems
+    return out
+
+
+def _evidence_hashes(refs):
+    """{matched, mismatch, missing}: each distinct export_file the rows cite, looked up under
+    nse/data (screenshots are kept locally, git-ignored) and re-hashed."""
+    from nse.research.deps import NSE
+    wanted = {}
+    for r in refs:
+        if r.export_file:
+            wanted.setdefault(r.export_file, set()).add(r.export_sha256.lower())
+    found = {}
+    for folder, _, names in os.walk(os.path.join(NSE, "data")):
+        for n in names:
+            if n in wanted and n not in found:
+                found[n] = os.path.join(folder, n)
+    out = {"matched": [], "mismatch": [], "missing": []}
+    for name in sorted(wanted):
+        if name not in found:
+            out["missing"].append(name)
+            continue
+        with open(found[name], "rb") as fh:
+            digest = hashlib.sha256(fh.read()).hexdigest()
+        (out["matched"] if wanted[name] == {digest} else out["mismatch"]).append(name)
+    return out
+
+
+LINT_PATHS = ("nse", "tests", os.path.join(".claude", "hooks"))
+
+
+def _lint_command():
+    """The linter to run: ruff on PATH or in .venv, else pyflakes in this interpreter."""
+    import shutil
+    for ruff in (os.path.join(ROOT, ".venv", "bin", "ruff"), shutil.which("ruff")):
+        if ruff and os.path.isfile(ruff):
+            return "ruff", [ruff, "check", "--no-cache", "--quiet"] + list(LINT_PATHS)
+    import importlib.util
+    if importlib.util.find_spec("pyflakes") is not None:
+        return "pyflakes", [sys.executable, "-m", "pyflakes"] + list(LINT_PATHS)
+    return None, None
+
+
+def check_static_lint():
+    """Static lint (OPTIONAL). Findings FAIL; no linter installed is UNAVAILABLE, never PASS."""
+    out = {"name": "static_lint", "required": False, "details": {}}
+    tool, cmd = _lint_command()
+    if tool is None:
+        out["status"] = UNAVAILABLE
+        out["problems"] = ["no linter: install the dev tools (docs/OPERATIONS_RUNBOOK.md section 2)"]
+        return out
+    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+    p = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, env=env)
+    lines = [x for x in (p.stdout + p.stderr).splitlines() if x.strip()]
+    out["details"] = {"tool": tool, "paths": list(LINT_PATHS), "findings": lines[:200]}
+    out["status"] = PASS if p.returncode == 0 else FAIL
+    out["problems"] = ["%s: %d finding(s); first: %s" % (tool, len(lines), lines[0] if lines else "exit %d" % p.returncode)] \
+        if p.returncode else []
     return out
 
 
@@ -267,6 +356,7 @@ def main(argv=None):
     p.add_argument("--group", action="append", help="run only these test groups (repeatable)")
     p.add_argument("--acceptance", action="store_true", help="missing local prerequisites FAIL (sets %s=1)" % ACCEPTANCE_ENV)
     p.add_argument("--no-data", action="store_true", help="skip the optional local-data and reference checks")
+    p.add_argument("--no-lint", action="store_true", help="skip the optional static-lint check")
     p.add_argument("--out", default=os.path.join(ROOT, "nse", "output", "validation", "report.json"))
     p.add_argument("--list", action="store_true", help="list the groups and exit")
     p.add_argument("--require-window", nargs=2, metavar=("FROM", "TO"),
@@ -276,8 +366,8 @@ def main(argv=None):
         for name, mods in GROUPS:
             print("%-26s %s" % (name, ", ".join(mods)))
         return 0
-    if args.acceptance and (args.group or args.no_data):
-        p.error("--acceptance runs every check; it cannot be combined with --group or --no-data")
+    if args.acceptance and (args.group or args.no_data or args.no_lint):
+        p.error("--acceptance runs every check; it cannot be combined with --group, --no-data or --no-lint")
     if args.acceptance:
         os.environ[ACCEPTANCE_ENV] = "1"
     names = [g for g, _ in GROUPS]
@@ -301,12 +391,26 @@ def main(argv=None):
             except Exception as e:                  # an optional check that crashes is a FAIL, not a pass
                 checks.append({"name": getattr(fn, "__name__", "local_data"), "required": False, "status": FAIL,
                                "problems": ["%s: %s" % (type(e).__name__, e)]})
+    if not args.no_lint and not args.group:
+        try:
+            checks.append(check_static_lint())
+        except Exception as e:                      # a crashed optional check is a FAIL, not a pass
+            checks.append({"name": "static_lint", "required": False, "status": FAIL,
+                           "problems": ["%s: %s" % (type(e).__name__, e)]})
     passed_modules = set()
     for c in checks:
         if c.get("modules") and c["status"] == PASS:
             passed_modules.update(c["modules"])
     from nse.research import readiness
-    report = {"acceptance_mode": args.acceptance, "checks": checks,
+    not_run = []          # optional checks this invocation left out, named so a partial run never reads as complete
+    if args.group:
+        not_run.append("local_data, reference_comparison, static_lint (--group run)")
+    else:
+        if args.no_data:
+            not_run.append("local_data, reference_comparison (--no-data)")
+        if args.no_lint:
+            not_run.append("static_lint (--no-lint)")
+    report = {"acceptance_mode": args.acceptance, "checks": checks, "checks_not_run": not_run,
               "readiness": readiness.report(passed_modules),
               "totals": {k: sum(c.get(k, 0) for c in checks) for k in ("ran", "failures", "errors", "skipped")}}
     report["verdict"], exit_code = verdict(checks, args.acceptance)
@@ -327,6 +431,8 @@ def main(argv=None):
             print("    - LOAD ERROR %s" % f)
         for f in c.get("prerequisite_skips", []):
             print("    - SKIPPED %s: %s" % (f["test"], f["reason"]))
+    for x in not_run:
+        print("not run: %s" % x)
     print("totals: %s" % report["totals"])
     print("verdict: %s  (report: %s)" % (report["verdict"], os.path.relpath(args.out, ROOT)))
     print("Software tests are not external validation; see the readiness section of the report.")

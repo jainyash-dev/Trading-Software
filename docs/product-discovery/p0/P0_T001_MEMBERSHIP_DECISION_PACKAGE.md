@@ -1,6 +1,8 @@
 # T-001 membership decision package
 
-**Recommendations only.** Nothing in this package was written into `nse/data/universe/nifty100_review.csv`. Every canonical `decision` is still blank. A simulated acceptance is not certification.
+**Recommendations in the tables below are the 2026-11-11 advisory record.** They are not themselves decisions.
+
+On 2026-11-12 Yash Jain recorded T-001 batch 1 in `nse/data/universe/nifty100_review.csv`: `decision` `ACCEPTED` on 123 rows, reviewer `Yash Jain`, `reviewed_on` `2026-11-12`. The rows are the 98 identity-clear baseline names, all 12 E01 rows, both E02 rows, all 10 E03 rows, and the CADILAHC to ZYDUSLIFE rename. `baseline:GRASIM:INE047A01021` and `baseline:BAJFINANCE:INE296A01024` were left blank. The converter then reports 71 periods with a source hash and 114 without. That is not full-index certification and not a certified research universe.
 
 Reviewed against HEAD `56434ea` inputs on 2026-11-11. This run matched row hashes and cited-file hashes. It did not re-read every PDF page.
 
@@ -12,7 +14,7 @@ Reviewed against HEAD `56434ea` inputs on 2026-11-11. This run matched row hashe
 | Packet rows | 271, same keys |
 | Queue rows | 271, same keys |
 | Template hashes | 271, no mismatch against the review file, the packet, or the queue |
-| Canonical `decision` | blank on all 271 |
+| Canonical `decision` | 123 `ACCEPTED` on 2026-11-12; 148 still blank, including GRASIM and BAJFINANCE |
 | Reviewer `Yash Jain` | 35 rows (25 `count_approval`, 10 `mapping_approval`) |
 | No reviewer | 236 |
 | Baseline source file | `indices_dataDec2020.zip`, hash matched on all 100 rows |
@@ -90,4 +92,4 @@ Certified research symbol-dates remain **0**. The dry run is not a certification
 
 ## Owner action
 
-Fill `owner_decision` on `P0_MEMBERSHIP_GROUP_REVIEW.csv` with `ACCEPTED` or `REJECTED` per group you actually accept. That file is not the ledger. After that, the accepted groups can be copied into `nifty100_review.csv` `decision` by a later, explicit step. Do not copy count rows into `decision`. Do not treat this recommendation file as already approved.
+Batch 1 is recorded in the ledger, as the opening paragraph says. The remaining acceptance-recommended groups, the seven insufficient groups, and the 25 count groups are still open. A later group is copied into `nifty100_review.csv` `decision` only after an explicit decision on that group. Count rows stay out of `decision`. A recommendation is not an approval.

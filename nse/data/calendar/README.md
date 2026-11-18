@@ -28,6 +28,11 @@ exactly as served.
 
 | Year | Reference | Circular date | Holidays printed (weekday + weekend) |
 |---|---|---|---|
+| 2016 | NSE/CMTR/31297 (Circular 73/2015) | 2015-12-07 | 15 + 4 |
+| 2017 | NSE/CMTR/33746 (Circular 64/2016) | 2016-12-05 | 13 + 5 |
+| 2018 | NSE/CMTR/36475 (Circular 71/2017) | 2017-12-12 | 16 + 3 |
+| 2019 | NSE/CMTR/39612 (Circular 115/2018) | 2018-12-07 | 15 + 4 |
+| 2020 | NSE/CMTR/42877 (Circular 146/2019) | 2019-12-11 | 12 + 7 |
 | 2021 | NSE/CMTR/46623 (Circular 113/2020) | 2020-12-11 | 14 + 5 |
 | 2022 | NSE/CMTR/50560 (Circular 117/2021) | 2021-12-10 | 13 + 5 |
 | 2023 | NSE/CMTR/54757 (Circular 150/2022) | 2022-12-08 | 15 + 4 |
@@ -42,11 +47,23 @@ NSE Invest (NMF) and clearing (CMPT) circulars have different schedules and are 
 
 | Date | Event | Circular | Calendar treatment |
 |---|---|---|---|
+| 2016-10-28 | Dhanteras "Extended LIVE TRADING": regular market 09:15-15:30 unchanged, plus an evening session for Gold ETFs and SGBs only | NSE/CMTR/33442 | NORMAL_SPECIAL: regular equity session; gold extension noted only (D58, CAL-2 option A) |
+| 2016-10-30 | Muhurat (Sunday), 18:30-19:30 | NSE/CMTR/33424 | Excluded (D30) |
+| 2017-10-17 | Dhanteras extended session (as 2016) | NSE/CMTR/36003 | NORMAL_SPECIAL (D58) |
+| 2017-10-19 | Muhurat, 18:30-19:30 | NSE/CMTR/35993 | Excluded (D30) |
+| 2018-11-05 | Dhanteras extended session (as 2016) | NSE/CMTR/39215 | NORMAL_SPECIAL (D58) |
+| 2018-11-07 | Muhurat, 17:30-18:30 | NSE/CMTR/39216 | Excluded (D30) |
+| 2019-04-29 | Added holiday (parliamentary elections, Mumbai) | NSE/CMTR/40536 | Holiday |
+| 2019-10-21 | Added holiday (Maharashtra assembly elections) | NSE/MSD/42319 | Holiday |
+| 2019-10-25 | Dhanteras extended session (as 2016) | NSE/CMTR/42455 | NORMAL_SPECIAL (D58) |
+| 2019-10-27 | Muhurat (Sunday), 18:15-19:15 (42403, revised by 42483) | NSE/CMTR/42483 | Excluded (D30) |
+| 2020-02-01 | Saturday Budget session, 09:15-15:30 printed | NSE/CMTR/43290 | NORMAL_SPECIAL (D30 provisional) |
+| 2020-11-14 | Muhurat (Saturday), 18:15-19:15 | NSE/CMTR/46230 | Excluded (D30) |
 | 2021-11-04 | Muhurat, Normal Market 18:15-19:15 | NSE/CMTR/50050 | Excluded (D30) |
 | 2022-10-24 | Muhurat, 18:15-19:15 | NSE/CMTR/54023 | Excluded (D30) |
 | 2023-06-28 / 06-29 | Bakri Id moved from 28 to 29 June | NSE/CMTR/57285 (ZIP) | 28 June normal; 29 June holiday |
 | 2023-11-12 | Muhurat (Sunday), 18:15-19:15 | NSE/CMTR/59124 | Excluded (D30) |
-| 2024-01-20 | Saturday regular session from the primary site, "as per regular market timings" (withdraws the DR-switch session of NSE/MSD/59999, 60300, 60318) | NSE/MSD/60340 | NORMAL_SPECIAL (D30 provisional); hours taken from NSE/CMTR/41180 |
+| 2024-01-20 | Saturday regular session from the primary site, "as per regular market timings"; withdraws NSE/MSD/59999 (which had planned a two-window primary/DR session), 60300 and 60318 (held since 2026-11-09) | NSE/MSD/60340 | NORMAL_SPECIAL (D30 provisional); hours taken from NSE/CMTR/41180 |
 | 2024-01-22 | Added holiday | NSE/CMTR/60338 (ZIP) | Holiday |
 | 2024-03-02 | Saturday DR-switch session: 09:15-10:00 and 11:30-12:30 | NSE/MSD/60677 | Shortened, excluded (D30) |
 | 2024-05-18 | Saturday DR-switch session: 09:15-10:00 and 11:30-12:30 | NSE/MSD/61893 | Shortened, excluded (D30) |
@@ -58,8 +75,13 @@ NSE Invest (NMF) and clearing (CMPT) circulars have different schedules and are 
 
 **Completeness is not proven.** These are the events targeted searches and number-range
 checks found. A missed holiday or session is caught only by reconciling the calendar with
-the dates that have an NSE end-of-day file (`reconcile()`). That has been done for
-2022-01-03 to 2022-03-31 only (clean); the other periods have no EOD files yet.
+the dates that have an NSE end-of-day file.
+- **2016-2025 (D47, D55; 2026-11-09): reconciled and clean.** All official EOD files are held (2,466 trading days since D58 confirmed the four Dhanteras sessions; 2,462 before). The `eod-coverage` report finds a file on every calendar trading day and none on a closed day. NSE also serves files for the 12 excluded sessions of 2016-2025 (Muhurat, and the 2024 DR-switch Saturdays); they are held in their own role, never as candles (ED-34).
+- **CAL-2: the four Dhanteras dates are confirmed regular equity sessions (D58, owner, 2026-11-10; supersedes D54 for these dates).** NSE serves a normal bhavcopy for each (about 1,500 EQ rows), and the circulars print "Regular Market Timing (there is no change to this)". The rows are `CONFIRMED` `SPECIAL_SESSION` 09:15-15:30, classified `NORMAL_SPECIAL`. The Gold ETF/SGB-only evening extension is kept in each note and builds no candle. No UNRESOLVED row remains, so the ED-44 history cut no longer applies. The rules for any future UNRESOLVED date are unchanged (ED-31, ED-42, ED-44).
+- **2016-2020 searches:**
+  - no 2020 Dhanteras circular was found;
+  - 21 Feb 2017 (a Mumbai municipal-election day) has no circular in hand and no row. NSE serves a normal bhavcopy for it, which is consistent with a trading day;
+  - nothing here is inferred.
 
 ## 2. What happens next
 
@@ -93,4 +115,4 @@ circulars and every circular with a timing table were also checked on the render
 
 Open items:
 - No TradingView comparison has been made yet (B8, B17).
-- Reconciliation with EOD files covers Q1 2022 only.
+- The 2016–2025 reconciliation is the paragraph above. This older sentence, "reconciliation covers Q1 2022 only", is not the current file check.

@@ -1,0 +1,35 @@
+requirement_id,module,statement,priority,status_today,evidence,acceptance_gate,owner_decision_needed
+FR-1.1,MS-001,Ingest official NSE CM bhavcopies via loader/manifest,P0,implemented_tested,nse/eod + tests,parser+manifest tests,no
+FR-1.2,MS-001,Raw files immutable; corrections are new files,P0,implemented_partial,acquisition/manifest conventions,object-store immutability tests,no
+FR-1.3,MS-001,Normalise to candle model; raw unadjusted OHLC canonical (D50),P0,implemented_tested,marketdata/D50,candle consistency tests,no
+FR-1.4,MS-002,Instrument identity intervals; unresolved -> DATA_INSUFFICIENT,P0,implemented_tested,instruments + identity tests,identity fail-closed tests,no
+FR-1.5,MS-002,Historical membership dated intervals; overlaps refused,P0,implemented_partial_uncertified,universe files; P0 not certified,membership acceptance+cert gates,D53/D66 windows
+FR-1.6,MS-003,CA events separate from prices; scale events affect G0,P0,implemented_partial,corporate_actions; D66 incomplete,D66 dual-source windows,D66 sources
+FR-1.7,MS-003,Verified trading calendar; UNRESOLVED not inferred,P0,implemented_tested,nse/calendar; D58,calendar tests,no
+FR-1.8,MS-004,Detect missing/duplicate/inconsistent/conflicting data,P0,implemented_tested,marketdata findings,validation suite,no
+FR-1.9,MS-004,Dataset identity via hashes + validation history,P0,implemented_tested,manifests/run_manifest,hash stability tests,no
+FR-1.11,MS-004,Show readiness engineering/data/research separately,P0,implemented_tested,readiness.py + overview API,UI honesty banners,no
+FR-2.1,MS-005,Session and scan overview usability,P1,implemented_tested,overview API + UI,browser+API tests,no
+FR-2.2,MS-005,Index levels only from verified series else UNAVAILABLE,P2,degraded_unavailable,overview returns null,must stay UNAVAILABLE,OD source
+FR-3.1,MS-007,Manual MIT scan via pipeline,P0,implemented_tested,scans API + scanner,platform+research tests,no
+FR-3.2,MS-007,Scheduled/historical scan modes,P1,implemented_partial,jobs+scheduler flag,scheduler e2e in cloud,no
+FR-3.3,MS-007,Show statuses gates freshness,P0,implemented_tested,scan symbols API,UI+API,no
+SD-018,MS-007,WIT refusal BLOCKED,P0,implemented_tested,scanner blocks WIT,adversarial tests,no
+FR-4.1,MS-006,MW D charts with engine zones,P0,implemented_tested,CandleChart + bundle API,P2 browser evidence,no
+FR-4.2,MS-006,Zoom pan crosshair,P1,implemented_tested,FR-42 browser evidence,browser pack,no
+FR-5.1,MS-010,Plan from stored candidate,P0,implemented_tested,plans API,P4 browser,no
+FR-5.8,MS-010,Approval records human; no order send,P0,implemented_tested,approve route authorises_order false,security+flow tests,no
+FR-6.5,MS-011,Positions from journal not second store,P0,implemented_tested,portfolio_at,P5 tests,no
+D42-CAPS,MS-011,10 monthly TRIGGERED + 10 open independent,P0,implemented_tested,store races P5,concurrency tests,OD if SaaS changes policy
+FR-7.1,MS-012,Journal separates plan order fill,P0,implemented_tested,journal API P6,P6 matrix,no
+FR-8.1,MS-013,Backtest with dataset+execution model+manifest,P1,implemented_partial,backtest engine; thin API,manifest required,no
+FR-9.*,MS-012,Analytics descriptive; no R4 claim,P2,partial_descriptive,journal performance,label JOURNAL_DESCRIPTIVE,no
+FR-11.*,MS-014,Assistant explains with citations; no override,P2,partial_deterministic_only,GET explain; no LLM,provider OD,OQ-2
+SFR-ID-01,MS-016,Customer registration and auth,P0,not_implemented,loopback session only,auth e2e + security suite,OD-BP-004
+SFR-ID-03,MS-016,Tenant-scoped API access,P0,not_implemented,single-user local,cross-tenant negative tests,open (direction set by OD-BP-001)
+SFR-BILL-01,MS-017,Subscription entitlements,P0,not_implemented,absent,entitlement enforcement tests,OD-BP-005
+SFR-OPS-01,MS-018,CDN WAF TLS hosting,P0,not_implemented,absent,infra acceptance,OD-BP-010
+SFR-DATA-03,MS-003,D66 dual-source CA completeness,P0,policy_implemented_data_blocked,D66 decision; 0 windows,completeness.csv owner approvals,source acquisition
+NFR-SaaS-3,MS-016,Cross-tenant isolation CI tests,P0,not_implemented,absent,mandatory negative tests,W0 security suite
+NO-BROKER,ALL,No broker order execution,P0,enforced,authorises_order false; providers disabled,architecture+security tests,no
+NO-DESKTOP-PRIMARY,MS-018,No Tauri/Electron primary product,P0,enforced_by_none_and_historical_D57,no src-tauri,packaging review,none

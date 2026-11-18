@@ -1,0 +1,13 @@
+{
+  "crosshair_legend": "Crosshair",
+  "zoom_changed_axis": false,
+  "fit_restored": true,
+  "mark_clicked": true,
+  "drawing_persisted_after_reload": [
+    "horizontal @ 279.69 (PLATFORM_DB)"
+  ],
+  "delete_clicked": true,
+  "after_delete": 0,
+  "rename_button": "Rename",
+  "rename_persisted": true
+}

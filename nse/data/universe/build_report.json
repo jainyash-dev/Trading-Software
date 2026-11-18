@@ -1,0 +1,1881 @@
+{
+ "counts": {
+  "baseline": 100,
+  "changes": 146,
+  "instrument_records": 189,
+  "member_isins": 166
+ },
+ "inferences": [
+  {
+   "basis": "no bhavcopy row for DUMMYREL on or before 2023-07-20; ISIN of JIOFIN in NSE EQUITY_L.csv",
+   "date": "2023-07-20",
+   "isin": "INE758E01017",
+   "symbol": "DUMMYREL",
+   "where": "E09"
+  },
+  {
+   "basis": "no bhavcopy row for DUMMYITC on or before 2025-01-06; ISIN of ITCHOTELS in NSE EQUITY_L.csv",
+   "date": "2025-01-06",
+   "isin": "INE379A01028",
+   "symbol": "DUMMYITC",
+   "where": "E15"
+  },
+  {
+   "basis": "no bhavcopy row for DUMMYSIEMS on or before 2025-04-07; ISIN of ENRIN in NSE EQUITY_L.csv",
+   "date": "2025-04-07",
+   "isin": "INE1NPP01017",
+   "symbol": "DUMMYSIEMS",
+   "where": "E18"
+  },
+  {
+   "basis": "no bhavcopy row for DUMMYTATAM on or before 2025-10-14; ISIN of TMCV in NSE EQUITY_L.csv",
+   "date": "2025-10-14",
+   "isin": "INE1TAE01010",
+   "symbol": "DUMMYTATAM",
+   "where": "E21"
+  },
+  {
+   "basis": "no bhavcopy row for DUMMYHDLVR on or before 2025-12-05; ISIN of KWIL in NSE EQUITY_L.csv",
+   "date": "2025-12-05",
+   "isin": "INE2KCE01013",
+   "symbol": "DUMMYHDLVR",
+   "where": "E23"
+  }
+ ],
+ "isin_changes_applied": [
+  {
+   "date": "2022-04-20",
+   "evidence": [
+    [
+     "2022-04-19",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE797F01020",
+   "old": "INE797F01012",
+   "symbol": "JUBLFOOD"
+  },
+  {
+   "date": "2022-07-29",
+   "evidence": [
+    [
+     "2022-07-28",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE081A01020",
+   "old": "INE081A01012",
+   "symbol": "TATASTEEL"
+  },
+  {
+   "date": "2022-09-14",
+   "evidence": [
+    [
+     "2022-09-13",
+     "BONUS"
+    ],
+    [
+     "2022-09-13",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE918I01026",
+   "old": "INE918I01018",
+   "symbol": "BAJAJFINSV"
+  },
+  {
+   "date": "2023-06-15",
+   "evidence": [
+    [
+     "2023-06-15",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE200M01021",
+   "old": "INE200M01013",
+   "symbol": "VBL"
+  },
+  {
+   "date": "2023-09-28",
+   "evidence": [
+    [
+     "2023-09-28",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE066F01020",
+   "old": "INE066F01012",
+   "symbol": "HAL"
+  },
+  {
+   "date": "2024-01-05",
+   "evidence": [
+    [
+     "2024-01-05",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE239A01024",
+   "old": "INE239A01016",
+   "symbol": "NESTLEIND"
+  },
+  {
+   "date": "2024-05-15",
+   "evidence": [
+    [
+     "2024-05-15",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE476A01022",
+   "old": "INE476A01014",
+   "symbol": "CANBK"
+  },
+  {
+   "date": "2024-09-12",
+   "evidence": [
+    [
+     "2024-09-12",
+     "UNPARSED_PRICE_EVENT"
+    ]
+   ],
+   "new": "INE200M01039",
+   "old": "INE200M01021",
+   "symbol": "VBL"
+  },
+  {
+   "date": "2024-10-28",
+   "evidence": [
+    [
+     "2024-10-28",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE089A01031",
+   "old": "INE089A01023",
+   "symbol": "DRREDDY"
+  },
+  {
+   "date": "2025-01-10",
+   "evidence": [
+    [
+     "2025-01-10",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE721A01047",
+   "old": "INE721A01013",
+   "symbol": "SHRIRAMFIN"
+  },
+  {
+   "date": "2025-05-07",
+   "evidence": [
+    [
+     "2025-05-07",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE663F01032",
+   "old": "INE663F01024",
+   "symbol": "NAUKRI"
+  },
+  {
+   "date": "2025-06-16",
+   "evidence": [
+    [
+     "2025-06-16",
+     "BONUS"
+    ],
+    [
+     "2025-06-16",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE296A01032",
+   "old": "INE296A01024",
+   "symbol": "BAJFINANCE"
+  },
+  {
+   "date": "2025-09-22",
+   "evidence": [
+    [
+     "2025-09-22",
+     "SPLIT"
+    ]
+   ],
+   "new": "INE814H01029",
+   "old": "INE814H01011",
+   "symbol": "ADANIPOWER"
+  }
+ ],
+ "isin_cross_check": [],
+ "isin_differs_from_current_list": [
+  {
+   "bhavcopy_isin": "INE296A01024",
+   "equity_l_isin": "INE296A01032",
+   "symbol": "BAJFINANCE"
+  },
+  {
+   "bhavcopy_isin": "INE918I01018",
+   "equity_l_isin": "INE918I01026",
+   "symbol": "BAJAJFINSV"
+  },
+  {
+   "bhavcopy_isin": "INE089A01023",
+   "equity_l_isin": "INE089A01031",
+   "symbol": "DRREDDY"
+  },
+  {
+   "bhavcopy_isin": "INE663F01024",
+   "equity_l_isin": "INE663F01032",
+   "symbol": "NAUKRI"
+  },
+  {
+   "bhavcopy_isin": "INE237A01028",
+   "equity_l_isin": "INE237A01036",
+   "symbol": "KOTAKBANK"
+  },
+  {
+   "bhavcopy_isin": "INE239A01016",
+   "equity_l_isin": "INE239A01024",
+   "symbol": "NESTLEIND"
+  },
+  {
+   "bhavcopy_isin": "INE081A01012",
+   "equity_l_isin": "INE081A01020",
+   "symbol": "TATASTEEL"
+  }
+ ],
+ "members_without_listing_record": [
+  {
+   "isin": "IN9155A01020",
+   "symbols": [
+    "TATAMTRDVR"
+   ]
+  },
+  {
+   "isin": "INE001A01036",
+   "symbols": [
+    "HDFC"
+   ]
+  },
+  {
+   "isin": "INE018I01017",
+   "symbols": [
+    "MINDTREE"
+   ]
+  },
+  {
+   "isin": "INE066F01012",
+   "symbols": [
+    "HAL"
+   ]
+  },
+  {
+   "isin": "INE081A01012",
+   "symbols": [
+    "TATASTEEL"
+   ]
+  },
+  {
+   "isin": "INE089A01023",
+   "symbols": [
+    "DRREDDY"
+   ]
+  },
+  {
+   "isin": "INE140A01024",
+   "symbols": [
+    "PEL"
+   ]
+  },
+  {
+   "isin": "INE200M01013",
+   "symbols": [
+    "VBL"
+   ]
+  },
+  {
+   "isin": "INE200M01021",
+   "symbols": [
+    "VBL"
+   ]
+  },
+  {
+   "isin": "INE237A01028",
+   "symbols": [
+    "KOTAKBANK"
+   ]
+  },
+  {
+   "isin": "INE239A01016",
+   "symbols": [
+    "NESTLEIND"
+   ]
+  },
+  {
+   "isin": "INE296A01024",
+   "symbols": [
+    "BAJFINANCE"
+   ]
+  },
+  {
+   "isin": "INE476A01014",
+   "symbols": [
+    "CANBK"
+   ]
+  },
+  {
+   "isin": "INE663F01024",
+   "symbols": [
+    "NAUKRI"
+   ]
+  },
+  {
+   "isin": "INE721A01013",
+   "symbols": [
+    "SHRIRAMFIN"
+   ]
+  },
+  {
+   "isin": "INE797F01012",
+   "symbols": [
+    "JUBLFOOD"
+   ]
+  },
+  {
+   "isin": "INE814H01011",
+   "symbols": [
+    "ADANIPOWER"
+   ]
+  },
+  {
+   "isin": "INE918I01018",
+   "symbols": [
+    "BAJAJFINSV"
+   ]
+  }
+ ],
+ "renames_applied": [
+  {
+   "date": "2022-03-07",
+   "isin": "INE010B01027",
+   "new": "ZYDUSLIFE",
+   "old": "CADILAHC"
+  },
+  {
+   "date": "2022-12-05",
+   "isin": "INE214T01019",
+   "new": "LTIM",
+   "old": "LTI"
+  },
+  {
+   "date": "2023-08-21",
+   "isin": "INE758E01017",
+   "new": "JIOFIN",
+   "old": "DUMMYREL"
+  },
+  {
+   "date": "2023-08-24",
+   "isin": "INE931S01010",
+   "new": "ADANIENSOL",
+   "old": "ADANITRANS"
+  },
+  {
+   "date": "2024-06-07",
+   "isin": "INE854D01024",
+   "new": "UNITDSPR",
+   "old": "MCDOWELL-N"
+  },
+  {
+   "date": "2025-01-29",
+   "isin": "INE379A01028",
+   "new": "ITCHOTELS",
+   "old": "DUMMYITC"
+  },
+  {
+   "date": "2025-04-09",
+   "isin": "INE758T01015",
+   "new": "ETERNAL",
+   "old": "ZOMATO"
+  },
+  {
+   "date": "2025-06-19",
+   "isin": "INE1NPP01017",
+   "new": "ENRIN",
+   "old": "DUMMYSIEMS"
+  },
+  {
+   "date": "2025-10-24",
+   "isin": "INE155A01022",
+   "new": "TMPV",
+   "old": "TATAMOTORS"
+  },
+  {
+   "date": "2025-11-12",
+   "isin": "INE1TAE01010",
+   "new": "TMCV",
+   "old": "DUMMYTATAM"
+  }
+ ],
+ "renames_skipped": [
+  {
+   "date": "2021-01-12",
+   "new": "ACRYSIL",
+   "old": "1201210518",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-01-13",
+   "new": "ATGL",
+   "old": "ADANIGAS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-01-20",
+   "new": "SECURKLOUD",
+   "old": "8KMILES",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-02-01",
+   "new": "RPSGVENT",
+   "old": "CESCVENT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-02-10",
+   "new": "OMINFRAL",
+   "old": "OMMETALS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-02-12",
+   "new": "JUBLPHARMA",
+   "old": "JUBILANT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-04-07",
+   "new": "RTNINDIA",
+   "old": "RTNINFRA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-05-06",
+   "new": "VIKASLIFE",
+   "old": "VIKASMCORP",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-05-20",
+   "new": "INCREDIBLE",
+   "old": "ADHUNIKIND",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-06-16",
+   "new": "MOM100",
+   "old": "M100",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-06-16",
+   "new": "MOGSEC",
+   "old": "G5",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-06-16",
+   "new": "MON100",
+   "old": "N100",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-06-16",
+   "new": "MOM50",
+   "old": "M50",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-07-22",
+   "new": "RHIM",
+   "old": "ORIENTREF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-07-28",
+   "new": "SGBJUL29IV",
+   "old": "SGBJUN29IV",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-08-05",
+   "new": "POONAWALLA",
+   "old": "MAGMA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-08-06",
+   "new": "JAIPURKURT",
+   "old": "NANDANI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-08-16",
+   "new": "SEJAL",
+   "old": "SEZAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-08-16",
+   "new": "AJRINFRA",
+   "old": "GAMMNINFRA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-09-01",
+   "new": "DELPHIFX",
+   "old": "EBIXFOREX",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-10-22",
+   "new": "AURUM",
+   "old": "MAJESCO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-11-11",
+   "new": "ANGELONE",
+   "old": "ANGELBRKG",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-11-30",
+   "new": "EQUIPPP",
+   "old": "PROINDIA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-12-03",
+   "new": "BBOX",
+   "old": "AGCNET",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-12-15",
+   "new": "YAARI",
+   "old": "YAARII",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-12-16",
+   "new": "KBCGLOBAL",
+   "old": "KARDA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-12-20",
+   "new": "LINC",
+   "old": "LINCPEN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-12-20",
+   "new": "DOLATALGO",
+   "old": "DOLAT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2021-12-22",
+   "new": "WINPRO",
+   "old": "JUMPNET",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-04-27",
+   "new": "KPIGREEN",
+   "old": "KPIGLOBAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "ITBEES",
+   "old": "NETFIT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "AUTOBEES",
+   "old": "NETFAUTO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "GILT5YBEES",
+   "old": "NETFGILT5Y",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "CONSUMBEES",
+   "old": "NETFCONSUM",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "SILVERBEES",
+   "old": "NETFSILVER",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "SDL26BEES",
+   "old": "NETFSDL26",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "MID150BEES",
+   "old": "NETFMID150",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "PHARMABEES",
+   "old": "NETFPHARMA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "SDL24BEES",
+   "old": "NCPSESDL24",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "NIF100BEES",
+   "old": "NETFNIF100",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-10",
+   "new": "NV20BEES",
+   "old": "NETFNV20",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-05-11",
+   "new": "AGI",
+   "old": "HSIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-06-09",
+   "new": "MOTHERSON",
+   "old": "MOTHERSUMI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-06-20",
+   "new": "JWL",
+   "old": "CEBBCO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-06-21",
+   "new": "HINDWAREAP",
+   "old": "SHIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-07-04",
+   "new": "ZUARIIND",
+   "old": "ZUARIGLOB",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-07-18",
+   "new": "HEADSUP",
+   "old": "TMRVL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-07-25",
+   "new": "COSMOFIRST",
+   "old": "COSMOFILMS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-07-29",
+   "new": "NAVA",
+   "old": "NBVENTURES",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-08-05",
+   "new": "UNOMINDA",
+   "old": "MINDAIND",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-08-16",
+   "new": "MODISONLTD",
+   "old": "MODISNME",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-09-01",
+   "new": "TRU",
+   "old": "DHANVARSHA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-11-02",
+   "new": "DMCC",
+   "old": "DHARAMSI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-11-18",
+   "new": "CARYSIL",
+   "old": "ACRYSIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-11-21",
+   "new": "JTLIND",
+   "old": "JTLINFRA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-11-23",
+   "new": "UNIVAFOODS",
+   "old": "HOTELRUGBY",
+   "why": "not a member then"
+  },
+  {
+   "date": "2022-12-20",
+   "new": "SHRIRAMFIN",
+   "old": "SRTRANSFIN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-01-02",
+   "new": "ARIHANTACA",
+   "old": "AAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-01-04",
+   "new": "WEL",
+   "old": "WFL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-01-20",
+   "new": "STYRENIX",
+   "old": "INEOSSTYRO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-01-23",
+   "new": "360ONE",
+   "old": "IIFLWAM",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-03-10",
+   "new": "HEUBACHIND",
+   "old": "CLNINDIA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-05-09",
+   "new": "NDLVENTURE",
+   "old": "NXTDIGITAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-05-12",
+   "new": "PVRINOX",
+   "old": "PVR",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-05-19",
+   "new": "OSWALGREEN",
+   "old": "BINDALAGRO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-06",
+   "new": "KPIL",
+   "old": "KALPATPOWR",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-16",
+   "new": "HDFCGOLD",
+   "old": "HDFCMFGETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-16",
+   "new": "HDFCNIFBAN",
+   "old": "HBANKETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-16",
+   "new": "HDFCNIFTY",
+   "old": "HDFCNIFETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-16",
+   "new": "HDFCSENSEX",
+   "old": "HDFCSENETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-19",
+   "new": "CIEINDIA",
+   "old": "MAHINDCIE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-06-19",
+   "new": "TITAGARH",
+   "old": "TWL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-03",
+   "new": "SHAH",
+   "old": "GAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-14",
+   "new": "GATECH",
+   "old": "STAMPEDE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-18",
+   "new": "NIDO",
+   "old": "EHFLNCD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-26",
+   "new": "UCAL",
+   "old": "UCALFUEL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-31",
+   "new": "LICMFGOLD",
+   "old": "IDBIGOLD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-31",
+   "new": "GVPTECH",
+   "old": "4THDIM",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-07-31",
+   "new": "ORIENTCER",
+   "old": "ORIENTABRA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-08-04",
+   "new": "PROZONER",
+   "old": "PROZONINTU",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-08-08",
+   "new": "GATECHDVR",
+   "old": "SCAPDVR",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-08-10",
+   "new": "TVSHLTD",
+   "old": "SUNCLAYLTD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-08-23",
+   "new": "SAMPANN",
+   "old": "SEPOWER",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "SILVRETF",
+   "old": "MASILVER",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "MIDCAPETF",
+   "old": "MAM150ETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "NEXT50",
+   "old": "MANXT50",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "GSEC10YEAR",
+   "old": "MAGS813ETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "ESG",
+   "old": "MAESGETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "LOWVOL",
+   "old": "MANV30F",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "BFSI",
+   "old": "MAFSETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "NIFTYETF",
+   "old": "MAN50ETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "MAKEINDIA",
+   "old": "MAMFGETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-01",
+   "new": "GOLDETF",
+   "old": "MAGOLDETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-11",
+   "new": "EPIGRAL",
+   "old": "MFL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-12",
+   "new": "GTECJAINX",
+   "old": "KEERTI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-09-21",
+   "new": "SEMAC",
+   "old": "REVATHI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-10-16",
+   "new": "LLOYDSENGG",
+   "old": "LSIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-10-20",
+   "new": "TPHQ",
+   "old": "GISOLUTION",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-10-27",
+   "new": "ARE&M",
+   "old": "AMARAJABAT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-11-06",
+   "new": "LTFOODS",
+   "old": "DAAWAT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-11-15",
+   "new": "SONAMLTD",
+   "old": "SONAMCLOCK",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-11-30",
+   "new": "ACLGATI",
+   "old": "GATI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-01",
+   "new": "GOLDKART",
+   "old": "SONAHISONA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-14",
+   "new": "WELSPUNLIV",
+   "old": "WELSPUNIND",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-15",
+   "new": "ATLANTAA",
+   "old": "ATLANTA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "NEXT50IETF",
+   "old": "ICICINXT50",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "GSEC5IETF",
+   "old": "ICICI5GSEC",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "FMCGIETF",
+   "old": "ICICIFMCG",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "FINIETF",
+   "old": "ICICIFIN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "LIQUIDIETF",
+   "old": "ICICILIQ",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "MOM30IETF",
+   "old": "ICICIMOM30",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "ALPL30IETF",
+   "old": "ICICIALPLV",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "HEALTHIETF",
+   "old": "ICICIPHARM",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "AUTOIETF",
+   "old": "ICICIAUTO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "ITIETF",
+   "old": "ICICITECH",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "SILVERIETF",
+   "old": "ICICISILVE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "QUAL30IETF",
+   "old": "ICICIQTY30",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "MIDCAPIETF",
+   "old": "ICICIM150",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "PVTBANIETF",
+   "old": "ICICIBANKP",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "PSUBNKIETF",
+   "old": "PSUBANKICI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "GSEC10IETF",
+   "old": "ICICI10GS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "BSE500IETF",
+   "old": "ICICI500",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "COMMOIETF",
+   "old": "ICICICOMMO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "INFRAIETF",
+   "old": "ICICIINFRA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2023-12-20",
+   "new": "CONSUMIETF",
+   "old": "ICICICONSU",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "PSUBANKADD",
+   "old": "DSPPSBKETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "GOLDETFADD",
+   "old": "DSPGOLDETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "MIDQ50ADD",
+   "old": "DSPQ50ETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "BANKETFADD",
+   "old": "DSPBANKETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "SILVERADD",
+   "old": "DSPSILVETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "NIFTY50ADD",
+   "old": "DSPN50ETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "PVTBANKADD",
+   "old": "DSPPVBKETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "ITETFADD",
+   "old": "DSPITETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "SENSEXADD",
+   "old": "DSPSENXETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-02-15",
+   "new": "EQUAL50ADD",
+   "old": "DSPNEWETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "PSUBANK",
+   "old": "KOTAKPSUBK",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "MNC",
+   "old": "KOTAKMNC",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "NIFTY1",
+   "old": "KOTAKNIFTY",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "LIQUID1",
+   "old": "KOTAKLIQ",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "ALPHA",
+   "old": "KOTAKALPHA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "BANKNIFTY1",
+   "old": "KOTAKBKETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "MIDCAP",
+   "old": "KOTAKMID50",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "IT",
+   "old": "KOTAKIT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "LOWVOL1",
+   "old": "KOTAKLOVOL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-03-20",
+   "new": "CONS",
+   "old": "KOTAKCONS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-04-08",
+   "new": "BHARTIHEXA",
+   "old": "LIST000857",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-04-16",
+   "new": "GOLD1",
+   "old": "KOTAKGOLD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-04-16",
+   "new": "SILVER1",
+   "old": "KOTAKSILVE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-04-23",
+   "new": "LTF",
+   "old": "L&TFH",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-06-07",
+   "new": "AEGISLOG",
+   "old": "AEGISCHEM",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-07-08",
+   "new": "EMBDL",
+   "old": "IBREALEST",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-07-26",
+   "new": "SAMMAANCAP",
+   "old": "IBULHSGFIN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-07-26",
+   "new": "SCLPP",
+   "old": "IBULPP",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-08-01",
+   "new": "AMBANIORGO",
+   "old": "AMBANIORG",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-08-09",
+   "new": "SHEKHAWATI",
+   "old": "SPYL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-08-23",
+   "new": "GROWWEV",
+   "old": "GROWEV",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-08-26",
+   "new": "TARIL",
+   "old": "TRIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-09-03",
+   "new": "ORTINGLOBE",
+   "old": "ORTINLAB",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-09-27",
+   "new": "ALLDIGI",
+   "old": "ALLSEC",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-09-30",
+   "new": "TIPSMUSIC",
+   "old": "TIPSINDLTD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-10-09",
+   "new": "KUNDANMM",
+   "old": "EASTSUGIND",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-10-09",
+   "new": "VEEDOL",
+   "old": "TIDEWATER",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-10-10",
+   "new": "LMW",
+   "old": "LAXMIMACH",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-10-10",
+   "new": "ABREL",
+   "old": "CENTURYTEX",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-10-23",
+   "new": "TRANSWORLD",
+   "old": "SHREYAS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-11-05",
+   "new": "GVT&D",
+   "old": "GET&D",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-11-12",
+   "new": "INTERISE",
+   "old": "INTERISE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-11-12",
+   "new": "INTERISE",
+   "old": "INDINFR",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-11-25",
+   "new": "692GS2039",
+   "old": "692MH2039",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-11-26",
+   "new": "RVTH",
+   "old": "REVATHIEQU",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-12-03",
+   "new": "IIFLCAPS",
+   "old": "IIFLSEC",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-12-09",
+   "new": "ARVINDPORT",
+   "old": "ACSAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-12-11",
+   "new": "GMRAIRPORT",
+   "old": "GMRINFRA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2024-12-23",
+   "new": "HBLENGINE",
+   "old": "HBLPOWER",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-01-16",
+   "new": "URAVIDEF",
+   "old": "URAVI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-01-20",
+   "new": "ALIVUS",
+   "old": "GLS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-01-23",
+   "new": "INDUSINVIT",
+   "old": "BHINVIT",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-02-07",
+   "new": "TICL",
+   "old": "TCLCONS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-02-19",
+   "new": "799LTFL30",
+   "old": "780LTFL30",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-03-11",
+   "new": "EMAPARTNER",
+   "old": "EMAIN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-03-20",
+   "new": "CPCAP",
+   "old": "CAREERP",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-03-28",
+   "new": "SUNDROP",
+   "old": "ATFL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-04-01",
+   "new": "AFSL",
+   "old": "AHL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-04-02",
+   "new": "10157PCP27",
+   "old": "10157PCP24",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-04-09",
+   "new": "BIRLANU",
+   "old": "HIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-04-11",
+   "new": "ADOR",
+   "old": "ADORWELD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-04-15",
+   "new": "UMIYA-MRO",
+   "old": "MRO-TEK",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-05-19",
+   "new": "COHANCE",
+   "old": "SUVENPHAR",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-06-02",
+   "new": "ACUTAAS",
+   "old": "AMIORG",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-06-17",
+   "new": "WAAREEINDO",
+   "old": "INDOSOLAR",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-06-23",
+   "new": "KAVDEFENCE",
+   "old": "KAVVERITEL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-06-25",
+   "new": "AEROENTER",
+   "old": "SATINDLTD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-06-26",
+   "new": "DHARAN",
+   "old": "KBCGLOBAL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-06-27",
+   "new": "RAYMONDREL",
+   "old": "RRL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-03",
+   "new": "JUBLCPL",
+   "old": "JACPL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-14",
+   "new": "BILVYAPAR",
+   "old": "BINANIIND",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-18",
+   "new": "QUALITY30",
+   "old": "QUALITY",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-21",
+   "new": "QUALITY30",
+   "old": "QUALITY30",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-21",
+   "new": "CHEMBONDCH",
+   "old": "CHEMBONDIN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-22",
+   "new": "VERTIS",
+   "old": "VERTIS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-07-22",
+   "new": "VERTIS",
+   "old": "HIGHWAYS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-08-06",
+   "new": "RNPL",
+   "old": "RENOL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-08-13",
+   "new": "TEAMGTY",
+   "old": "TIMESGTY",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-08-22",
+   "new": "AERONEU",
+   "old": "SAH",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-08-28",
+   "new": "GVPIL",
+   "old": "GEPIL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-09-03",
+   "new": "HGM",
+   "old": "HOVS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-09-04",
+   "new": "SWANCORP",
+   "old": "SWANENERGY",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-09-15",
+   "new": "SILVERAG",
+   "old": "SILVRETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-09-15",
+   "new": "GANESHHOU",
+   "old": "GANESHHOUC",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-09-17",
+   "new": "CEMPRO",
+   "old": "ITDCEM",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-09-22",
+   "new": "ANTELOPUS",
+   "old": "SELAN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-10-10",
+   "new": "WORTHPERI",
+   "old": "WORTH",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-10-13",
+   "new": "VGL",
+   "old": "AARVEEDEN",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-10-13",
+   "new": "UFBL",
+   "old": "BARBEQUE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-10-16",
+   "new": "TSFINV",
+   "old": "SUNDARMHLD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-10-17",
+   "new": "AURIGROW",
+   "old": "GODHA",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-11-10",
+   "new": "IBULLSLTD",
+   "old": "YAARI",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-11-10",
+   "new": "SMLMAH",
+   "old": "SMLISUZU",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-11-18",
+   "new": "ALCODIS",
+   "old": "AURDIS",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-11-26",
+   "new": "HALEOSLABS",
+   "old": "SMSLIFE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-10",
+   "new": "CNL",
+   "old": "CREATIVE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-15",
+   "new": "GOLDADD",
+   "old": "GOLDETFADD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-15",
+   "new": "NIFTYADD",
+   "old": "NIFTY50ADD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-15",
+   "new": "BANKADD",
+   "old": "BANKETFADD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-15",
+   "new": "ITADD",
+   "old": "ITETFADD",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-17",
+   "new": "ADDICTIVE",
+   "old": "LAWSIKHO",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-22",
+   "new": "NEUEON",
+   "old": "NTL",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "SNXT50BETA",
+   "old": "UTISXN50",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "SENSEXBETA",
+   "old": "UTISENSETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "ITBETA",
+   "old": "NIFITETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "BOSCH-HCIL",
+   "old": "JCHAC",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "GILT10BETA",
+   "old": "NIF10GETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "SILVERBETA",
+   "old": "SILVERETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "GOLDBETA",
+   "old": "GOLDSHARE",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "NEXT50BETA",
+   "old": "UTINEXT50",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "BANKBETA",
+   "old": "UTIBANKETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "GILT5BETA",
+   "old": "NIF5GETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "MIDCAPBETA",
+   "old": "NIFMID150",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-24",
+   "new": "NIFTYBETA",
+   "old": "UTINIFTETF",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-26",
+   "new": "955SFIL26",
+   "old": "955SFIL26",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-26",
+   "new": "955SFIL26",
+   "old": "955ICCL26",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-26",
+   "new": "980SFIL29",
+   "old": "980ICCL29",
+   "why": "not a member then"
+  },
+  {
+   "date": "2025-12-26",
+   "new": "980SFIL29",
+   "old": "980SFIL29",
+   "why": "not a member then"
+  }
+ ]
+}

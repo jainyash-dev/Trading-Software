@@ -7,7 +7,6 @@ with the mismatching gate named, and a byte-identical report for identical input
 
 import argparse
 import contextlib
-import copy
 import io
 import json
 import os

@@ -672,16 +672,87 @@ class ApprovalScopes(unittest.TestCase):
 
 
 class RecordedOwnerApprovals(unittest.TestCase):
-    """Canonical ledger after the 2026-11-11 owner approvals (Yash Jain).
+    """Canonical ledger after the recorded owner actions.
 
-    `count_approval` APPROVED is the count-arithmetic decision. `mapping_approval`
-    APPROVED is the E03 symbol-and-direction decision. `decision` is the membership-period
-    decision and stays blank, so the converter verifies no period. The values are the
-    owner's; this test only checks that the file and the converter keep them apart.
+    2026-11-11, Yash Jain: `count_approval` APPROVED on the 25 exception rows, and
+    `mapping_approval` APPROVED on the ten E03 rows. Those scopes are not period decisions.
+
+    2026-11-12, Yash Jain, T-001 batch 1: `decision` ACCEPTED on 123 rows. That is the 98
+    identity-clear baseline rows, all 12 E01 rows, both E02 rows, all 10 E03 rows, and the
+    CADILAHC to ZYDUSLIFE rename. GRASIM and BAJFINANCE stay blank. A period is verified
+    only when its start and its end, if any, are both ACCEPTED and its identity check is clear.
+
+    2026-11-13, Yash Jain, T-001 batch 2: `decision` ACCEPTED on the 17 rows of the five
+    evidence cards in P0_T001_BATCH2_OWNER_PACKAGE.md (all 10 E04 rows, all 4 E05 rows,
+    and the JUBLFOOD, TATASTEEL and BAJAJFINSV ISIN changes). Nothing else changed.
     """
 
     REVIEWER = "Yash Jain"
     ON = "2026-11-11"
+    BATCH_ON = "2026-11-12"
+    BATCH2_ON = "2026-11-13"
+    BATCH3_ON = "2026-11-15"   # D67 (Q3): the 91 evidence-sufficient rows
+    BATCH3_FILE = os.path.join(os.path.dirname(__file__), "..", "docs", "product-discovery", "p0",
+                               "P0_MEMBERSHIP_OWNER_DECISION_FILE_PROPOSED.csv")
+    # D67 (Q4): deferred; their decision cells must stay blank
+    OPTIONAL_DEFERRED = (
+        "change:R-2023-08-21-JIOFIN:RENAME:JIOFIN:INE758E01017",
+        "change:R-2025-01-29-ITCHOTELS:RENAME:ITCHOTELS:INE379A01028",
+        "change:E16:REMOVE:ITCHOTELS:INE379A01028",
+        "change:R-2025-06-19-ENRIN:RENAME:ENRIN:INE1NPP01017",
+        "change:E19:REMOVE:ENRIN:INE1NPP01017",
+        "change:R-2025-11-12-TMCV:RENAME:TMCV:INE1TAE01010",
+        "change:E22:REMOVE:TMCV:INE1TAE01010",
+    )
+
+    @classmethod
+    def batch3(cls):
+        with open(cls.BATCH3_FILE, newline="", encoding="utf-8") as fh:
+            keys = [r["row_key"] for r in csv.DictReader(fh)]
+        assert len(keys) == len(set(keys)) == 91, len(keys)
+        return set(keys)
+
+    BATCH2 = (
+        "change:E04:REMOVE:AUROPHARMA:INE406A01037",
+        "change:E04:REMOVE:HINDPETRO:INE094A01015",
+        "change:E04:REMOVE:IGL:INE203G01027",
+        "change:E04:REMOVE:JINDALSTEL:INE749A01030",
+        "change:E04:REMOVE:YESBANK:INE528G01035",
+        "change:E04:ADD:NYKAA:INE388Y01029",
+        "change:E04:ADD:MINDTREE:INE018I01017",
+        "change:E04:ADD:PAYTM:INE982J01020",
+        "change:E04:ADD:SRF:INE647A01010",
+        "change:E04:ADD:ZOMATO:INE758T01015",
+        "change:E05:REMOVE:NMDC:INE584A01023",
+        "change:E05:REMOVE:PEL:INE140A01024",
+        "change:E05:ADD:LICI:INE0J1Y01017",
+        "change:E05:ADD:TATAPOWER:INE245A01021",
+        "change:I-2022-04-20-JUBLFOOD:ISIN_CHANGE:JUBLFOOD:INE797F01020",
+        "change:I-2022-07-29-TATASTEEL:ISIN_CHANGE:TATASTEEL:INE081A01020",
+        "change:I-2022-09-14-BAJAJFINSV:ISIN_CHANGE:BAJAJFINSV:INE918I01026",
+    )
+    # (symbol, isin, effective_from, effective_to) periods that batch 2 verified
+    BATCH2_PERIODS = {
+        ("AUROPHARMA", "INE406A01037", "2020-12-31", "2022-03-30"),
+        ("HINDPETRO", "INE094A01015", "2020-12-31", "2022-03-30"),
+        ("IGL", "INE203G01027", "2020-12-31", "2022-03-30"),
+        ("JINDALSTEL", "INE749A01030", "2021-09-30", "2022-03-30"),
+        ("YESBANK", "INE528G01035", "2021-03-31", "2022-03-30"),
+        ("NMDC", "INE584A01023", "2020-12-31", "2022-08-07"),
+        ("PEL", "INE140A01024", "2020-12-31", "2022-08-07"),
+        ("LICI", "INE0J1Y01017", "2022-08-08", ""),
+        ("TATAPOWER", "INE245A01021", "2022-08-08", ""),
+        ("JUBLFOOD", "INE797F01012", "2021-03-31", "2022-04-19"),
+        ("TATASTEEL", "INE081A01012", "2020-12-31", "2022-07-28"),
+        ("TATASTEEL", "INE081A01020", "2022-07-29", ""),
+        ("BAJAJFINSV", "INE918I01018", "2020-12-31", "2022-09-13"),
+        ("BAJAJFINSV", "INE918I01026", "2022-09-14", ""),
+    }
+    HELD_BLANK = (
+        "baseline:GRASIM:INE047A01021",
+        "baseline:BAJFINANCE:INE296A01024",
+    )
+    RENAME = "change:R-2022-03-07-ZYDUSLIFE:RENAME:ZYDUSLIFE:INE010B01027"
     E03 = (
         "change:E03:REMOVE:ABBOTINDIA:INE358A01014",
         "change:E03:REMOVE:ALKEM:INE540L01014",
@@ -743,50 +814,99 @@ class RecordedOwnerApprovals(unittest.TestCase):
                 counts[int(row["members"])] = counts.get(int(row["members"]), 0) + 1
         self.assertEqual(counts, {101: 20, 100: 5})
 
+    def _batch_key(self, key):
+        if key in self.HELD_BLANK:
+            return False
+        return (key.startswith("baseline:") or key.startswith("change:E01:")
+                or key.startswith("change:E02:") or key.startswith("change:E03:")
+                or key == self.RENAME)
+
     def test_only_the_thirty_five_owner_rows_carry_reviewer_and_date(self):
         count_keys = [r["row_key"] for r in self.rows if r["count_approval"] == ms.APPROVED]
         map_keys = [r["row_key"] for r in self.rows if r["mapping_approval"] == ms.APPROVED]
         self.assertEqual(len(count_keys), 25)
         self.assertEqual(sorted(map_keys), sorted(self.E03))
         self.assertTrue(all(k.startswith("exception:") for k in count_keys))
-        touched = set(count_keys) | set(map_keys)
-        self.assertEqual(len(touched), 35)
-        self.assertEqual(sum(1 for row in self.rows if not row["reviewer"].strip()), 236)
+        batch = [r["row_key"] for r in self.rows if self._batch_key(r["row_key"])]
+        self.assertEqual(len(batch), 123)
+        self.assertEqual(len(set(self.BATCH2)), 17)
+        self.assertFalse(set(self.BATCH2) & set(batch))
+        self.assertEqual({r["row_key"] for r in self.rows if r["reviewed_on"] == self.BATCH2_ON}, set(self.BATCH2))
+        batch3 = self.batch3()
+        self.assertFalse(batch3 & (set(batch) | set(self.BATCH2) | set(self.HELD_BLANK) | set(self.DUMMY_KEYS)
+                                   | set(self.OPTIONAL_DEFERRED) | set(count_keys)))
+        self.assertEqual({r["row_key"] for r in self.rows if r["reviewed_on"] == self.BATCH3_ON}, batch3)
+        self.assertEqual(sum(1 for k in batch if k.startswith("baseline:")), 98)
         for row in self.rows:
-            self.assertEqual(row["decision"], "")
-            if row["row_key"] in touched:
+            key = row["row_key"]
+            if key in batch3:
+                self.assertEqual(row["decision"], ms.ACCEPTED)
+                self.assertEqual(row["reviewer"], self.REVIEWER)
+                self.assertEqual(row["reviewed_on"], self.BATCH3_ON)
+                self.assertIn("D67", row["notes"])
+                self.assertEqual(row["count_approval"], "")
+                self.assertEqual(row["mapping_approval"], "")
+            elif key in batch:
+                self.assertEqual(row["decision"], ms.ACCEPTED)
+                self.assertEqual(row["reviewer"], self.REVIEWER)
+                self.assertEqual(row["reviewed_on"], self.BATCH_ON)
+                self.assertIn("T-001 batch 1", row["notes"])
+            elif key in self.BATCH2:
+                self.assertEqual(row["decision"], ms.ACCEPTED)
+                self.assertEqual(row["reviewer"], self.REVIEWER)
+                self.assertEqual(row["reviewed_on"], self.BATCH2_ON)
+                self.assertIn("T-001 batch 2", row["notes"])
+                self.assertEqual(row["count_approval"], "")
+                self.assertEqual(row["mapping_approval"], "")
+            elif key in count_keys:
+                self.assertEqual(row["decision"], "")
                 self.assertEqual(row["reviewer"], self.REVIEWER)
                 self.assertEqual(row["reviewed_on"], self.ON)
                 self.assertTrue(row["notes"])
+                self.assertEqual(row["mapping_approval"], "")
             else:
+                self.assertEqual(row["decision"], "")
                 self.assertEqual(row["reviewer"], "")
                 self.assertEqual(row["reviewed_on"], "")
                 self.assertEqual(row["notes"], "")
                 self.assertEqual(row["count_approval"], "")
                 self.assertEqual(row["mapping_approval"], "")
+        for key in self.E03:
+            row = self.by_key[key]
+            self.assertEqual(row["decision"], ms.ACCEPTED)
+            self.assertEqual(row["mapping_approval"], ms.APPROVED)
+            self.assertIn("mapping_approval APPROVED", row["notes"])
+        for key in self.HELD_BLANK:
+            row = self.by_key[key]
+            self.assertEqual(row["decision"], "")
+            self.assertEqual(row["reviewer"], "")
         for key in self.DUMMY_KEYS:
             row = self.by_key[key]
             self.assertEqual(row["decision"], "")
             self.assertEqual(row["mapping_approval"], "")
             self.assertEqual(row["count_approval"], "")
-            self.assertNotIn(key, touched)
+            self.assertNotIn(key, batch)
+        for key in self.OPTIONAL_DEFERRED:            # D67 Q4: deferred, never written
+            row = self.by_key[key]
+            self.assertEqual((row["decision"], row["reviewer"], row["reviewed_on"]), ("", "", ""), key)
 
     def test_owner_review_queue_does_not_accept_a_period(self):
         packet = os.path.join(self.folder, "nifty100_review_packet.csv")
         queue = ms.owner_review_queue(self.review_path, packet)
         self.assertEqual(len(queue), 271)
-        self.assertTrue(all(row["decision"] == "" for row in queue))
+        self.assertEqual([row["decision"] for row in queue], [row["decision"] for row in self.rows])
         self.assertNotIn(ms.ACCEPT_RECOMMENDED, {row["recommendation"] for row in queue})
         self.assertTrue(all(row["recommendation"] == ms.NEEDS_OWNER_REVIEW or row["recommendation"] == ms.INSUFFICIENT_EVIDENCE
                             for row in queue))
         dummies = [row for row in queue if "DUMMY" in row["row_key"]]
         self.assertEqual(len(dummies), 5)
         self.assertTrue(all(row["recommendation"] != ms.ACCEPT_RECOMMENDED for row in dummies))
-        # The canonical ledger is unchanged.
+        # The queue reads the ledger. It does not write it.
         with open(self.review_path, newline="", encoding="utf-8") as fh:
             again = list(csv.DictReader(fh))
-        self.assertTrue(all(row["decision"] == "" for row in again))
-        self.assertEqual(sum(1 for row in again if row["reviewer"].strip()), 35)
+        self.assertEqual(
+            [(r["row_key"], r["decision"], r["reviewer"], r["reviewed_on"]) for r in again],
+            [(r["row_key"], r["decision"], r["reviewer"], r["reviewed_on"]) for r in self.rows])
         queue_path = os.path.join(os.path.dirname(__file__), "..", "docs", "product-discovery", "p0",
                                   "P0_MEMBERSHIP_OWNER_QUEUE.csv")
         with open(queue_path, newline="", encoding="utf-8") as fh:
@@ -802,9 +922,10 @@ class RecordedOwnerApprovals(unittest.TestCase):
         self.assertEqual(len(rows), 271)
         self.assertEqual({r["row_key"] for r in rows}, set(self.by_key))
         for row in rows:
-            self.assertEqual(row["row_sha256"], self.by_key[row["row_key"]]["row_sha256"])
-            self.assertEqual(row["canonical_decision"], "")
-            self.assertEqual(row["owner_decision"], "")
+            live = self.by_key[row["row_key"]]
+            self.assertEqual(row["row_sha256"], live["row_sha256"])
+            self.assertEqual(row["canonical_decision"], live["decision"])
+            self.assertEqual(row["owner_decision"], live["decision"])
         counts = {}
         for row in rows:
             counts[row["recommendation"]] = counts.get(row["recommendation"], 0) + 1
@@ -816,44 +937,72 @@ class RecordedOwnerApprovals(unittest.TestCase):
             "change:I-2025-06-16-BAJFINANCE:ISIN_CHANGE:BAJFINANCE:INE296A01032"})
         with open(self.review_path, newline="", encoding="utf-8") as fh:
             live = list(csv.DictReader(fh))
-        self.assertTrue(all(row["decision"] == "" for row in live))
+        # batch 1 (123), batch 2 (17) and D67 (91); every other decision cell is blank
+        self.assertEqual(sum(1 for row in live if row["decision"] == ms.ACCEPTED), 231)
+        self.assertEqual(sum(1 for row in live if row["decision"] == ""), 40)
 
     def test_count_and_mapping_approval_verify_no_period(self):
         review = self.conv.report["review"]
         self.assertEqual(review["problems"], [])
-        self.assertEqual(review["accepted"], 0)
         self.assertEqual(review["rejected"], [])
         self.assertEqual(review["stale_hash"], [])
         self.assertTrue(review["count_exceptions_accepted"])
         self.assertEqual(review["status"], "INCOMPLETE")
-        # Count and mapping approvals are not membership decisions, so every reviewed
-        # transcription row stays undecided.
-        self.assertEqual(review["undecided"], review["rows"])
-        self.assertEqual(review["accepted"], 0)
-        # The report lists the exceptions the conversion actually uses. Every one of
-        # those is among the 25 arithmetic approvals, and none is a membership decision.
+        # The 231 ACCEPTED rows are the 2026-11-12 (123), 2026-11-13 (17) and D67 2026-11-15 (91)
+        # membership decisions. The 40 undecided rows are the 25 count approvals (decision cells
+        # stay blank), the 7 deferred optional rows and the 8 other deferred rows.
+        self.assertEqual(review["accepted"], 231)
+        self.assertEqual(review["undecided"], 40)
+        self.assertEqual(review["rows"], 271)
         self.assertGreaterEqual(len(review["count_approvals"]), 1)
         self.assertTrue(all(k.startswith("exception:") for k in review["count_approvals"]))
         self.assertEqual(len(review["count_approvals"]), len(self.conv.report["count_exceptions_used"]))
         self.assertEqual(sorted(review["mapping_approvals"]), sorted(self.E03))
-        self.assertEqual(self.conv.report["unverified_periods"], self.conv.report["periods"])
-        self.assertTrue(all(r["source_sha256"] == "" for r in self.conv.rows))
+        self.assertEqual(self.conv.report["periods"], 185)
+        self.assertEqual(self.conv.report["unverified_periods"], 12)
+        hashed = [r for r in self.conv.rows if r["source_sha256"]]
+        self.assertEqual(len(hashed), 173)
+        # every batch 2 period is verified. The five E04 ADD periods and the JUBLFOOD / ZYDUSLIFE
+        # periods were unverified until D67 accepted their closing rows (a decision verifies only
+        # the periods it both opens and closes); they are now verified.
+        got = {(r["symbol"], r["isin"], r["effective_from"], r["effective_to"]) for r in hashed}
+        self.assertTrue(self.BATCH2_PERIODS <= got, self.BATCH2_PERIODS - got)
+        for symbol in ("NYKAA", "MINDTREE", "PAYTM", "SRF", "ZOMATO"):
+            self.assertTrue(all(r["source_sha256"] != "" for r in self.conv.rows if r["symbol"] == symbol), symbol)
+        self.assertNotEqual(
+            next(r for r in self.conv.rows if r["symbol"] == "JUBLFOOD" and r["effective_from"] == "2022-04-20")
+            ["source_sha256"], "")
+        # Exactly these 12 periods stay unverified: OD-ID-1/2 (kept unjoined, D67), the five dummy
+        # seats (OD-MEM-2/3) and the four periods of the seven deferred optional rows (D67 Q4).
+        unverified = sorted((r["symbol"], r["effective_from"]) for r in self.conv.rows if not r["source_sha256"])
+        self.assertEqual(unverified, sorted([
+            ("BAJFINANCE", "2020-12-31"), ("BAJFINANCE", "2025-06-16"), ("GRASIM", "2020-12-31"),
+            ("DUMMYHDLVR", "2025-12-05"), ("DUMMYITC", "2025-01-06"), ("DUMMYREL", "2023-07-20"),
+            ("DUMMYSIEMS", "2025-04-07"), ("DUMMYTATAM", "2025-10-14"),
+            ("ENRIN", "2025-06-19"), ("ITCHOTELS", "2025-01-29"), ("JIOFIN", "2023-08-21"), ("TMCV", "2025-11-12")]))
         by_symbol = {}
         for row in self.conv.rows:
             by_symbol.setdefault(row["symbol"], []).append(row)
         for symbol in ("BANKBARODA", "CHOLAFIN"):
             period = next(r for r in by_symbol[symbol] if r["effective_from"] == "2021-09-30")
             self.assertEqual(period["effective_to"], "")
-            self.assertEqual(period["source_sha256"], "")
-        for symbol in ("DUMMYREL", "DUMMYITC", "DUMMYSIEMS", "DUMMYTATAM", "DUMMYHDLVR"):
+            self.assertNotEqual(period["source_sha256"], "")
+        self.assertNotEqual(
+            next(r for r in by_symbol["CADILAHC"] if r["effective_from"] == "2020-12-31")["source_sha256"], "")
+        self.assertNotEqual(   # closed by change:E06:REMOVE:ZYDUSLIFE, accepted under D67
+            next(r for r in by_symbol["ZYDUSLIFE"] if r["effective_from"] == "2022-03-07")["source_sha256"], "")
+        for symbol in ("GRASIM", "BAJFINANCE", "DUMMYREL", "DUMMYITC", "DUMMYSIEMS",
+                       "DUMMYTATAM", "DUMMYHDLVR"):
             self.assertTrue(by_symbol[symbol])
             self.assertTrue(all(r["source_sha256"] == "" for r in by_symbol[symbol]))
-            self.assertTrue(all("UNVERIFIED" in r["notes"] for r in by_symbol[symbol]))
+            self.assertTrue(all(any(token in r["notes"] for token in
+                                    ("UNREVIEWED", "UNVERIFIED", "UNKNOWN_INSTRUMENT"))
+                                for r in by_symbol[symbol]))
 
     def test_one_membership_decision_does_not_spread(self):
-        # A membership-period decision is a separate field. Filling it on BANKBARODA
-        # alone must not certify CHOLAFIN, and clearing every decision is already the
-        # canonical file above.
+        # A membership-period decision is a separate field. With every decision cleared
+        # and then filled on BANKBARODA alone, CHOLAFIN stays unverified. Count and
+        # mapping approvals are copied through and still do not verify CHOLAFIN.
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp)
         path = os.path.join(tmp, "review.csv")
@@ -861,8 +1010,9 @@ class RecordedOwnerApprovals(unittest.TestCase):
         rows = []
         for row in self.rows:
             copied = {column: row.get(column, "") for column in fields}
-            if copied["row_key"] == "change:E03:ADD:BANKBARODA:INE028A01039":
-                copied["decision"] = ms.ACCEPTED
+            copied["decision"] = (ms.ACCEPTED
+                                  if copied["row_key"] == "change:E03:ADD:BANKBARODA:INE028A01039"
+                                  else "")
             rows.append(copied)
         with open(path, "w", newline="", encoding="utf-8") as fh:
             writer = csv.DictWriter(fh, fieldnames=fields, lineterminator="\n")

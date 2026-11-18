@@ -18,3 +18,8 @@ replay). Label synthetic data as SYNTHETIC in docstrings.
 
 Register every new test module in a group in `nse/validation/run_all.py` (the repository
 check fails otherwise) and run `python3 -m nse.validation.run_all --no-data`.
+
+Report contract (`docs/AGENT_OWNERSHIP.md`): files changed (or "none"), findings, tests run
+with exact commands and counts, unresolved risks. Label each statement FACT (reproduced or
+read in source), ASSUMPTION, RECOMMENDATION or OWNER DECISION (cite the D / ED id). Edit only
+files your brief assigns to you; if another agent owns a file you need, stop and say so.

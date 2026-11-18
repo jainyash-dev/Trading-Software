@@ -9,6 +9,7 @@ without source and sha256 is UNVERIFIED (D31), an uncovered symbol is UNKNOWN_IN
 import argparse
 import contextlib
 import datetime
+import hashlib
 import io
 import json
 import os
@@ -19,7 +20,10 @@ import unittest
 from nse.research import instruments as ins, marketdata
 
 D = datetime.date
-SHA = "a" * 64
+# provenance is verified by hashing the cited file (audit 2026-11-06), so each test
+# folder holds a SYNTHETIC doc.pdf with exactly these bytes
+DOC = b"SYNTHETIC test document"
+SHA = hashlib.sha256(DOC).hexdigest()
 HEADER = ",".join(ins.COLUMNS)
 I1, I2, I3 = "INE000A01011", "INE000B01012", "INE000C01013"
 
@@ -33,6 +37,8 @@ def row(kind, symbol, isin, start, new="", end="", verified=True, notes="SYNTHET
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
+        with open(os.path.join(self.tmp, "doc.pdf"), "wb") as fh:
+            fh.write(DOC)
 
     def tearDown(self):
         shutil.rmtree(self.tmp)
@@ -231,8 +237,8 @@ class Cli(Base):
 
     def test_check_command(self):
         recs = self.write(row("LISTING", "AAA", I1, "2015-01-01"), row("LISTING", "BBB", I2, "2015-01-01"))
-        self.bhav(D(2025, 1, 6), [("AAA", I1), ("BBB", I2)])
-        folder = self.bhav(D(2025, 1, 7), [("AAA", I1), ("BBB", I2)])
+        self.bhav(D(2024, 1, 8), [("AAA", I1), ("BBB", I2)])
+        folder = self.bhav(D(2024, 1, 9), [("AAA", I1), ("BBB", I2)])
         out = os.path.join(self.tmp, "o", "check.json")
         code, _ = self.run_cli(["instruments-check", "--records", recs, "--bhavcopy-dir", folder, "--out", out])
         self.assertEqual(code, 0)
@@ -243,8 +249,8 @@ class Cli(Base):
 
     def test_check_command_fails_on_an_unexplained_isin_change(self):
         recs = self.write(row("LISTING", "AAA", I1, "2015-01-01"))
-        self.bhav(D(2025, 1, 6), [("AAA", I1)])
-        folder = self.bhav(D(2025, 1, 7), [("AAA", I2)])
+        self.bhav(D(2024, 1, 8), [("AAA", I1)])
+        folder = self.bhav(D(2024, 1, 9), [("AAA", I2)])
         code, text = self.run_cli(["instruments-check", "--records", recs, "--bhavcopy-dir", folder,
                                    "--symbols", "AAA"])
         self.assertEqual(code, 1)
@@ -277,3 +283,336 @@ class PointInTimeReviewRegression(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InputIdentityIntegration(Base):
+    """ED-21: bhavcopy inputs carry the identity check (inputs.load -> apply_to_input).
+    SYNTHETIC bhavcopies and records; G0 turns a dated ERROR finding into DATA_INSUFFICIENT
+    from that date (marketdata.findings_at), which these tests check through findings_at."""
+    MON = Cli.MON
+    D1, D2 = D(2024, 1, 8), D(2024, 1, 9)
+
+    def bhav(self, d, rows):
+        return Cli.bhav(self, d, rows)
+
+    def load_input(self, records=None, isin2=I1):
+        from nse.research import inputs
+        self.bhav(self.D1, [("AAA", I1)])
+        folder = os.path.join(self.tmp, "bhav")
+        self.bhav(self.D2, [("AAA", isin2)])
+        # bare CSVs are what the Cli fixture writes; archive_paths takes archives, so load them directly
+        from nse.research.deps import bhavcopy as bc
+        files = bc.load_many(sorted(os.path.join(folder, n) for n in os.listdir(folder)))
+        inp = marketdata.from_bhavcopy(files, "AAA")
+        return ins.apply_to_input(inp, files, records), inputs
+
+    def errors_at(self, inp, d):
+        return [f.code for f in inp.findings_at(d) if f.severity == marketdata.ERROR]
+
+    def test_without_records_identity_is_unverified_but_a_stable_isin_is_not_an_error(self):
+        from nse.research import models as m
+        inp, _ = self.load_input()
+        self.assertIn(m.IDENTITY_UNVERIFIED, inp.limitations)
+        self.assertEqual(self.errors_at(inp, self.D2), [])
+        self.assertEqual((inp.provenance["identity"]["records_supplied"], inp.provenance["identity"]["records_verified"]),
+                         (False, False))
+
+    def test_an_unexplained_isin_change_blocks_from_its_date_only(self):
+        inp, _ = self.load_input(isin2=I2)
+        self.assertEqual(self.errors_at(inp, self.D1), [])                      # earlier scans unchanged (D44)
+        self.assertEqual(self.errors_at(inp, self.D2), [ins.ISIN_CHANGED_WITHOUT_RECORD])
+
+    def test_verified_records_clear_the_limitation(self):
+        from nse.research import models as m
+        inp, _ = self.load_input(self.load(row("LISTING", "AAA", I1, "2015-01-01")))
+        self.assertNotIn(m.IDENTITY_UNVERIFIED, inp.limitations)
+        self.assertTrue(inp.provenance["identity"]["records_verified"])
+
+    def test_an_isin_change_record_explains_the_change(self):
+        recs = self.load(row("LISTING", "AAA", I1, "2015-01-01"), row("ISIN_CHANGE", "AAA", I2, "2024-01-09"))
+        inp, _ = self.load_input(recs, isin2=I2)
+        self.assertEqual(self.errors_at(inp, self.D2), [])
+
+    def test_records_that_contradict_the_file_are_an_error(self):
+        inp, _ = self.load_input(self.load(row("LISTING", "AAA", I2, "2015-01-01")))
+        self.assertIn(ins.ISIN_RECORD_MISMATCH, self.errors_at(inp, self.D1))
+
+    def test_unverified_records_keep_the_limitation(self):
+        from nse.research import models as m
+        inp, _ = self.load_input(self.load(row("LISTING", "AAA", I1, "2015-01-01", verified=False)))
+        self.assertIn(m.IDENTITY_UNVERIFIED, inp.limitations)
+        self.assertFalse(inp.provenance["identity"]["records_verified"])
+
+    def test_inputs_load_applies_the_check_to_bhavcopy_archives(self):
+        import zipfile
+        from nse.research import inputs, models as m
+        from nse.research.deps import bhavcopy as bc
+        arch = os.path.join(self.tmp, "arch")
+        os.makedirs(arch)
+        for d, isin in ((self.D1, I1), (self.D2, I2)):
+            name = bc.official_name(d)
+            body = (",".join(bc.LEGACY_HEADER) + "\n" + "AAA,EQ,100,100,100,100,100,100,1000,100000,%s,10,%s,\n"
+                    % (d.strftime("%d-%b-%Y").upper(), isin))
+            with zipfile.ZipFile(os.path.join(arch, name), "w") as z:
+                z.writestr(name[:-4], body)
+        [inp] = inputs.load(["AAA"], bhavcopy_dir=arch)
+        self.assertIn(m.IDENTITY_UNVERIFIED, inp.limitations)
+        self.assertEqual(self.errors_at(inp, self.D2), [ins.ISIN_CHANGED_WITHOUT_RECORD])
+        recs = self.write(row("LISTING", "AAA", I1, "2015-01-01"), row("ISIN_CHANGE", "AAA", I2, "2024-01-09"))
+        [inp] = inputs.load(["AAA"], bhavcopy_dir=arch, instrument_records=recs)
+        self.assertEqual(self.errors_at(inp, self.D2), [])
+        self.assertNotIn(m.IDENTITY_UNVERIFIED, inp.limitations)
+
+    def test_the_scanner_reports_data_insufficient_from_the_change_and_keeps_the_limitation(self):
+        from nse.research import models as m, scanner
+        inp, _ = self.load_input(isin2=I2)
+        at = lambda d: scanner.scan_symbol(inp, scanner.ScanConfig(as_of=datetime.datetime.combine(d, datetime.time(15, 30))))
+        after = at(self.D2)
+        self.assertEqual(after.status, scanner.SYMBOL_DATA_INSUFFICIENT)
+        self.assertEqual(after.candidates, [])
+        self.assertTrue(any(r.startswith(ins.ISIN_CHANGED_WITHOUT_RECORD) for r in after.reasons))
+        self.assertIn(m.IDENTITY_UNVERIFIED, after.limitations)
+        before = at(self.D1)                       # the change is not known yet: not blocked by identity
+        self.assertFalse(any(ins.ISIN_CHANGED_WITHOUT_RECORD in r for r in before.reasons))
+
+
+class RenameRegression(Base):
+    """Contrarian review 2026-11-09 (confirmed defect): a rename keeping the ISIN (e.g.
+    ZOMATO -> ETERNAL) must not give the new symbol a silently truncated history. SYNTHETIC."""
+    MON, D1, D2 = Cli.MON, InputIdentityIntegration.D1, InputIdentityIntegration.D2
+    bhav = InputIdentityIntegration.bhav
+    errors_at = InputIdentityIntegration.errors_at
+
+    def renamed(self, records=None):
+        from nse.research.deps import bhavcopy as bc
+        self.bhav(self.D1, [("OLDSYM", I1)])
+        self.bhav(self.D2, [("NEWSYM", I1)])
+        folder = os.path.join(self.tmp, "bhav")
+        files = bc.load_many(sorted(os.path.join(folder, n) for n in os.listdir(folder)))
+        return ins.apply_to_input(marketdata.from_bhavcopy(files, "NEWSYM"), files, records)
+
+    def test_unrecorded_rename_is_data_insufficient_from_the_rename(self):
+        inp = self.renamed()
+        self.assertIn(ins.SYMBOL_HISTORY_SPLIT, self.errors_at(inp, self.D2))
+        self.assertIn(ins.SYMBOL_CHANGED_WITHOUT_RECORD, self.errors_at(inp, self.D2))
+
+    def test_without_the_lineage_join_a_recorded_rename_still_blocks(self):
+        # apply_to_input alone (no segments) cannot join; inputs.load joins verified renames (D51)
+        recs = self.load(row("LISTING", "OLDSYM", I1, "2015-01-01"),
+                         row("SYMBOL_CHANGE", "OLDSYM", I1, "2024-01-09", new="NEWSYM"))
+        inp = self.renamed(recs)
+        errs = self.errors_at(inp, self.D2)
+        self.assertNotIn(ins.SYMBOL_CHANGED_WITHOUT_RECORD, errs)          # the record explains it...
+        self.assertEqual(errs, [ins.SYMBOL_HISTORY_SPLIT])                  # ...but the series is still cut
+
+    def test_the_old_symbol_is_not_flagged_by_its_successor(self):
+        from nse.research.deps import bhavcopy as bc
+        self.renamed()
+        folder = os.path.join(self.tmp, "bhav")
+        files = bc.load_many(sorted(os.path.join(folder, n) for n in os.listdir(folder)))
+        inp = ins.apply_to_input(marketdata.from_bhavcopy(files, "OLDSYM"), files, None)
+        self.assertNotIn(ins.SYMBOL_HISTORY_SPLIT, self.errors_at(inp, self.D2))
+
+
+class QaRegressions20261109(Base):
+    """Independent QA 2026-11-09 (confirmed defects). SYNTHETIC records and bhavcopies."""
+    MON, D1, D2 = Cli.MON, InputIdentityIntegration.D1, InputIdentityIntegration.D2
+    bhav = InputIdentityIntegration.bhav
+    errors_at = InputIdentityIntegration.errors_at
+
+    def inp(self, days, records, symbol="AAA"):
+        from nse.research.deps import bhavcopy as bc
+        for d, rows in days:
+            self.bhav(d, rows)
+        folder = os.path.join(self.tmp, "bhav")
+        files = bc.load_many(sorted(os.path.join(folder, n) for n in os.listdir(folder)))
+        return ins.apply_to_input(marketdata.from_bhavcopy(files, symbol), files, records)
+
+    def test_symbol_reused_for_another_isin_blocks_from_the_reuse(self):
+        recs = self.load(row("LISTING", "AAA", I1, "2015-01-01", end="2024-01-08"), row("LISTING", "AAA", I2, "2024-01-09"))
+        inp = self.inp([(self.D1, [("AAA", I1)]), (self.D2, [("AAA", I2)])], recs)
+        self.assertEqual(self.errors_at(inp, self.D1), [])
+        self.assertEqual(self.errors_at(inp, self.D2), [ins.SYMBOL_REUSED_FOR_DIFFERENT_ISIN])
+
+    def test_a_symbol_the_supplied_records_do_not_cover_is_an_error_from_that_date(self):
+        recs = self.load(row("LISTING", "AAA", I1, "2015-01-01", end="2024-01-08"))
+        inp = self.inp([(self.D1, [("AAA", I1)]), (self.D2, [("AAA", I1)])], recs)
+        self.assertEqual(self.errors_at(inp, self.D1), [])
+        self.assertEqual(self.errors_at(inp, self.D2), [ins.UNKNOWN_INSTRUMENT])
+
+    def test_labels_do_not_depend_on_later_files(self):
+        # the same scan date must get the same limitation and provenance with or without a later file
+        recs = self.load(row("LISTING", "AAA", I1, "2015-01-01", end="2024-01-08"))
+        short = self.inp([(self.D1, [("AAA", I1)])], recs)
+        shutil.rmtree(os.path.join(self.tmp, "bhav"))
+        full = self.inp([(self.D1, [("AAA", I1)]), (self.D2, [("AAA", I1)])], recs)
+        self.assertEqual((short.limitations, short.provenance["identity"]), (full.limitations, full.provenance["identity"]))
+        self.assertEqual([f.code for f in short.findings_at(self.D1)], [f.code for f in full.findings_at(self.D1)])
+
+
+class LineageD51(Base):
+    """D51 (owner 2026-11-09): connect a renamed company's history only through verified ISIN
+    continuity and effective dates; never by ticker or name. SYNTHETIC archives and records."""
+    DAYS = [D(2024, 1, 8), D(2024, 1, 9), D(2024, 1, 10), D(2024, 1, 11)]
+
+    def archives(self, rows_by_day):
+        import zipfile
+        from nse.research.deps import bhavcopy as bc
+        folder = os.path.join(self.tmp, "arch")
+        os.makedirs(folder, exist_ok=True)
+        for d, rows in zip(self.DAYS, rows_by_day):
+            name = bc.official_name(d)
+            body = ",".join(bc.LEGACY_HEADER) + "\n" + "".join(
+                "%s,EQ,100,101,99,100,100,100,1000,100000,%s,10,%s,\n" % (sym, d.strftime("%d-%b-%Y").upper(), isin)
+                for sym, isin in rows)
+            with zipfile.ZipFile(os.path.join(folder, name), "w") as z:
+                z.writestr(name[:-4], body)
+        return folder
+
+    def load_input(self, rows_by_day, *recs, symbol="NEW"):
+        from nse.research import inputs
+        [inp] = inputs.load([symbol], bhavcopy_dir=self.archives(rows_by_day), instrument_records=self.write(*recs))
+        return inp
+
+    def errors(self, inp, d):
+        return sorted(f.code for f in inp.findings_at(d) if f.severity == marketdata.ERROR)
+
+    RENAMED = [[("OLD", I1)], [("OLD", I1)], [("NEW", I1)], [("NEW", I1)]]
+
+    def test_verified_rename_with_isin_continuity_is_one_history(self):
+        inp = self.load_input(self.RENAMED, row("LISTING", "OLD", I1, "2015-01-01"),
+                              row("SYMBOL_CHANGE", "OLD", I1, "2024-01-10", new="NEW"))
+        self.assertEqual([c.start.date() for c in inp.candles], self.DAYS)          # all four bars, one series
+        self.assertEqual(self.errors(inp, self.DAYS[-1]), [])
+        lin = inp.provenance["identity"]["lineage"]
+        self.assertEqual([(x["symbol"], x["from"], x["to"]) for x in lin],
+                         [("OLD", None, "2024-01-09"), ("NEW", "2024-01-10", None)])
+
+    def test_an_unverified_rename_record_does_not_join(self):
+        inp = self.load_input(self.RENAMED, row("LISTING", "OLD", I1, "2015-01-01"),
+                              row("SYMBOL_CHANGE", "OLD", I1, "2024-01-10", new="NEW", verified=False))
+        self.assertEqual(len(inp.candles), 2)
+        self.assertIn(ins.SYMBOL_HISTORY_SPLIT, self.errors(inp, self.DAYS[-1]))
+        self.assertTrue(any(f.code == "LINEAGE_NOT_JOINED" for f in inp.findings))
+
+    def test_a_different_isin_after_the_change_blocks_from_that_day(self):
+        # QA 2026-11-09 (prefix invariance): evidence dated on or after the change never undoes
+        # the join retroactively; it is a dated ERROR, so no decision is ever made on a series
+        # mixing two ISINs: from the first NEW row (I2) every scan is DATA_INSUFFICIENT.
+        rows = [[("OLD", I1)], [("OLD", I1)], [("NEW", I2)], [("NEW", I2)]]
+        inp = self.load_input(rows, row("LISTING", "OLD", I1, "2015-01-01"),
+                              row("SYMBOL_CHANGE", "OLD", I1, "2024-01-10", new="NEW"))
+        self.assertEqual(self.errors(inp, self.DAYS[1]), [])
+        self.assertIn("LINEAGE_CONFLICT", self.errors(inp, self.DAYS[2]))
+
+    def test_overlapping_rows_block_from_the_overlap(self):
+        rows = [[("OLD", I1)], [("OLD", I1)], [("NEW", I1), ("OLD", I1)], [("NEW", I1)]]
+        inp = self.load_input(rows, row("LISTING", "OLD", I1, "2015-01-01"),
+                              row("SYMBOL_CHANGE", "OLD", I1, "2024-01-10", new="NEW"))
+        self.assertEqual(self.errors(inp, self.DAYS[1]), [])
+        self.assertIn("LINEAGE_CONFLICT", self.errors(inp, self.DAYS[2]))
+
+    def test_the_join_does_not_depend_on_later_files(self):
+        # QA 2026-11-09 reproduction: a recorded ISIN change of NEW after the rename (e.g. a
+        # face-value split) must not undo the join seen with fewer files
+        recs = (row("LISTING", "OLD", I1, "2015-01-01"), row("SYMBOL_CHANGE", "OLD", I1, "2024-01-10", new="NEW"),
+                row("ISIN_CHANGE", "NEW", I2, "2024-01-11"))
+        short = self.load_input(self.RENAMED[:3], *recs)
+        shutil.rmtree(os.path.join(self.tmp, "arch"))
+        full = self.load_input(self.RENAMED[:3] + [[("NEW", I2)]], *recs)
+        self.assertEqual(short.provenance["identity"]["lineage"], full.provenance["identity"]["lineage"])
+        self.assertEqual([c.start.date() for c in short.candles], [c.start.date() for c in full.candles][:3])
+        self.assertEqual(self.errors(full, self.DAYS[2]), self.errors(short, self.DAYS[2]))
+
+    def test_a_chain_of_verified_renames_is_joined(self):
+        rows = [[("AAA", I1)], [("BBB", I1)], [("NEW", I1)], [("NEW", I1)]]
+        inp = self.load_input(rows, row("LISTING", "AAA", I1, "2015-01-01"),
+                              row("SYMBOL_CHANGE", "AAA", I1, "2024-01-09", new="BBB"),
+                              row("SYMBOL_CHANGE", "BBB", I1, "2024-01-10", new="NEW"))
+        self.assertEqual(len(inp.candles), 4)
+        self.assertEqual(self.errors(inp, self.DAYS[-1]), [])
+        self.assertEqual([x["symbol"] for x in inp.provenance["identity"]["lineage"]], ["AAA", "BBB", "NEW"])
+
+    def test_a_shared_ticker_without_a_record_is_never_joined(self):
+        inp = self.load_input(self.RENAMED, row("LISTING", "OLD", I1, "2015-01-01", end="2024-01-09"),
+                              row("LISTING", "NEW", I1, "2024-01-10"))
+        self.assertEqual(len(inp.candles), 2)
+        self.assertIn(ins.SYMBOL_HISTORY_SPLIT, self.errors(inp, self.DAYS[-1]))
+
+
+class FilteredLoadingEquivalence(Base):
+    """ED-41: inputs.load keeps in memory only the rows it needs (the symbol, its rename chain
+    and other symbols sharing its ISINs). The result must equal loading every row. SYNTHETIC."""
+    DAYS, RENAMED, archives = LineageD51.DAYS, LineageD51.RENAMED, LineageD51.archives
+
+    def both(self, rows_by_day, *recs, symbol="NEW"):
+        from unittest import mock
+        from nse.research import inputs
+        from nse.research.deps import bhavcopy as bc
+        folder = self.archives(rows_by_day)
+        path = self.write(*recs)
+        dump = lambda inp: (json.dumps(inp.provenance, sort_keys=True, default=str), [c.start for c in inp.candles],
+                            [c.close for c in inp.candles], sorted(json.dumps(f.to_dict(), sort_keys=True) for f in inp.findings),
+                            sorted(inp.limitations))
+        [filtered] = inputs.load([symbol], bhavcopy_dir=folder, instrument_records=path)
+        full_rows = lambda paths, manifest, symbols, records, series: bc.load_many(paths, manifest)
+        with mock.patch.object(inputs, "_load_needed_rows", full_rows):
+            [full] = inputs.load([symbol], bhavcopy_dir=folder, instrument_records=path)
+        shutil.rmtree(folder)
+        self.assertEqual(dump(filtered), dump(full))
+        return filtered
+
+    def test_equal_to_loading_every_row(self):
+        noise = ("ZZZ", I3)
+        cases = [
+            # verified rename, plus an unrelated symbol on every day
+            ([r + [noise] for r in self.RENAMED], (row("LISTING", "OLD", I1, "2015-01-01"),
+                                                    row("SYMBOL_CHANGE", "OLD", I1, "2024-01-10", new="NEW"))),
+            # the same ISIN under another ticker before NEW, without a record (SYMBOL_HISTORY_SPLIT)
+            ([[("OLD", I1), noise], [("OLD", I1)], [("NEW", I1)], [("NEW", I1), noise]],
+             (row("LISTING", "NEW", I1, "2024-01-10"),)),
+            # NEW's ISIN also traded by a third symbol after NEW appears, and an ISIN change of NEW
+            ([[("NEW", I1)], [("NEW", I1), ("OTH", I1)], [("NEW", I2)], [("NEW", I2), ("OTH", I2)]],
+             (row("LISTING", "NEW", I1, "2015-01-01"), row("ISIN_CHANGE", "NEW", I2, "2024-01-10"))),
+            # no records at all
+            ([[("OLD", I1)], [("OLD", I1)], [("NEW", I1)], [("NEW", I1)]], ()),
+        ]
+        for i, (rows, recs) in enumerate(cases):
+            with self.subTest(case=i):
+                self.both(rows, *recs)
+
+    def test_rows_of_other_isins_are_not_kept(self):
+        from nse.research import inputs
+        folder = self.archives([[("NEW", I1), ("ZZZ", I3)]] * 4)
+        from nse.research.deps import bhavcopy as bc
+        files = inputs._load_needed_rows(bc.archive_paths(folder), None, ["NEW"], [], "EQ")
+        self.assertEqual(sorted(set(r.symbol for f in files for r in f.rows)), ["NEW"])
+        self.assertEqual([f.series_counts["EQ"] for f in files], [2] * 4)        # counts describe the whole file
+
+
+class RealIdentityRecords(unittest.TestCase):
+    """The held identity records (nse/data/universe/instrument_records.csv, ED-37). Regression
+    (PROMPT-01 audit, 2026-11-09): pre-2016 renames carrying today's ISIN made two ISINs active
+    under TATASTEEL, JSWSTEEL, CHOLAFIN, SOLARINDS and BAJFINANCE, which would have blocked their
+    scans. Real file, no bhavcopies."""
+    PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "nse", "data", "universe",
+                        "instrument_records.csv")
+    # ISIN changes with no single effective date (D56). Both ISINs stay listed, so the symbol
+    # is unresolved and is never joined. YESBANK's 2020-03-16 change is separate: NSE/CML/43833
+    # names INE528G01035 from that date. BAJFINANCE and GRASIM MSEI circulars each state two dates.
+    UNEVIDENCED = {"BAJFINANCE", "GRASIM"}
+
+    def test_every_record_is_verified_and_no_symbol_has_two_isins(self):
+        if not os.path.isfile(self.PATH):
+            self.skipTest("identity records not held")
+        recs = ins.load(self.PATH)
+        self.assertTrue(recs and all(r.verified for r in recs))
+        doubled = set()
+        d = D(2016, 1, 1)
+        while d <= D(2025, 12, 31):
+            by_symbol = {}
+            for isin, (sym, _) in ins.state_at(recs, d)[0].items():
+                by_symbol.setdefault(sym, []).append(isin)
+            doubled |= set(s for s, isins in by_symbol.items() if len(isins) > 1)
+            d += datetime.timedelta(days=7)
+        self.assertEqual(doubled, self.UNEVIDENCED)

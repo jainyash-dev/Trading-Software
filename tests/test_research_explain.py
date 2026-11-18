@@ -69,7 +69,8 @@ def build_result():
     inputs = [R.daily_input("ACT", act), R.daily_input("GAP", gap), R.daily_input("TST", touched),
               R.daily_input("AGR", agr)]
     cfg = scanner.ScanConfig(as_of=act[-1].end, calendar=CAL, calendar_label="TEST_WEEKDAYS",
-                             risk_per_trade=1000.0, generated_at="test-label")
+                             risk_per_trade=1000.0, generated_at="test-label",
+                             corporate_action_coverage=R.verified_ca("ACT", "GAP", "TST", "AGR"))
     res = scanner.scan(inputs, cfg)
     res.symbols = sorted(res.symbols + [rejected_symbol(act[-1].end)], key=lambda s: s.symbol)
     return res

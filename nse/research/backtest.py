@@ -31,10 +31,19 @@ then lists MONTHLY_TRADE_CAP_NOT_ENFORCED / PORTFOLIO_CONCURRENCY_NOT_MODELLED):
     trades are open at its fill time. A trade exiting on the bar of the new fill counts
     as open (the intraday order is unknown: the conservative reading). Pending unfilled
     orders hold no slot.
-Not modelled (each would need a user decision first): portfolio capital, price bands and
-circuit limits, liquidity and position size versus traded volume, flat per-order charges
-(costs are percentages only), and re-evaluating an order after its signal (an order lives
-until it fills, expires or is cancelled by cancel_if_target_first).
+Pending orders (RB 2530-2538, audit 2026-11-06): before each bar that could fill, every
+later scan in the history known by that bar's start must still list the zone in an allowed
+status, or the order is CANCELLED_SETUP_INVALID (tested zone, trend shift, new HTF
+conflict all surface as a changed status). Checks happen only at the scan times supplied
+(REVALIDATION_AT_SCAN_TIMES_ONLY). With a calendar, expiry counts verified sessions and a
+missing, excluded or unclassifiable session, or an incomplete bar, ends the record with a
+DATA_* reason and no R (fail closed); a chosen entry/stop below 2:1 is NOT_TRADED_RR_BELOW_2.
+Not modelled (each would need a user decision or evidence first), and listed on every result
+as EXECUTION_REALISM_GAPS: portfolio capital and quantity (so flat, minimum or capped charges
+and side-specific costs cannot be expressed: costs are symmetric percentages), price bands
+and circuit limits, liquidity versus traded volume, partial fills, tick-size rounding, and
+GTT trigger-then-limit semantics (the model is a resting limit). Dated percentage schedules
+come from execution_policy.CostSchedule (B12).
 Walk-forward and sensitivity: run_walk_forward evaluates user-given folds; run_sensitivity
 runs user-given models side by side. The engine never selects, optimises or ranks a
 parameter or a model, so the engine itself adds no test-period selection bias (a user who
@@ -51,9 +60,9 @@ import math
 import statistics
 import sys
 from dataclasses import dataclass
-from typing import Optional, Tuple
+from typing import Tuple
 
-from nse.research import corporate_actions, models as m, scanner
+from nse.research import corporate_actions, inputs as inputs_, levels as lv_, models as m, scanner
 
 ENTRY_CHOICES = ("ENTRY_MIN", "ENTRY_MAX")
 STOP_CHOICES = ("NORMAL_WIDE", "NORMAL_TIGHT", "EXCEPTIONAL_WIDE", "EXCEPTIONAL_TIGHT")
@@ -70,14 +79,44 @@ MONTHLY_CAP_SELECTION_BY_FILL_ORDER = "MONTHLY_CAP_SELECTION_BY_FILL_ORDER"
 PORTFOLIO_CONCURRENCY_NOT_MODELLED = "PORTFOLIO_CONCURRENCY_NOT_MODELLED"
 NOT_TRADED_MONTHLY_CAP = "NOT_TRADED_MONTHLY_CAP"
 NOT_TRADED_MAX_OPEN_POSITIONS = "NOT_TRADED_MAX_OPEN_POSITIONS"
+# Fail-closed trade outcomes (r is None): the data cannot say what happened.
+DATA_INCOMPLETE_CANDLE = "DATA_INCOMPLETE_CANDLE"                 # an incomplete bar inside the window
+DATA_MISSING_SESSION = "DATA_MISSING_SESSION"                     # a verified session has no candle
+DATA_UNVERIFIED_SESSION = "DATA_UNVERIFIED_SESSION"               # the calendar cannot classify a date
+DATA_EXCLUDED_SESSION = "DATA_EXCLUDED_SESSION"                   # a candle on a non-normal session (D30)
+DATA_DUPLICATE_SESSION = "DATA_DUPLICATE_SESSION"                 # two candles for one verified session
+CANCELLED_SETUP_INVALID = "CANCELLED_SETUP_INVALID"               # RB 2530-2538: a pre-trade check failed
+# D40 (2026-11-08 evidence resolution): a two-window primary/DR session (EXCLUDED_SHORTENED,
+# 2 Mar and 18 May 2024) is one trading date for expiry, but its daily bar spans the break,
+# so it is never a tradable candle (D30); its high/low only bound what could have happened.
+SHORTENED = "EXCLUDED_SHORTENED"
+# Result limitations for the policies above.
+EXPIRY_COUNTS_CANDLES_NO_CALENDAR = "EXPIRY_COUNTS_CANDLES_NO_CALENDAR"
+REVALIDATION_AT_SCAN_TIMES_ONLY = "REVALIDATION_AT_SCAN_TIMES_ONLY"
+MANUAL_REVIEW_SIMULATED = "MANUAL_REVIEW_SIMULATED"
+GAP_FILL_AT_LEVEL_UNTRADED_PRICES = "GAP_FILL_AT_LEVEL_UNTRADED_PRICES"
+# Owner-approved portfolio policy (DECISION_LOG D42, D45, D46). Not Rulebook rules. A model
+# above the limits is refused (D45: an invalid configuration is never simulated with a
+# warning); a stricter model (fewer positions or trades, shorter expiry) is allowed and an
+# expiry other than 10 sessions is labelled.
+OWNER_MAX_OPEN_POSITIONS = m.OWNER_MAX_OPEN_POSITIONS
+OWNER_MONTHLY_TRADE_CAP = m.OWNER_MONTHLY_TRADE_CAP
+OWNER_ENTRY_EXPIRY_SESSIONS = m.OWNER_ENTRY_EXPIRY_SESSIONS
+ENTRY_EXPIRY_NOT_OWNER_POLICY = "ENTRY_EXPIRY_NOT_OWNER_POLICY"
+# Kept so older result files and reports still resolve; unreachable since D45 refuses such models.
+MAX_OPEN_POSITIONS_ABOVE_OWNER_LIMIT = "MAX_OPEN_POSITIONS_ABOVE_OWNER_LIMIT"
+# Disclosed on every result: what the simulation cannot represent (cost review 2026-11-08)
+EXECUTION_REALISM_GAPS = ("COSTS_PERCENT_SYMMETRIC_ONLY", "FLAT_MIN_CAPPED_CHARGES_NOT_MODELLED",
+                          "PRICE_BANDS_NOT_MODELLED", "PARTIAL_FILLS_NOT_MODELLED", "TICK_SIZE_NOT_MODELLED",
+                          "GTT_TRIGGER_SEMANTICS_NOT_MODELLED", "LIQUIDITY_NOT_MODELLED", "CAPITAL_NOT_MODELLED")
 SMALL_SAMPLE = "SMALL_SAMPLE"
 # A reporting convention only, not a validation criterion: fewer closed trades than this
 # and the metrics carry SMALL_SAMPLE. Thirty trades do not make a result significant either.
 SMALL_SAMPLE_THRESHOLD = 30
 # R-multiple buckets (label, upper bound inclusive); the last is everything above 3.
 R_BUCKETS = (("<=-1", -1.0), ("(-1,0]", 0.0), ("(0,1]", 1.0), ("(1,2]", 2.0), ("(2,3]", 3.0), (">3", None))
-# The execution assumptions with no default (B9, B12). The fields after them are optional
-# portfolio rules whose default None means "not applied", recorded as a limitation.
+# The execution assumptions with no default (B9, B12). The fields after them are the
+# portfolio limits, which default to the owner limits (D42, D46) and can never be None (D45).
 ASSUMPTION_FIELDS = ("entry", "stop", "target", "statuses", "entry_expiry_sessions", "cancel_if_target_first",
                      "gap_fill", "same_bar", "cost_pct_per_side", "slippage_pct_per_side")
 OPTIONAL_RULES = (("monthly_trade_cap", MONTHLY_TRADE_CAP_NOT_ENFORCED),
@@ -96,8 +135,8 @@ class ExecutionModel:
     same_bar: str                    # SAME_BAR: one bar touches the stop and the target (B12)
     cost_pct_per_side: float         # from an official schedule (B12)
     slippage_pct_per_side: float     # (B12)
-    monthly_trade_cap: Optional[int] = None    # RB 2392; None: not enforced (a limitation, not a rule)
-    max_open_positions: Optional[int] = None   # None: concurrency not modelled (a limitation)
+    monthly_trade_cap: int = OWNER_MONTHLY_TRADE_CAP     # RB 2392; per IST month (D42, D46)
+    max_open_positions: int = OWNER_MAX_OPEN_POSITIONS   # owner limit (D42); independent of the cap
 
     def __post_init__(self):
         for name, value, allowed in (("entry", self.entry, ENTRY_CHOICES), ("stop", self.stop, STOP_CHOICES),
@@ -109,18 +148,29 @@ class ExecutionModel:
             raise ValueError("statuses must be a non-empty subset of %s" % ", ".join(m.STATUS_ORDER))
         if m.BLOCKED_STATUS in self.statuses or m.REJECTED in self.statuses or m.STATUS_DATA_INSUFFICIENT in self.statuses:
             raise ValueError("BLOCKED, REJECTED and DATA_INSUFFICIENT results are never traded")
-        if self.entry_expiry_sessions < 1:
-            raise ValueError("entry_expiry_sessions must be at least 1")
+        if isinstance(self.entry_expiry_sessions, bool) or not isinstance(self.entry_expiry_sessions, int) \
+                or self.entry_expiry_sessions < 1:
+            raise ValueError("entry_expiry_sessions must be an integer of at least 1")
+        if self.entry_expiry_sessions > OWNER_ENTRY_EXPIRY_SESSIONS:
+            raise ValueError("entry_expiry_sessions %d exceeds the owner limit of %d verified sessions (D42, D45)"
+                             % (self.entry_expiry_sessions, OWNER_ENTRY_EXPIRY_SESSIONS))
         for v in (self.cost_pct_per_side, self.slippage_pct_per_side):
             if not isinstance(v, (int, float)) or not math.isfinite(v) or v < 0:
                 raise ValueError("costs and slippage must be finite and non-negative")
-        for name, _ in OPTIONAL_RULES:
+        for name, limit in (("monthly_trade_cap", OWNER_MONTHLY_TRADE_CAP),
+                            ("max_open_positions", OWNER_MAX_OPEN_POSITIONS)):
             v = getattr(self, name)
-            if v is not None and (isinstance(v, bool) or not isinstance(v, int) or v < 1):
-                raise ValueError("%s must be None (not applied) or an integer of at least 1" % name)
+            if v is None:
+                raise ValueError("%s cannot be None: an unlimited %s exceeds the owner limit of %d (D45)"
+                                 % (name, name, limit))
+            if isinstance(v, bool) or not isinstance(v, int) or v < 1:
+                raise ValueError("%s must be an integer of at least 1" % name)
+            if v > limit:
+                raise ValueError("%s %d exceeds the owner limit of %d (D42, D45)" % (name, v, limit))
 
     def not_applied(self):
-        """Limitation codes for the optional portfolio rules left at None."""
+        """Limitation codes for portfolio rules left at None: always empty since D45 refuses
+        None; kept for callers of the older interface."""
         return [code for name, code in OPTIONAL_RULES if getattr(self, name) is None]
 
 
@@ -139,18 +189,92 @@ def plan(candidate, model):
     stop = lo if width == "WIDE" else hi
     if not (stop < entry < target):
         return None, "LEVELS_NOT_ORDERED"
+    # RB 82 / RF8: the chosen entry and stop must themselves give 2:1 (G7 may only have
+    # found that some point of the buffer ranges does: DEPENDS_ON_BUFFER)
+    if round((target - entry) / (entry - stop), 6) < lv_.MIN_RR:
+        return None, "RR_BELOW_2"
     return (entry, stop, target), None
 
 
-def simulate(levels, candles, signal_end, model, zone=None):
+def _sessions(candles, signal_end, calendar):
+    """The candles a trade may read after signal_end, in order, and the first reason the
+    data stops being trustworthy (None if it never does). Every candle must be complete.
+    With a calendar each verified trading day must have exactly one candle and no candle
+    may fall on another day (D30 excluded sessions are not normal bars); a date the
+    calendar cannot classify stops the sequence. Expiry therefore counts verified
+    sessions, and a missing session ends the record instead of stretching the order."""
+    after = sorted((c for c in candles if c.start > signal_end), key=lambda c: c.start)
+    seq = []
+    if calendar is None:
+        for c in after:
+            if not c.complete:
+                return seq, (DATA_INCOMPLETE_CANDLE, c.end.isoformat())
+            seq.append(c)
+        return seq, None
+    by_day = {}
+    for c in after:
+        by_day.setdefault(c.start.date(), []).append(c)
+    if not by_day:
+        return seq, None
+    d, last = signal_end.date() + datetime.timedelta(days=1), max(by_day)
+    while d <= last:
+        try:
+            trading = calendar.is_trading_day(d)
+            kind = calendar.session_type(d) if not trading and hasattr(calendar, "session_type") else None
+        except Exception as exc:                       # coverage or ambiguity error: not a verified session
+            return seq, (DATA_UNVERIFIED_SESSION, "%s (%s)" % (d.isoformat(), type(exc).__name__))
+        day = by_day.get(d, [])
+        if kind == SHORTENED:                          # one trading date (D40); bounds only, never a fill bar
+            if len(day) != 1:
+                return seq, ((DATA_MISSING_SESSION if not day else DATA_DUPLICATE_SESSION), d.isoformat())
+            if not day[0].complete:
+                return seq, (DATA_INCOMPLETE_CANDLE, day[0].end.isoformat())
+            seq.append(_Shortened(day[0]))
+        elif not trading:
+            if day:
+                return seq, (DATA_EXCLUDED_SESSION, d.isoformat())
+        elif not day:
+            return seq, (DATA_MISSING_SESSION, d.isoformat())
+        else:
+            if len(day) != 1:                          # duplicate rows: which one traded is unknown
+                return seq, (DATA_DUPLICATE_SESSION, d.isoformat())
+            if not day[0].complete:
+                return seq, (DATA_INCOMPLETE_CANDLE, day[0].end.isoformat())
+            seq.append(day[0])
+        d += datetime.timedelta(days=1)
+    return seq, None
+
+
+class _Shortened(object):
+    """A two-window session's daily bar (D40, D30): it counts for expiry, and its high/low
+    show whether a level could have been reached; it is never a fill or exit price."""
+    shortened = True
+
+    def __init__(self, c):
+        self.c = c
+
+    def __getattr__(self, name):
+        return getattr(self.c, name)
+
+
+def _outside(price, c):
+    return price > c.high or price < c.low
+
+
+def simulate(levels, candles, signal_end, model, zone=None, calendar=None, revalidation=()):
     """One limit buy. candles: the symbol's candles; only those starting after signal_end
     are read. Returns a dict trade record (no metrics). When zone is supplied, its
     completed-candle DL invalidation is recorded separately from trade stop events.
     assumption_events lists each bar where a B12 policy decided the result: a bar that
     opened through a level (GAP_THROUGH_*, gap_fill) or one whose intrabar order is
-    unknown (SAME_BAR_AMBIGUOUS, same_bar), so the user sees how much they matter."""
+    unknown (SAME_BAR_AMBIGUOUS, same_bar), so the user sees how much they matter.
+    calendar: when given, expiry counts verified sessions (_sessions). revalidation:
+    (time, still_valid, detail) from later point-in-time scans; before each bar that
+    could fill, a scan at or before its start that no longer allows the setup cancels
+    the order (RB 2530-2538). After the fill nothing is re-evaluated (RB 2540-2551)."""
     entry, stop, target = levels
-    future = [c for c in candles if c.start > signal_end and c.complete]
+    future, stopped = _sessions(candles, signal_end, calendar)
+    checks = sorted((t, ok, why) for t, ok, why in revalidation if t > signal_end)
     rec = {"entry_level": entry, "stop_level": stop, "target_level": target, "fill_time": None, "fill_price": None,
            "exit_time": None, "exit_price": None, "exit_reason": None,
            "trade_events": [], "zone_events": [], "assumption_events": []}
@@ -158,6 +282,23 @@ def simulate(levels, candles, signal_end, model, zone=None):
     filled = None
     while i < len(future) and i < model.entry_expiry_sessions:
         c = future[i]
+        failed = [(t, why) for t, ok, why in checks if t <= c.start and not ok]
+        if failed:                                     # revalidation first, on every bar (QA 2026-11-08)
+            rec["exit_reason"] = CANCELLED_SETUP_INVALID
+            rec["trade_events"].append({"type": CANCELLED_SETUP_INVALID, "time": failed[0][0].isoformat(),
+                                        "detail": failed[0][1], "rule": "RB 2530-2538"})
+            return rec
+        if getattr(c, "shortened", False):
+            if c.low <= entry or (model.cancel_if_target_first and c.high >= target):
+                # which window traded first, and at what price, is unknowable from one daily bar
+                rec.update(exit_reason=DATA_EXCLUDED_SESSION, data_stop=c.start.date().isoformat())
+                return rec
+            i += 1                                     # counted: one verified trading date (D40)
+            continue
+        # opening at or above the target means it traded there before any fill
+        if model.cancel_if_target_first and c.open >= target:
+            rec["exit_reason"] = "CANCELLED_TARGET_FIRST"
+            return rec
         if c.low <= entry:
             filled = i
             rec["fill_time"] = c.end.isoformat()
@@ -165,17 +306,38 @@ def simulate(levels, candles, signal_end, model, zone=None):
                 rec["assumption_events"].append({"type": "GAP_THROUGH_ENTRY", "time": c.end.isoformat(),
                                                  "policy": "gap_fill=" + model.gap_fill})
             rec["fill_price"] = c.open if (c.open < entry and model.gap_fill == "AT_OPEN") else entry
+            if _outside(rec["fill_price"], c):
+                rec["assumption_events"].append({"type": "PRICE_OUTSIDE_BAR", "time": c.end.isoformat(),
+                                                 "price": rec["fill_price"], "policy": "gap_fill=" + model.gap_fill})
             break
         if model.cancel_if_target_first and c.high >= target:
             rec["exit_reason"] = "CANCELLED_TARGET_FIRST"
             return rec
         i += 1
     if filled is None:
-        rec["exit_reason"] = "EXPIRED" if i >= model.entry_expiry_sessions else "OPEN_ORDER_AT_END_OF_DATA"
+        if i >= model.entry_expiry_sessions:
+            rec["exit_reason"] = "EXPIRED"
+        elif stopped:
+            rec.update(exit_reason=stopped[0], data_stop=stopped[1])
+        else:
+            rec["exit_reason"] = "OPEN_ORDER_AT_END_OF_DATA"
         return rec
     invalidation_recorded = False
     for j in range(filled, len(future)):
         c = future[j]
+        if getattr(c, "shortened", False):
+            if c.low <= stop or c.high >= target:
+                rec.update(exit_reason=DATA_EXCLUDED_SESSION, data_stop=c.start.date().isoformat())
+                return rec
+            # untouched: the position carries over. The bar is not a candle (D30), so the zone's
+            # completed-close DL check is not applied to it; that is recorded, never silent
+            ev = {"type": "SHORTENED_SESSION_CARRIED_OVER", "time": c.end.isoformat(), "rule": "D40, D30",
+                  "zone_check": "NOT_APPLIED"}
+            if zone and zone.get("distal") is not None:
+                side = zone.get("side", "demand")
+                ev["close_beyond_dl"] = (c.close < zone["distal"]) if side == "demand" else (c.close > zone["distal"])
+            rec["assumption_events"].append(ev)
+            continue
         fill_bar = j == filled
         if zone and not invalidation_recorded and c.complete:
             distal = zone.get("distal")
@@ -213,6 +375,9 @@ def simulate(levels, candles, signal_end, model, zone=None):
             if not fill_bar and c.open < stop:
                 rec["assumption_events"].append({"type": "GAP_THROUGH_STOP", "time": c.end.isoformat(),
                                                  "policy": "gap_fill=" + model.gap_fill})
+            if _outside(price, c) and not (fill_bar and price == rec["fill_price"]):
+                rec["assumption_events"].append({"type": "PRICE_OUTSIDE_BAR", "time": c.end.isoformat(),
+                                                 "price": price, "policy": "gap_fill=" + model.gap_fill})
             rec["trade_events"].append({"type": "STOP_LOSS_HIT", "time": c.end.isoformat(),
                                         "price": price, "stop_level": stop})
             rec.update(exit_time=c.end.isoformat(), exit_price=price, exit_reason="STOP")
@@ -222,9 +387,15 @@ def simulate(levels, candles, signal_end, model, zone=None):
                 rec["assumption_events"].append({"type": "GAP_THROUGH_TARGET", "time": c.end.isoformat(),
                                                  "policy": "gap_fill=" + model.gap_fill})
             price = c.open if (not fill_bar and c.open > target and model.gap_fill == "AT_OPEN") else target
+            if _outside(price, c):
+                rec["assumption_events"].append({"type": "PRICE_OUTSIDE_BAR", "time": c.end.isoformat(),
+                                                 "price": price, "policy": "gap_fill=" + model.gap_fill})
             rec.update(exit_time=c.end.isoformat(), exit_price=price, exit_reason="TARGET")
             return rec
-    rec["exit_reason"] = "OPEN_AT_END_OF_DATA"
+    if stopped:
+        rec.update(exit_reason=stopped[0], data_stop=stopped[1])
+    else:
+        rec["exit_reason"] = "OPEN_AT_END_OF_DATA"
     return rec
 
 
@@ -349,6 +520,13 @@ def breakdowns(trades):
     return out
 
 
+def _cmp_time(t):
+    """t as naive IST, so aware and naive (exchange-local) times compare on one clock."""
+    if t.tzinfo is not None and t.utcoffset() is not None:
+        return t.astimezone(m.IST).replace(tzinfo=None)
+    return t
+
+
 def apply_portfolio_rules(trades, model):
     """Monthly cap (RB 2392, 2408) and concurrency, when the model sets them. Filled
     trades are taken in (fill time, signal time, symbol, zone id) order; a refused one
@@ -358,16 +536,16 @@ def apply_portfolio_rules(trades, model):
         return trades
     ts = datetime.datetime.fromisoformat
     filled = sorted([t for t in trades if t.get("fill_time")],
-                    key=lambda t: (ts(t["fill_time"]), t["signal_as_of"], t["symbol"], t["zone_id"]))
+                    key=lambda t: (_cmp_time(ts(t["fill_time"])), t["signal_as_of"], t["symbol"], t["zone_id"]))
     taken, per_month = [], {}
     for t in filled:
         fill = ts(t["fill_time"])
         reason = None
         if model.max_open_positions is not None:
-            open_now = sum(1 for a in taken if a.get("exit_time") is None or ts(a["exit_time"]) >= fill)
+            open_now = sum(1 for a in taken if a.get("exit_time") is None or _cmp_time(ts(a["exit_time"])) >= _cmp_time(fill))
             if open_now >= model.max_open_positions:
                 reason = NOT_TRADED_MAX_OPEN_POSITIONS
-        month = t["fill_time"][:7]
+        month = "%04d-%02d" % m.ist_month(fill)                  # first fill time in IST (D42, D46)
         if reason is None and model.monthly_trade_cap is not None and per_month.get(month, 0) >= model.monthly_trade_cap:
             reason = NOT_TRADED_MONTHLY_CAP
         if reason is None:
@@ -397,32 +575,68 @@ def _price_scale_events(inputs, scan_config):
     return events
 
 
-def _limitations(model, universe):
-    limitations = [NOT_PERFORMANCE_EVIDENCE, m.NOT_EXTERNALLY_VALIDATED] + model.not_applied()
-    if universe is None or universe.adhoc:
+def _limitations(model, universe, calendar=None):
+    limitations = [NOT_PERFORMANCE_EVIDENCE, m.NOT_EXTERNALLY_VALIDATED, REVALIDATION_AT_SCAN_TIMES_ONLY] \
+        + model.not_applied() + list(EXECUTION_REALISM_GAPS)
+    if calendar is None:
+        limitations.append(EXPIRY_COUNTS_CANDLES_NO_CALENDAR)
+    if m.MANUAL_REVIEW in model.statuses:
+        limitations.append(MANUAL_REVIEW_SIMULATED)         # unresolved eligibility (owner pack section 6)
+    if model.gap_fill == "AT_LEVEL":
+        limitations.append(GAP_FILL_AT_LEVEL_UNTRADED_PRICES)
+    if model.entry_expiry_sessions != OWNER_ENTRY_EXPIRY_SESSIONS:
+        limitations.append(ENTRY_EXPIRY_NOT_OWNER_POLICY)
+    unverified_file = universe is not None and not universe.adhoc and any(not r.verified for r in universe.rows)
+    if universe is None or universe.adhoc or unverified_file:
         limitations.append(SURVIVORSHIP_UNCONTROLLED)
     if model.monthly_trade_cap is not None:
         limitations.append(MONTHLY_CAP_SELECTION_BY_FILL_ORDER)
-        limitations.append(MONTHLY_CAP_COUNTED_AT_FILL)            # engineering reading of "trade" (B12)
-        if model.monthly_trade_cap > RULEBOOK_MONTHLY_MAX:
-            limitations.append(MONTHLY_CAP_ABOVE_RULEBOOK)         # RB 2392: a MAXIMUM of 10
+        limitations.append(MONTHLY_CAP_COUNTED_AT_FILL)            # first fill time, IST month (D42, D46)
     return sorted(set(limitations))
 
 
 def _portfolio_rules(model):
-    return {"monthly_trade_cap": model.monthly_trade_cap, "monthly_cap_counts": "FILL_MONTH",
+    return {"monthly_trade_cap": model.monthly_trade_cap, "monthly_cap_counts": "FILL_MONTH_IST",
             "max_open_positions": model.max_open_positions,
             "order": "fill time, signal time, symbol, zone id",
             "exit_on_fill_bar_counts_as_open": True, "pending_orders_hold_a_slot": False,
             "sources": {"monthly_trade_cap": ["RB 2392", "RB 2400", "RB 2408", "RB 2414-2415"],
-                        "max_open_positions": ["user parameter (not a Rulebook rule)"]}}
+                        "max_open_positions": ["user parameter (not a Rulebook rule)"]},
+            "owner_policy": {"max_open_positions": OWNER_MAX_OPEN_POSITIONS,
+                             "monthly_trade_cap": OWNER_MONTHLY_TRADE_CAP,
+                             "entry_expiry_sessions": OWNER_ENTRY_EXPIRY_SESSIONS,
+                             "above_limit": "REFUSED", "source": "D42, D45, D46"}}
 
 
 def _from_history(history, inputs, scan_config, model, split=None, universe=None):
     """Trades and metrics from scans already made (one model). Shared by run and
     run_sensitivity so every model reads the same signals."""
+    calendar = scan_config.calendar
+    if calendar is None:
+        # D42 / D45: expiry counts verified NSE sessions; counting candles would let a missing
+        # session silently extend a pending order, so the run is refused, not labelled
+        raise ValueError("a backtest needs a trading calendar: pending-order expiry counts verified sessions "
+                         "and a missing session must not extend it (D42, D45)")
     by_symbol = {i.symbol: i for i in inputs}
     events = _price_scale_events(inputs, scan_config)
+    # what each later scan says about each zone: the pending-order revalidation input
+    views = []
+    for scan in history:
+        statuses = {}
+        for s in scan.symbols:
+            statuses[s.symbol] = dict((c.zone["zone_id"], c.status) for c in s.candidates)
+        views.append((datetime.datetime.fromisoformat(scan.as_of), statuses))
+
+    def revalidation(symbol, zone_id):
+        out = []
+        for t, statuses in views:
+            if symbol not in statuses:
+                out.append((t, False, "SYMBOL_NOT_EVALUATED"))
+                continue
+            st = statuses[symbol].get(zone_id)
+            out.append((t, st in model.statuses, st or "ZONE_NO_LONGER_A_CANDIDATE"))
+        return out
+
     seen = set()
     trades = []
     for scan in history:
@@ -443,7 +657,8 @@ def _from_history(history, inputs, scan_config, model, split=None, universe=None
                 else:
                     rec.update(simulate(levels, by_symbol[c.symbol].candles, t, model,
                                         zone={"zone_id": c.zone["zone_id"], "timeframe": c.execution_tf,
-                                              "side": c.zone["side"], "distal": c.zone["distal"]}))
+                                              "side": c.zone["side"], "distal": c.zone["distal"]},
+                                        calendar=calendar, revalidation=revalidation(c.symbol, c.zone["zone_id"])))
                     rec["r"] = r_multiple(rec, model)
                     end = (datetime.date.fromisoformat(rec["exit_time"][:10]) if rec.get("exit_time")
                            else datetime.date.max)
@@ -454,9 +669,12 @@ def _from_history(history, inputs, scan_config, model, split=None, universe=None
                 trades.append(rec)
     trades.sort(key=lambda r: (r["signal_as_of"], r["symbol"], r["zone_id"]))
     apply_portfolio_rules(trades, model)
+    limitations = _limitations(model, universe, calendar)
+    if any(m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW in scan.limitations for scan in history):
+        limitations = sorted(set(limitations) | {m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW})
     out = {"model": dataclasses.asdict(model), "scans": len(history), "signals": len(trades), "trades": trades,
            "metrics": {"ALL": extended_metrics(trades)}, "breakdowns": breakdowns(trades),
-           "portfolio_rules": _portfolio_rules(model), "limitations": _limitations(model, universe),
+           "portfolio_rules": _portfolio_rules(model), "limitations": limitations,
            "note": "Simulated with the user-supplied execution model above. Manual checks were not performed; "
                    "this is arithmetic on research signals, not a performance claim."}
     if split is not None:
@@ -542,11 +760,15 @@ def run_walk_forward(inputs, folds, scan_config, model, universe=None):
             dropped += 1
             continue
         seen.add(key)
-        pooled.append(t)
+        pooled.append(dict(t))
+    # the caps hold across folds too: two OUT windows that split one IST month must not hold
+    # more than the monthly cap between them, nor more open positions (D42, D45; QA 2026-11-08).
+    # A trade already refused inside its segment has no fill and stays refused.
+    apply_portfolio_rules(pooled, model)
     return {"model": dataclasses.asdict(model), "folds": out_folds,
             "pooled_out": {"metrics": extended_metrics(pooled), "signals": len(pooled),
                            "duplicate_zone_signals_dropped": dropped},
-            "limitations": _limitations(model, universe), "no_selection": NO_SELECTION_NOTE,
+            "limitations": _limitations(model, universe, scan_config.calendar), "no_selection": NO_SELECTION_NOTE,
             "note": "Per-fold IN and OUT arithmetic with one user model. Not a performance claim."}
 
 
@@ -613,6 +835,10 @@ def _common(p):
     s.add_argument("--bhavcopy-dir")
     s.add_argument("--csv-dir")
     p.add_argument("--manifest")
+    p.add_argument("--corporate-actions", help="corporate-action records CSV (corporate_actions.py format); "
+                 "coverage.csv beside it gives the verified collection windows (D50, D52)")
+    p.add_argument("--instruments", help="instrument identity records CSV (instruments.py format); "
+                 "omitted -> IDENTITY_UNVERIFIED, ISIN changes still checked")
     p.add_argument("--series", default="EQ")
     p.add_argument("--source-label", default="USER_CSV")
     p.add_argument("--price-adjustment", default="UNKNOWN", choices=("UNKNOWN", "NONE", "ADJUSTED"))
@@ -622,13 +848,15 @@ def _common(p):
 
 
 def _setup(args, end):
-    from nse.research import cli, universe as uni
+    from nse.research import universe as uni
     from nse.research.deps import calendar as cal_mod
     universe = uni.load(args.universe) if args.universe else uni.adhoc(args.symbols.split(","))
-    inputs = cli._inputs(args, sorted(set(r.symbol for r in universe.rows)))
+    inputs = inputs_.from_args(args, sorted(set(r.symbol for r in universe.rows)))
     calendar = cal_mod.NseCalendar.load(args.calendar) if args.calendar else None
+    acts, cov = inputs_.corporate_action_config(getattr(args, "corporate_actions", None))
     cfg = scanner.ScanConfig(as_of=end, calendar=calendar, calendar_label=args.calendar or "NONE",
-                             risk_per_trade=args.risk_per_trade, universe_label=universe.name)
+                             risk_per_trade=args.risk_per_trade, universe_label=universe.name,
+                             corporate_actions=acts, corporate_action_coverage=cov)
     return inputs, cfg, None if universe.adhoc else universe
 
 
@@ -653,29 +881,47 @@ def _guarded(fn):
 
 
 def cmd_walk_forward(args):
-    from nse.research import cli
     model = load_model(args.model)
-    folds = load_folds(args.folds, cli._as_of)
+    folds = load_folds(args.folds, inputs_.parse_as_of)
     inputs, cfg, universe = _setup(args, max(f[3] for f in folds))
     res = run_walk_forward(inputs, folds, cfg, model, universe=universe)
     _write(args.out, res, {"folds": [{"fold": f["fold"], "IN": f["IN"]["metrics"]["ALL"],
                                       "OUT": f["OUT"]["metrics"]["ALL"]} for f in res["folds"]],
                            "pooled_out": res["pooled_out"], "limitations": res["limitations"]})
+    _write_command_manifest(args, "backtest-walk-forward", max(f[3] for f in folds), res.get("limitations") or [])
     return 0
 
 
 def cmd_sensitivity(args):
-    from nse.research import cli
     models = [load_model(p) for p in args.models]
-    start, end = cli._as_of(args.start), cli._as_of(args.end)
+    start, end = inputs_.parse_as_of(args.start), inputs_.parse_as_of(args.end)
     inputs, cfg, universe = _setup(args, end)
     dates = _windows(inputs, start, end)
-    res = run_sensitivity(inputs, dates, cfg, models, split=cli._as_of(args.split) if args.split else None,
+    res = run_sensitivity(inputs, dates, cfg, models, split=inputs_.parse_as_of(args.split) if args.split else None,
                           universe=universe)
     _write(args.out, res, {"runs": [{"index": r["index"], "model_file": args.models[r["index"]],
                                      "metrics": r["metrics"]["ALL"]} for r in res["runs"]],
                            "limitations": res["limitations"]})
+    _write_command_manifest(args, "backtest-sensitivity", end, res.get("limitations") or [])
     return 0
+
+
+def _write_command_manifest(args, kind, as_of, limitations):
+    """TD-4: walk-forward and sensitivity keep the same manifest sidecar as backtest."""
+    import os
+    from nse.research import run_manifest
+    folder = os.path.dirname(os.path.abspath(args.out)) or "."
+    base = os.path.basename(args.out)
+    paths = run_manifest.scan_input_paths(args)
+    for extra in (getattr(args, "model", None), getattr(args, "folds", None)):
+        if extra:
+            paths.append(extra)
+    for extra in getattr(args, "models", None) or []:
+        paths.append(extra)
+    params = {key: getattr(args, key) for key in ("symbols", "universe", "model", "models", "folds", "start", "end", "split", "out")
+              if getattr(args, key, None) not in (None, [])}
+    manifest = run_manifest.build(kind, as_of, params, paths, limitations)
+    run_manifest.write(manifest, folder, [base], name=base + ".manifest.json")
 
 
 def add_commands(subparsers):

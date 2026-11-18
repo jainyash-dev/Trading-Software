@@ -8,7 +8,6 @@ from unittest import mock
 
 import _research as R
 from nse.research import confluence, models as m, scanner
-from nse.research.deps import mtf
 
 
 class Ema(unittest.TestCase):
@@ -80,7 +79,8 @@ class OnTheRealPipeline(unittest.TestCase):
     def setUpClass(cls):
         cls.candles = R.long_mit_candles()
         cfg = scanner.ScanConfig(as_of=cls.candles[-1].end, calendar=R.WeekdayCalendar(),
-                                 calendar_label="TEST_WEEKDAYS", risk_per_trade=1000.0)
+                                 calendar_label="TEST_WEEKDAYS", risk_per_trade=1000.0,
+                                 corporate_action_coverage=R.verified_ca("SYN"))
         cls.cfg = cfg
         cls.res = scanner.scan([R.daily_input("SYN", cls.candles)], cfg)
 
@@ -110,7 +110,8 @@ class OnTheRealPipeline(unittest.TestCase):
     def test_prefix_invariant(self):
         later = R.extend(self.candles, [(110.0, 110.5, 109.5, 110.0)] * 3)
         cfg = scanner.ScanConfig(as_of=self.candles[-1].end, calendar=R.WeekdayCalendar(),
-                                 calendar_label="TEST_WEEKDAYS", risk_per_trade=1000.0)
+                                 calendar_label="TEST_WEEKDAYS", risk_per_trade=1000.0,
+                                 corporate_action_coverage=R.verified_ca("SYN"))
         again = scanner.scan([R.daily_input("SYN", later)], cfg)
         self.assertEqual(self.res.candidates()[0].zone["pre_entry_score"],
                          again.candidates()[0].zone["pre_entry_score"])

@@ -14,7 +14,6 @@ result then carries UNIVERSE_UNVERIFIED.
 
 import csv
 import datetime
-import re
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -22,7 +21,11 @@ from nse.research import models as m
 
 COLUMNS = ("symbol", "series", "isin", "index_name", "effective_from", "effective_to", "source",
            "source_file", "source_sha256", "recorded_on", "notes")
-_SHA = re.compile(r"[0-9a-f]{64}\Z")
+
+# D59: membership-based Nifty 100 research uses this date onward. Candles before it may
+# warm indicators. They are not a point-in-time Nifty 100 universe, and no later list is
+# used to fill them in.
+PROVISIONAL_MEMBERSHIP_START = datetime.date(2020, 12, 31)
 
 
 class UniverseError(ValueError):
@@ -37,6 +40,7 @@ class Membership:
     effective_to: Optional[datetime.date]
     verified: bool
     source: str
+    isin: str = ""            # as recorded in the universe file; "" for ad-hoc rows
 
 
 @dataclass
@@ -52,10 +56,24 @@ class Universe:
                 out[r.symbol] = r
         return [out[k] for k in sorted(out)]
 
+    def balance(self, as_of_date, expected):
+        """(member count on as_of_date, whether it equals expected), e.g. expected=100 for
+        Nifty 100 (D1). Reports only; members() and limitations() are unchanged."""
+        n = len(self.members(as_of_date))
+        return n, n == expected
+
     def limitations(self, as_of_date):
-        if self.adhoc or not all(r.verified for r in self.members(as_of_date)):
-            return [m.UNIVERSE_UNVERIFIED]
-        return []
+        out = []
+        # D59 is a research-window label, not a certification. An ad-hoc symbol list is
+        # already UNIVERSE_UNVERIFIED and is not a Nifty 100 membership study.
+        if not self.adhoc and as_of_date < PROVISIONAL_MEMBERSHIP_START:
+            out.append(m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW)
+        members = self.members(as_of_date)
+        # no member on the date (e.g. before the file's first period) is unknown membership,
+        # never a verified universe (PROMPT-01 audit: all([]) was True)
+        if self.adhoc or not members or not all(r.verified for r in members):
+            out.append(m.UNIVERSE_UNVERIFIED)
+        return out
 
 
 def adhoc(symbols, series="EQ"):
@@ -82,7 +100,18 @@ def load(path, name=None):
                 raise UniverseError("%s line %d: empty symbol" % (path, i))
             if end is not None and end < start:
                 raise UniverseError("%s line %d: effective_to before effective_from" % (path, i))
-            verified = bool(r["source"].strip()) and bool(_SHA.match(r["source_sha256"].strip().lower()))
+            verified = m.source_verified(path, r["source"], r["source_file"], r["source_sha256"])
             rows.append(Membership(r["symbol"].strip().upper(), r["series"].strip() or "EQ", start, end,
-                                   verified, r["source"].strip()))
+                                   verified, r["source"].strip(), r["isin"].strip().upper()))
+    # one membership period per symbol at a time: overlapping rows would let the last one win
+    # silently (members() keeps one row per symbol), so they are refused
+    by_symbol = {}
+    for r in rows:
+        by_symbol.setdefault(r.symbol, []).append(r)
+    for sym, rs in sorted(by_symbol.items()):
+        rs = sorted(rs, key=lambda r: r.effective_from)
+        for a, b in zip(rs, rs[1:]):
+            if a.effective_to is None or b.effective_from <= a.effective_to:
+                raise UniverseError("%s: %s has overlapping membership periods (from %s and from %s)"
+                                    % (path, sym, a.effective_from, b.effective_from))
     return Universe(name or path, rows)

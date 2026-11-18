@@ -1,0 +1,42 @@
+# Tool settings and the development toolchain. The research system (nse/) has NO
+# runtime dependencies: it runs on the Python standard library (architecture rule A5).
+# Setup and commands: docs/OPERATIONS_RUNBOOK.md. Decisions: nse/docs/ENGINEERING_DECISIONS.md ED-17.
+
+[project]
+name = "nse-gtf-research"
+version = "0.0.0"
+description = "NSE demand-and-supply research and decision support (no order placement)"
+requires-python = ">=3.10"          # full suite verified on 3.10 and 3.12 (docs/VALIDATION_SCORECARD.md)
+dependencies = []
+
+[dependency-groups]
+# optional developer tools; validation reports UNAVAILABLE, never PASS, when they are absent
+dev = [
+    "ruff==0.17.4",
+]
+
+[tool.uv]
+package = false                     # a repository of scripts and packages, not an installable distribution
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+extend-exclude = [
+    "nse/sources",                  # protected owner sources (never edited)
+    "trader-*",                     # legacy US skill pack (upstream code, out of scope)
+    "tests/fixtures",
+    ".claude/skills",               # project and vendored skill scripts are linted by their own tests
+]
+
+[tool.ruff.lint]
+# F: pyflakes (unused / undefined names, redefinitions); E9: syntax and IO errors.
+# Formatting rules are deliberately not enabled: reformatting the codebase would be a
+# large aesthetic diff with no correctness value (ED-17).
+select = ["F", "E9"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]                # tests insert the repository root on sys.path before importing nse
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"

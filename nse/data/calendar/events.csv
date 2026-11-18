@@ -1,4 +1,110 @@
 date,event,description,session_start,session_end,source_ref,status,note
+2016-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2016-03-07,HOLIDAY,Mahashivratri,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2016-03-24,HOLIDAY,Holi,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2016-03-25,HOLIDAY,Good Friday,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2016-04-14,HOLIDAY,Dr. Baba Saheb Ambedkar Jayanti,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 5
+2016-04-15,HOLIDAY,Ram Navami,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2016-04-19,HOLIDAY,Mahavir Jayanti,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2016-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/31297,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 1
+2016-07-06,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 8
+2016-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2016-09-05,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2016-09-13,HOLIDAY,Bakri ID,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 11
+2016-10-02,HOLIDAY,Mahatma Gandhi Jayanti,,,NSE/CMTR/31297,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 2
+2016-10-11,HOLIDAY,Dasera,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 12
+2016-10-12,HOLIDAY,Moharram,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 13
+2016-10-28,SPECIAL_SESSION,Extended live trading session on account of Dhanteras (Gold ETF and Sovereign Gold Bonds only),09:15,15:30,NSE/CMTR/33442,CONFIRMED,"Printed: 'Regular Market Timing (there is no change to this)', Normal Market/Odd lot 09:15-15:30; plus an extended session for Gold ETF and Sovereign Gold Bonds only (pre-open for cancellation 16:25, Normal Market re-open 16:30, close 19:00; no closing session). Bhavcopy broadcast three times that day. Owner decision D58 (CAL-2 option A, 2026-11-10): the equity session is a regular 09:15-15:30 session (NORMAL_SPECIAL); the Gold ETF/SGB extension is recorded here only and builds no candle"
+2016-10-30,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/31297,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 3. Footnote *: Muhurat trading this day (times in NSE/CMTR/33424)
+2016-10-30,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market/LPM,18:30,19:30,NSE/CMTR/33424,CONFIRMED,Normal Market/LPM row of the schedule. Also printed: pre-open 18:15-18:23; block deal 18:30-19:05; call auction illiquid 18:35-19:20; closing session 19:40-19:50. Excluded from candle construction (D30; D40)
+2016-10-31,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 14
+2016-11-14,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/31297,CONFIRMED,p.1 trading-holidays table Sr. No. 15
+2016-12-25,HOLIDAY,Christmas,,,NSE/CMTR/31297,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 4
+2017-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2017-02-24,HOLIDAY,Mahashivratri,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2017-03-13,HOLIDAY,Holi,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2017-04-04,HOLIDAY,Ram Navami,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2017-04-09,HOLIDAY,Mahavir Jayanti,,,NSE/CMTR/33746,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 1
+2017-04-14,HOLIDAY,Good Friday / Dr.Baba Saheb Ambedkar Jayanti,,,NSE/CMTR/33746,CONFIRMED,"p.1 trading-holidays table Sr. No. 5; the description is printed on two lines in one row (Good Friday, then Dr.Baba Saheb Ambedkar Jayanti); the ' / ' separator is editorial"
+2017-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2017-06-26,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2017-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 8
+2017-08-25,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2017-09-02,HOLIDAY,Bakri ID,,,NSE/CMTR/33746,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 2
+2017-09-30,HOLIDAY,Dasera,,,NSE/CMTR/33746,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 3
+2017-10-01,HOLIDAY,Moharram,,,NSE/CMTR/33746,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 4
+2017-10-02,HOLIDAY,Mahatama Gandhi Jayanti,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2017-10-17,SPECIAL_SESSION,Extended live trading session on account of Dhanteras (Gold ETF and Sovereign Gold Bonds only),09:15,15:30,NSE/CMTR/36003,CONFIRMED,"Printed: 'Regular Market Timing (there is no change to this)', Normal Market/Odd lot 09:15-15:30; plus an extended session for Gold ETF and Sovereign Gold Bonds only (pre-open for cancellation 16:25, Normal Market re-open 16:30, close 19:00; no closing session). Bhavcopy broadcast three times that day. Owner decision D58 (CAL-2 option A, 2026-11-10): the equity session is a regular 09:15-15:30 session (NORMAL_SPECIAL); the Gold ETF/SGB extension is recorded here only and builds no candle"
+2017-10-19,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 11; the regular session is closed. Footnote *: Muhurat trading this day (times in NSE/CMTR/35993)
+2017-10-19,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market/LPM,18:30,19:30,NSE/CMTR/35993,CONFIRMED,Normal Market/LPM row of the schedule. Also printed: pre-open 18:15-18:23; block deal 18:30-19:05; call auction illiquid 18:35-19:20; closing session 19:40-19:50. Excluded from candle construction (D30; D40)
+2017-10-20,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 12
+2017-11-04,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/33746,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 5
+2017-12-25,HOLIDAY,Christmas,,,NSE/CMTR/33746,CONFIRMED,p.1 trading-holidays table Sr. No. 13
+2018-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2018-02-13,HOLIDAY,Mahashivratri,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2018-03-02,HOLIDAY,Holi,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2018-03-25,HOLIDAY,Ram Navami,,,NSE/CMTR/36475,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 1
+2018-03-29,HOLIDAY,Mahavir Jayanti,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2018-03-30,HOLIDAY,Good Friday,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 5
+2018-04-14,HOLIDAY,Dr.Baba Saheb Ambedkar Jayanti,,,NSE/CMTR/36475,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 2
+2018-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2018-06-16,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/36475,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 3
+2018-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2018-08-22,HOLIDAY,Bakri ID,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 8
+2018-09-13,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2018-09-20,HOLIDAY,Moharram,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2018-10-02,HOLIDAY,Mahatama Gandhi Jayanti,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 11
+2018-10-18,HOLIDAY,Dasera,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 12
+2018-11-05,SPECIAL_SESSION,Extended live trading session on account of Dhanteras (Gold ETF and Sovereign Gold Bonds only),09:15,15:30,NSE/CMTR/39215,CONFIRMED,"Printed: 'Regular Market Timing (there is no change to this)', Normal Market/Odd lot 09:15-15:30; plus an extended session for Gold ETF and Sovereign Gold Bonds only (pre-open for cancellation 16:25, Normal Market re-open 16:30, close 19:00; no closing session). Bhavcopy broadcast three times that day. Owner decision D58 (CAL-2 option A, 2026-11-10): the equity session is a regular 09:15-15:30 session (NORMAL_SPECIAL); the Gold ETF/SGB extension is recorded here only and builds no candle"
+2018-11-07,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 13; the regular session is closed. Footnote *: Muhurat trading this day (times in NSE/CMTR/39216)
+2018-11-07,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market/LPM,17:30,18:30,NSE/CMTR/39216,CONFIRMED,Normal Market/LPM row of the schedule. Also printed: block deal 17:00-17:15; pre-open 17:15-17:23; call auction illiquid 17:35-18:20; closing session 18:40-18:50. Excluded from candle construction (D30; D40)
+2018-11-08,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 14
+2018-11-23,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 15
+2018-12-25,HOLIDAY,Christmas,,,NSE/CMTR/36475,CONFIRMED,p.1 trading-holidays table Sr. No. 16
+2019-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/39612,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 1
+2019-03-04,HOLIDAY,Mahashivratri,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2019-03-21,HOLIDAY,Holi,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2019-04-13,HOLIDAY,Ram Navami,,,NSE/CMTR/39612,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 2
+2019-04-14,HOLIDAY,Dr.Baba Saheb Ambedkar Jayanti,,,NSE/CMTR/39612,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 3
+2019-04-17,HOLIDAY,Mahavir Jayanti,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2019-04-19,HOLIDAY,Good Friday,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2019-04-29,HOLIDAY,Trading holiday on account of Parliamentary Elections in Mumbai,,,NSE/CMTR/40536,CONFIRMED,"Added holiday (Monday), in partial modification to NSE/CMTR/39612"
+2019-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 5
+2019-06-05,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2019-08-12,HOLIDAY,Bakri Id,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2019-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 8
+2019-09-02,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2019-09-10,HOLIDAY,Moharram,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2019-10-02,HOLIDAY,Mahatma Gandhi Jayanti,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 11
+2019-10-08,HOLIDAY,Dasera,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 12
+2019-10-21,HOLIDAY,Trading Holiday on account of Assembly Elections in Maharashtra,,,NSE/MSD/42319,CONFIRMED,"Added holiday (Monday). Member Service Department circular; its table marks Cash Equity, Equity Derivatives and Currency Derivatives as trading holidays and names the Capital Market (CM) segment in the text. It does not cite NSE/CMTR/39612"
+2019-10-25,SPECIAL_SESSION,Extended live trading session on account of Dhanteras (Gold ETF and Sovereign Gold Bonds only),09:15,15:30,NSE/CMTR/42455,CONFIRMED,"Printed: 'Regular Market Timing (there is no change to this)', Normal Market/Odd lot 09:15-15:30; plus an extended session for Gold ETF and Sovereign Gold Bonds only (pre-open for cancellation 16:55, Normal Market re-open 17:00, close 19:00; no closing session). Bhavcopy broadcast three times that day. Owner decision D58 (CAL-2 option A, 2026-11-10): the equity session is a regular 09:15-15:30 session (NORMAL_SPECIAL); the Gold ETF/SGB extension is recorded here only and builds no candle"
+2019-10-27,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/39612,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 4. Footnote *: Muhurat trading this day (times in NSE/CMTR/42483)
+2019-10-27,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market,18:15,19:15,NSE/CMTR/42483,CONFIRMED,"Normal Market row of the revised schedule (42483 partially modifies NSE/CMTR/42403, which printed the same Normal Market/LPM 18:15-19:15). Also printed in 42483: block deal 17:45-18:00; pre-open 18:00-18:08; call auction illiquid 18:20-19:05; closing session 19:25-19:35; trade modification cut-off 18:15-19:45. Excluded from candle construction (D30; D40)"
+2019-10-28,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 13
+2019-11-12,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 14
+2019-12-25,HOLIDAY,Christmas,,,NSE/CMTR/39612,CONFIRMED,p.1 trading-holidays table Sr. No. 15
+2020-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 1
+2020-02-01,SPECIAL_SESSION,Live Trading Session - presentation of Union Budget,09:15,15:30,NSE/CMTR/43290,CONFIRMED,Saturday. Printed: block deal session-1 08:45-09:00; pre-open 09:00-09:08; special pre-open (IPO & re-listed) 09:00-09:45; Normal Market 09:15-15:30; call auction illiquid 09:30-15:30; block deal session-2 14:05-14:20; post close 15:40-16:00; trade modification cut-off 16:15. D30 provisional rule: NORMAL_SPECIAL
+2020-02-21,HOLIDAY,Mahashivratri,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 1
+2020-03-10,HOLIDAY,Holi,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 2
+2020-04-02,HOLIDAY,Ram Navami,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 3
+2020-04-06,HOLIDAY,Mahavir Jayanti,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 4
+2020-04-10,HOLIDAY,Good Friday,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 5
+2020-04-14,HOLIDAY,Dr.Baba Saheb Ambedkar Jayanti,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 6
+2020-05-01,HOLIDAY,Maharashtra Day,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 7
+2020-05-25,HOLIDAY,Id-Ul-Fitr (Ramzan ID),,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 8
+2020-08-01,HOLIDAY,Bakri Id,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 2
+2020-08-15,HOLIDAY,Independence Day,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 3
+2020-08-22,HOLIDAY,Ganesh Chaturthi,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 4
+2020-08-30,HOLIDAY,Moharram,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 5
+2020-10-02,HOLIDAY,Mahatma Gandhi Jayanti,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 9
+2020-10-25,HOLIDAY,Dasera,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 6
+2020-11-14,HOLIDAY,Diwali-Laxmi Pujan*,,,NSE/CMTR/42877,CONFIRMED,p.1 Saturday/Sunday table Sr. No. 7. Footnote *: Muhurat trading this day (times in NSE/CMTR/46230)
+2020-11-14,MUHURAT_SESSION,Diwali Muhurat Trading Session - Normal Market,18:15,19:15,NSE/CMTR/46230,CONFIRMED,Normal Market row of the schedule. Also printed: block deal 17:45-18:00; pre-open 18:00-18:08; call auction illiquid 18:20-19:05; closing session 19:25-19:35; trade modification cut-off 18:15-19:45. Excluded from candle construction (D30; D40)
+2020-11-16,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 10
+2020-11-30,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 11
+2020-12-25,HOLIDAY,Christmas,,,NSE/CMTR/42877,CONFIRMED,p.1 trading-holidays table Sr. No. 12
 2021-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/46623,CONFIRMED,p.1 trading-holidays table Sr. No. 1
 2021-03-11,HOLIDAY,Mahashivratri,,,NSE/CMTR/46623,CONFIRMED,p.1 trading-holidays table Sr. No. 2
 2021-03-29,HOLIDAY,Holi,,,NSE/CMTR/46623,CONFIRMED,p.1 trading-holidays table Sr. No. 3
@@ -58,7 +164,7 @@ date,event,description,session_start,session_end,source_ref,status,note
 2023-11-14,HOLIDAY,Diwali-Balipratipada,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 13
 2023-11-27,HOLIDAY,Gurunanak Jayanti,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 14
 2023-12-25,HOLIDAY,Christmas,,,NSE/CMTR/54757,CONFIRMED,p.1 trading-holidays table Sr. No. 15
-2024-01-20,SPECIAL_SESSION,Regular trading session on Saturday from primary site as per regular market timings,09:15,15:30,NSE/MSD/60340,CONFIRMED,"The circular states regular trading sessions as per regular market timings but prints no times; 09:15-15:30 are the regular hours of NSE/CMTR/41180 (provisional normal-hours evidence, D40). It withdraws NSE/MSD/59999, 60300 and 60318 (the earlier DR-switch special session). D30 provisional rule: NORMAL_SPECIAL"
+2024-01-20,SPECIAL_SESSION,Regular trading session on Saturday from primary site as per regular market timings,09:15,15:30,NSE/MSD/60340,CONFIRMED,"The circular states regular trading sessions as per regular market timings but prints no times; 09:15-15:30 are the regular hours of NSE/CMTR/41180 (provisional normal-hours evidence, D40). It withdraws NSE/MSD/59999, 60300 and 60318 (held since 2026-11-09): 59999 had announced a special session with an intra-day switch-over to the DR site (09:15-10:00 primary, 11:30-12:30 DR); 60300 and 60318 only updated ENIT and member-portal timings for that plan. The two-part plan was withdrawn before the day and did not take place (D40 evidence review 2026-11-09). Primary site only; no switch-over. D30 provisional rule: NORMAL_SPECIAL"
 2024-01-22,HOLIDAY,Trading Holiday on account of Holiday declared under Negotiable Instrument Act,,,NSE/CMTR/60338,CONFIRMED,"Added holiday, in partial modification to NSE/CMTR/59722 (Government of Maharashtra and RBI notifications of 2024-01-19)"
 2024-01-26,HOLIDAY,Republic Day,,,NSE/CMTR/59722,CONFIRMED,p.1 trading-holidays table Sr. No. 1
 2024-03-02,SHORTENED_SESSION,Special Live trading session with intra day switch over to DR site,09:15,12:30,NSE/MSD/60677,CONFIRMED,Two Normal Market windows: 09:15-10:00 from the primary site and 11:30-12:30 from the DR site (closing session 12:40-12:50). The row spans first open to last close; it is not one continuous session. Shortened: excluded from candle construction (D30)

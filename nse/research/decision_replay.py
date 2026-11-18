@@ -19,7 +19,7 @@ import json
 import os
 import sys
 
-from nse.research import marketdata, models as m, reports, scanner, structure
+from nse.research import inputs, marketdata, models as m, reports, scanner, structure
 from nse.research.deps import calendar as cal_mod, mtf
 
 BUNDLE_VERSION = "1.0.0"
@@ -138,22 +138,24 @@ def to_json(b):
 # --- CLI ------------------------------------------------------------------------------
 
 def cmd_replay_decision(args):
-    from nse.research import cli, dashboard          # lazy: cli imports this module
+    from nse.research import dashboard               # lazy: dashboard imports this module (ARCHITECTURE exception X1)
     try:
-        as_of = cli._as_of(args.as_of)
+        as_of = inputs.parse_as_of(args.as_of)
         calendar = cal_mod.NseCalendar.load(args.calendar) if args.calendar else None
         symbol = args.symbol.strip().upper()
         if not symbol:
             raise ValueError("--symbol is empty")
-        [inp] = cli._inputs(args, [symbol])
-    except SystemExit as e:                          # cli._inputs reports a missing source this way
+        [inp] = inputs.from_args(args, [symbol])
+    except SystemExit as e:                          # inputs.from_args reports a missing source this way
         print("error: %s" % e, file=sys.stderr)
         return 2
     except (ValueError, OSError, cal_mod.CalendarError) as e:
         print("error: %s" % e, file=sys.stderr)
         return 2
+    acts, cov = inputs.corporate_action_config(getattr(args, "corporate_actions", None))
     cfg = scanner.ScanConfig(as_of=as_of, trade_type=args.trade_type, calendar=calendar,
-                             calendar_label=args.calendar or "NONE", risk_per_trade=args.risk_per_trade)
+                             calendar_label=args.calendar or "NONE", risk_per_trade=args.risk_per_trade,
+                             corporate_actions=acts, corporate_action_coverage=cov)
     b = bundle(inp, cfg)
     os.makedirs(args.out, exist_ok=True)
     for name, text in (("decision.json", to_json(b)), ("decision.html", dashboard.render_decision(b))):
@@ -172,8 +174,12 @@ def add_commands(subparsers):
     p.add_argument("--trade-type", default=m.MIT, choices=m.TRADE_TYPES)
     src = p.add_mutually_exclusive_group(required=True)
     src.add_argument("--csv-dir", help="folder with one SYMBOL.csv per symbol")
-    src.add_argument("--bhavcopy-dir", help="folder with legacy cm*bhav.csv.zip files")
+    src.add_argument("--bhavcopy-dir", help="folder with bhavcopy archives (legacy cm*bhav.csv.zip and UDiFF)")
     p.add_argument("--manifest", help="EOD manifest.csv (provenance check for bhavcopies)")
+    p.add_argument("--corporate-actions", help="corporate-action records CSV (corporate_actions.py format); "
+                 "coverage.csv beside it gives the verified collection windows (D50, D52)")
+    p.add_argument("--instruments", help="instrument identity records CSV (instruments.py format); "
+                 "omitted -> IDENTITY_UNVERIFIED, ISIN changes still checked")
     p.add_argument("--series", default="EQ")
     p.add_argument("--source-label", default="USER_CSV")
     p.add_argument("--price-adjustment", default="UNKNOWN", choices=("UNKNOWN", "NONE", "ADJUSTED"))

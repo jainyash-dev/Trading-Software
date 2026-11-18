@@ -1,0 +1,31 @@
+repository_checks          PASS                   
+repository                 PASS                   ran 15, failures 0, errors 0, skipped 0
+architecture               PASS                   ran 28, failures 0, errors 0, skipped 0
+zone_engine                PASS                   ran 65, failures 0, errors 0, skipped 0
+mtf_freshness              PASS                   ran 46, failures 0, errors 0, skipped 0
+data                       PASS                   ran 136, failures 0, errors 0, skipped 0
+strategy_gates             PASS                   ran 82, failures 0, errors 0, skipped 0
+lookahead                  PASS                   ran 13, failures 0, errors 0, skipped 0
+integration                PASS                   ran 53, failures 0, errors 0, skipped 0
+adversarial                PASS                   ran 28, failures 0, errors 0, skipped 0
+reports                    PASS                   ran 26, failures 0, errors 0, skipped 0
+data_readiness             PASS                   ran 81, failures 0, errors 0, skipped 0
+backtest                   PASS                   ran 82, failures 0, errors 0, skipped 0
+acquisition                PASS                   ran 40, failures 0, errors 0, skipped 0
+store                      PASS                   ran 80, failures 0, errors 0, skipped 0
+research_assistant         PASS                   ran 44, failures 0, errors 0, skipped 0
+dashboard                  PASS                   ran 24, failures 0, errors 0, skipped 0
+risk_instruments           PASS                   ran 234, failures 0, errors 0, skipped 0
+scenarios                  PASS                   ran 31, failures 0, errors 0, skipped 0
+health                     PASS                   ran 7, failures 0, errors 0, skipped 0
+hooks                      PASS                   ran 12, failures 0, errors 0, skipped 0
+council                    PASS                   ran 30, failures 0, errors 0, skipped 0
+validation_framework       PASS                   ran 14, failures 0, errors 0, skipped 0
+legacy_day_trader_skills   PASS                   ran 304, failures 0, errors 0, skipped 0
+local_data                 PASS                   
+reference_comparison       PASS                   
+static_lint                PASS                   
+totals: {'ran': 1475, 'failures': 0, 'errors': 0, 'skipped': 0}
+verdict: PASS  (report: ../../../private/tmp/claude-501/-Users-yash-day-trader-skill/ece5e266-7775-4d63-94b8-4f3718d80808/scratchpad/final_report.json)
+Software tests are not external validation; see the readiness section of the report.
+EXIT=0

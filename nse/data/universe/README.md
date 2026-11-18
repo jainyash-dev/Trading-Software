@@ -11,7 +11,7 @@ research-ready until then. Agents verify and prepare; only a human accepts.
 | `nifty100_baseline.csv` | The 100 members on 31 Dec 2020, with ISIN | NSE Indices "Constituents of NIFTY 100 \| December 31, 2020" (`evidence/baseline/indices_dataDec2020.zip`); ISINs from the 2021-01-01 bhavcopy |
 | `nifty100_changes.csv` | 146 rows, 2021-03-31 to 2025-12-05: ADD / REMOVE rows of the reconstitution and ad-hoc events, `RENAME` rows (including `DUMMYREL` to `JIOFIN` on 2023-08-21) and 13 `ISIN_CHANGE` rows | NSE Indices press releases (`evidence/releases/`), NSE circulars (`evidence/circulars/`), NSE `symbolchange.csv`, NSE corporate-action records (`../corporate_actions/raw/`) |
 | `nifty100_count_exceptions.csv` | 25 dated official counts other than 100 (101 during spin-off, DVR and dummy windows) | the release on each row |
-| `nifty100_review.csv` | **The human review: one row per baseline row, change row and count exception (271).** `decision` is still blank on every row. On 2026-11-11 Yash Jain approved the 25 count calculations (`count_approval` `APPROVED`) and the ten E03 mappings (`mapping_approval` `APPROVED`). Neither column verifies a membership period | the reviewer (below) |
+| `nifty100_review.csv` | **The human review: one row per baseline row, change row and count exception (271).** On 2026-11-11 Yash Jain approved the 25 count calculations (`count_approval` `APPROVED`) and the ten E03 mappings (`mapping_approval` `APPROVED`). On 2026-11-12 Yash Jain set `decision` `ACCEPTED` on 123 rows (T-001 batch 1): 98 identity-clear baseline rows, all 12 E01 rows, both E02 rows, all 10 E03 rows, and the CADILAHC to ZYDUSLIFE rename. GRASIM and BAJFINANCE stay blank. On 2026-11-13 Yash Jain accepted 17 more rows (T-001 batch 2: E04, E05 and three ISIN changes). On 2026-11-15 Yash Jain accepted the 91 evidence-sufficient rows (D67). 40 `decision` cells stay blank: 25 count rows, the 7 deferred optional rows and 8 other deferred rows | the reviewer (below) |
 | `nifty100_review_packet.csv` | The independent verifier's verdict and evidence per row (advisory; never a decision) | D53 verifier agents |
 | `nifty100_universe.csv` | Output of `membership.convert`, read by `universe.load` / `--universe` (185 periods) | the files above |
 | `nifty100_conversion_report.json` | Members per date, exceptions used, review status, identity findings | `membership.convert` |
@@ -47,9 +47,24 @@ A period is verified only when its start row and its end row (if any) have `deci
 Recorded on 2026-11-11 by Yash Jain, and only on those rows:
 
 - 25 `exception:` rows: `count_approval` `APPROVED`. This accepts the derived count arithmetic. It does not approve constituents, dummy seats, inferred ISINs, or a membership period.
-- 10 `change:E03:` rows (ABBOTINDIA, ALKEM, MRF, PETRONET, UBL out; BANKBARODA, CHOLAFIN, JINDALSTEL, PIIND, SAIL in): `mapping_approval` `APPROVED`. This accepts the symbol and the direction in `ind_prs23082021.pdf` page 5 section 3, effective 2021-09-30 from page 1. It does not approve the membership period. BANKBARODA and CHOLAFIN stay open and unverified.
+- 10 `change:E03:` rows (ABBOTINDIA, ALKEM, MRF, PETRONET, UBL out; BANKBARODA, CHOLAFIN, JINDALSTEL, PIIND, SAIL in): `mapping_approval` `APPROVED`. This accepts the symbol and the direction in `ind_prs23082021.pdf` page 5 section 3, effective 2021-09-30 from page 1.
 
-`decision` is blank on all 271 rows, including the 35 rows above. 236 rows have an empty reviewer, date, notes and both scope columns. Agents do not write `decision` `ACCEPTED`. The stored scope value is `APPROVED`, not `ACCEPTED`, so it cannot be read as a membership-period decision.
+Recorded on 2026-11-12 by Yash Jain, T-001 batch 1, and only on these rows:
+
+- `decision` `ACCEPTED` on the 98 baseline rows whose identity check is clear. `baseline:GRASIM:INE047A01021` and `baseline:BAJFINANCE:INE296A01024` stay blank.
+- `decision` `ACCEPTED` on all 12 `change:E01:` rows, both `change:E02:` rows, all 10 `change:E03:` rows, and `change:R-2022-03-07-ZYDUSLIFE:RENAME:ZYDUSLIFE:INE010B01027`.
+- The E03 `mapping_approval` `APPROVED` cells stay in place. The 2026-11-12 decision is the membership-row decision those cells did not grant.
+
+After that batch the converter reported 123 accepted rows, 148 undecided rows, 71 periods with a source hash and 114 without.
+
+Recorded on 2026-11-13 by Yash Jain, T-001 batch 2 (`docs/product-discovery/p0/P0_T001_BATCH2_OWNER_PACKAGE.md`), and only on these 17 rows:
+
+- `decision` `ACCEPTED` on all 10 `change:E04:` rows (effective 2022-03-31) and all 4 `change:E05:` rows (effective 2022-08-08).
+- `decision` `ACCEPTED` on the ISIN-change rows `change:I-2022-04-20-JUBLFOOD:ISIN_CHANGE:JUBLFOOD:INE797F01020`, `change:I-2022-07-29-TATASTEEL:ISIN_CHANGE:TATASTEEL:INE081A01020` and `change:I-2022-09-14-BAJAJFINSV:ISIN_CHANGE:BAJAJFINSV:INE918I01026`.
+
+After batch 2 the converter reported 140 accepted rows, 131 undecided rows, 85 periods with a source hash and 100 without.
+
+D67 (2026-11-15, owner Q3): `decision` `ACCEPTED` on exactly the 91 rows of `docs/product-discovery/p0/P0_MEMBERSHIP_OWNER_DECISION_FILE_PROPOSED.csv` after the pre-write checks in `docs/product-discovery/p0/P0_91_MEMBERSHIP_DECISION_AUDIT.md`. `nifty100_universe.csv` and `nifty100_conversion_report.json` were regenerated with `membership.convert`: 231 accepted rows, 40 undecided, 173 periods with a source hash and 12 without (BAJFINANCE x2, GRASIM, five dummy seats, and JIOFIN, ITCHOTELS, ENRIN, TMCV whose rows are deferred). Accepting a row never certifies a member-date (D66). A full-index scan still carries `UNIVERSE_UNVERIFIED` while any member on that date is unverified. GRASIM is unverified on every date in the window. Agents do not write `decision` `ACCEPTED` without an explicit owner instruction. The stored scope value is `APPROVED`, not `ACCEPTED`.
 
 Re-run the conversion afterwards:
 

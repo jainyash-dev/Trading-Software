@@ -24,7 +24,8 @@ ALL_RULES = list(alerts.RULES[:-1]) + [{"rule": alerts.ZONE_PROXIMITY, "pct": 15
 
 
 def scan_at(candles, as_of, symbol="SYN"):
-    cfg = scanner.ScanConfig(as_of=as_of, calendar=CAL, calendar_label="TEST_WEEKDAYS", risk_per_trade=1000.0)
+    cfg = scanner.ScanConfig(as_of=as_of, calendar=CAL, calendar_label="TEST_WEEKDAYS", risk_per_trade=1000.0,
+                             corporate_action_coverage=R.verified_ca(symbol))
     return reports.to_dict(scanner.scan([R.daily_input(symbol, candles)], cfg))
 
 

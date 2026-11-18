@@ -1,0 +1,15 @@
+{
+ "download_attempt_records": 2536,
+ "failed": [],
+ "files_by_last_outcome": {
+  "DOWNLOADED": 2416
+ },
+ "ledger_outcomes": {
+  "INGESTED": 2416,
+  "QUARANTINED": 2
+ },
+ "not_served": [],
+ "quarantine_reasons": {
+  "FORMAT_UNKNOWN": 2
+ }
+}

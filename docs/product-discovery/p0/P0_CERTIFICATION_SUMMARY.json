@@ -1,0 +1,578 @@
+{
+ "archives_held_on_non_sessions": [
+  "2021-11-04",
+  "2022-10-24",
+  "2023-11-12",
+  "2024-03-02",
+  "2024-05-18",
+  "2024-11-01",
+  "2025-10-21"
+ ],
+ "authorises_order": false,
+ "build_version": "1.5.0",
+ "by_final_eligibility": {
+  "EXCLUDED_CORPORATE_ACTION": 79151,
+  "EXCLUDED_MEMBERSHIP": 44627
+ },
+ "calendar_unresolved_dates_in_window": [],
+ "certification_scope": "P0_DATA",
+ "certified_symbol_dates": 0,
+ "completeness_register": {
+  "note": "a window needs a hash-verified independent source that is not a saved API response, and a USER_APPROVED decision whose entry has a 'Completeness source accepted' line (OD-CA-1)",
+  "path": "nse/data/corporate_actions/completeness.csv",
+  "present": false,
+  "proved_windows": 0
+ },
+ "corporate_action_evidence_tier": {
+  "CA_RESPONSE_PRESENT_NOT_COMPLETE": 108323,
+  "CORPORATE_ACTIONS_UNVERIFIED": 15455
+ },
+ "corporate_action_responses": {
+  "COVERED_WITH_VERIFIED_EVENTS": 64,
+  "EMPTY_RESPONSE_COMPLETENESS_UNKNOWN": 47,
+  "RESPONSE_PRESENT_COMPLETENESS_NOT_PROVED": 73,
+  "UNPARSED_EVENT": 8
+ },
+ "data_gates": [
+  "membership",
+  "identity",
+  "corporate_action",
+  "calendar",
+  "eod",
+  "price_continuity"
+ ],
+ "excluded_symbol_dates": 123778,
+ "full_index_certified_dates": 0,
+ "gate_values": {
+  "calendar": {
+   "TRADING_DAY": 123778
+  },
+  "corporate_action": {
+   "EMPTY_RESPONSE_COMPLETENESS_UNKNOWN": 640,
+   "EMPTY_RESPONSE_RENAMED_TICKER": 6432,
+   "EVENTS_VERIFIED_COMPLETENESS_NOT_PROVED": 51267,
+   "MISSING_COVERAGE": 123,
+   "RESPONSE_PRESENT_COMPLETENESS_NOT_PROVED": 57787,
+   "UNPARSED_EVENT": 7529
+  },
+  "eod": {
+   "ACCEPTED": 123395,
+   "NON_EQ_ONLY": 260,
+   "NO_EQ_ROW": 123
+  },
+  "identity": {
+   "RESOLVED": 121323,
+   "UNKNOWN_INSTRUMENT": 2455
+  },
+  "membership": {
+   "UNVERIFIED": 44627,
+   "VERIFIED": 79151
+  },
+  "price_continuity": {
+   "CONTINUOUS": 122646,
+   "ISIN_CHANGE_ON_STEP": 3,
+   "NO_EQ_ROW": 383,
+   "PREVCLOSE_BREAK_ACROSS_EXCLUDED_SESSION": 700,
+   "PRICE_SCALE_EVENT_ON_STEP": 39,
+   "PRIOR_SESSION_NON_EQ": 4,
+   "STEP_ACROSS_EXCLUDED_SESSION": 2,
+   "UNEXPLAINED_PRICE_SCALE_GAP": 1
+  }
+ },
+ "gtf_trade_eligibility": "NOT_EVALUATED_NOT_A_P0_GATE",
+ "inputs_sha256": {
+  "nse/calendar/nse_calendar.py": "f3646e4a7801c59d358c40c2cb125229b688d5c8b61dd6bec6fe5479fee51e34",
+  "nse/data/calendar/events.csv": "5ea4d0e6fd730af5b5c21d539ef373046d051fd1ec80b51de4d61716450f611c",
+  "nse/data/calendar/sources.csv": "cd0509d99ad93c8d823af1f89fc6664e4ea5a68b7c1d1f1f6e9a5d151d6664ef",
+  "nse/data/corporate_actions/actions.csv": "749757252b68f41199f1194278a5d33e6b608253efe5d03a3dd6a8a6be947fa6",
+  "nse/data/corporate_actions/collection_log.jsonl": "c5dd2c53282fc9a965c29ab23efdea23f3a3d2ce6b9d2267ab27dac257b34dc4",
+  "nse/data/corporate_actions/coverage.csv": "00bdb6604e0c090f9e06230fecfdfab3445e8088f796d0d61b2e35ef0ad12761",
+  "nse/data/corporate_actions/raw/* (name+sha256 list)": "9f25769e9d218653e384104241c9abc7b3f29550a12f173bdcb4942f8f933913",
+  "nse/data/eod/manifest.csv": "3ca878761da3486b59c819dcbbf82a20b52906b4d9787e6af73fe22c88d0ff3e",
+  "nse/data/universe/instrument_records.csv": "f7ce39b0241366a62b979bf80292a5dc89e8c22f6482b8b428d1a5cd014eed1b",
+  "nse/data/universe/nifty100_review.csv": "9b0fcba06cc57761a4adbf0a938e004fb6adf808ba7724842248977391ec1f39",
+  "nse/data/universe/nifty100_universe.csv": "15775fa1262b706edf7188b80cf740f5ec8144c94143da7fe0bb28e1d37c22c6",
+  "nse/docs/DECISION_LOG.md": "397c282b38a2ec42012bfe4dec37deebb214d5df08f8c20e66be5699709e0110",
+  "nse/eod/nse_bhavcopy.py": "225c1072cd0790596c5ffde4e52340ea1a24e81b35a6bf587300a303d847abfb",
+  "nse/research/corporate_actions.py": "c55036b8e66c57057c032447b51afd23d25263a1233a116dad1b6ecbf4290b14",
+  "nse/research/dataset_eligibility.py": "4102fbf22421319f3f83f60a91fcbf18c89c54110cb50db2da1ee1d91b76f476",
+  "nse/research/instruments.py": "9a452e61787247ee6b7c0a0e9f275ab3a7f3c4731668578e3212a2ed88b904b2",
+  "nse/research/membership.py": "69bc36fbe147d116a179577538a2d92c552b08f601a85dd70edeb149c3f33293",
+  "nse/research/p0_certification.py": "f4ce958d21812e0a8b41ce68f79e4ff1467890c383462bef940299269c515dc0",
+  "nse/research/universe.py": "5211388598687e7b6d986fcfac88cd464d59814448061f42225caf0cc019591c"
+ },
+ "label_by_date": {
+  "NO_CERTIFIED_SYMBOL_DATES": 1234
+ },
+ "member_dates": 123778,
+ "membership_periods": 185,
+ "membership_periods_verified": 85,
+ "non_eq_member_stretches": {
+  "ADANIGREEN": {
+   "BE": {
+    "first": "2021-06-09",
+    "last": "2021-09-09",
+    "sessions": 65
+   }
+  },
+  "ADANITRANS": {
+   "BE": {
+    "first": "2021-06-09",
+    "last": "2022-02-11",
+    "sessions": 166
+   },
+   "BE+BL": {
+    "first": "2021-10-04",
+    "last": "2021-10-04",
+    "sessions": 1
+   }
+  },
+  "ENRIN": {
+   "BE": {
+    "first": "2025-06-19",
+    "last": "2025-06-26",
+    "sessions": 6
+   }
+  },
+  "ITCHOTELS": {
+   "BE": {
+    "first": "2025-01-29",
+    "last": "2025-02-07",
+    "sessions": 9
+   }
+  },
+  "JIOFIN": {
+   "BE": {
+    "first": "2023-08-21",
+    "last": "2023-09-01",
+    "sessions": 10
+   }
+  },
+  "TMCV": {
+   "BE": {
+    "first": "2025-11-12",
+    "last": "2025-11-14",
+    "sessions": 3
+   }
+  }
+ },
+ "note": "P0 data certification only (D63). A certified symbol-date is not GTF trade eligibility. EXPLORATORY_ONLY_NOT_CERTIFIED rows are outside the certified universe and keep CORPORATE_ACTIONS_UNVERIFIED (D62).",
+ "reconciliation": {
+  "certified_plus_excluded_equal_rows": true,
+  "member_dates_equal_universe_member_count": true,
+  "no_order_authorised": true,
+  "one_row_per_symbol_date": true,
+  "register_covers_each_excluded_date_once": true,
+  "register_sessions_equal_excluded": true
+ },
+ "register_rows": 1671,
+ "rename_links": [
+  {
+   "effective_from": "2001-12-03",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE494B01023",
+   "new_symbol": "TVSMOTOR",
+   "previous_symbol": "TVS-SUZUKI",
+   "record_line": 161,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2003-12-26",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE155A01022",
+   "new_symbol": "TATAMOTORS",
+   "previous_symbol": "TELCO",
+   "record_line": 77,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2004-06-15",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE356A01018",
+   "new_symbol": "MPHASISBFL",
+   "previous_symbol": "BFLSOFTWAR",
+   "record_line": 136,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2005-06-14",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE196A01026",
+   "new_symbol": "MARICO",
+   "previous_symbol": "MARICOIND",
+   "record_line": 89,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2006-06-19",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE397D01024",
+   "new_symbol": "BHARTIARTL",
+   "previous_symbol": "BHARTI",
+   "record_line": 146,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2006-09-20",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE423A01024",
+   "new_symbol": "ADANIENT",
+   "previous_symbol": "ADANIEXPO",
+   "record_line": 152,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2006-12-26",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE356A01018",
+   "new_symbol": "MPHASIS",
+   "previous_symbol": "MPHASISBFL",
+   "record_line": 137,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2007-07-19",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE030A01027",
+   "new_symbol": "HINDUNILVR",
+   "previous_symbol": "HINDLEVER",
+   "record_line": 24,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2007-07-24",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE079A01024",
+   "new_symbol": "AMBUJACEM",
+   "previous_symbol": "GUJAMBCEM",
+   "record_line": 46,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2007-08-16",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE238A01034",
+   "new_symbol": "AXISBANK",
+   "previous_symbol": "UTIBANK",
+   "record_line": 108,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2007-08-27",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE038A01020",
+   "new_symbol": "HINDALCO",
+   "previous_symbol": "HINDALC0",
+   "record_line": 26,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2008-02-28",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE323A01026",
+   "new_symbol": "BOSCHLTD",
+   "previous_symbol": "MICO",
+   "record_line": 128,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2008-03-14",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE118A01012",
+   "new_symbol": "BAJAJHLDNG",
+   "previous_symbol": "BAJAJAUTO",
+   "record_line": 63,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2008-09-18",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE881D01027",
+   "new_symbol": "OFSS",
+   "previous_symbol": "I-FLEX",
+   "record_line": 213,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2010-07-21",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE192A01025",
+   "new_symbol": "TATAGLOBAL",
+   "previous_symbol": "TATATEA",
+   "record_line": 85,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2011-06-29",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE009A01021",
+   "new_symbol": "INFY",
+   "previous_symbol": "INFOSYSTCH",
+   "record_line": 7,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2011-08-08",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE158A01026",
+   "new_symbol": "HEROMOTOCO",
+   "previous_symbol": "HEROHONDA",
+   "record_line": 80,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2012-01-17",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE742F01042",
+   "new_symbol": "ADANIPORTS",
+   "previous_symbol": "MUNDRAPORT",
+   "record_line": 190,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2013-10-04",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE205A01025",
+   "new_symbol": "SSLT",
+   "previous_symbol": "SESAGOA",
+   "record_line": 98,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2013-10-23",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE628A01036",
+   "new_symbol": "UPL",
+   "previous_symbol": "UNIPHOS",
+   "record_line": 172,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2015-05-07",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE205A01025",
+   "new_symbol": "VEDL",
+   "previous_symbol": "SSLT",
+   "record_line": 99,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2017-03-08",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE067A01029",
+   "new_symbol": "CGPOWER",
+   "previous_symbol": "CROMPGREAV",
+   "record_line": 41,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2020-02-27",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE192A01025",
+   "new_symbol": "TATACONSUM",
+   "previous_symbol": "TATAGLOBAL",
+   "record_line": 86,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2020-12-18",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE121J01017",
+   "new_symbol": "INDUSTOWER",
+   "previous_symbol": "INFRATEL",
+   "record_line": 69,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2021-01-13",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE399L01023",
+   "new_symbol": "ATGL",
+   "previous_symbol": "ADANIGAS",
+   "record_line": 148,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2022-03-07",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE010B01027",
+   "new_symbol": "ZYDUSLIFE",
+   "previous_symbol": "CADILAHC",
+   "record_line": 10,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2022-06-09",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE775A01035",
+   "new_symbol": "MOTHERSON",
+   "previous_symbol": "MOTHERSUMI",
+   "record_line": 199,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2022-12-05",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE214T01019",
+   "new_symbol": "LTIM",
+   "previous_symbol": "LTI",
+   "record_line": 102,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2022-12-20",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE721A01013",
+   "new_symbol": "SHRIRAMFIN",
+   "previous_symbol": "SRTRANSFIN",
+   "record_line": 184,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2023-08-24",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE931S01010",
+   "new_symbol": "ADANIENSOL",
+   "previous_symbol": "ADANITRANS",
+   "record_line": 219,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2024-06-07",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE854D01024",
+   "new_symbol": "UNITDSPR",
+   "previous_symbol": "MCDOWELL-N",
+   "record_line": 210,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2025-04-09",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE758T01015",
+   "new_symbol": "ETERNAL",
+   "previous_symbol": "ZOMATO",
+   "record_line": 195,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2025-10-24",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE155A01022",
+   "new_symbol": "TMPV",
+   "previous_symbol": "TATAMOTORS",
+   "record_line": 78,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2026-02-27",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE214T01019",
+   "new_symbol": "LTM",
+   "previous_symbol": "LTIM",
+   "record_line": 103,
+   "status": "VERIFIED_DATED_RENAME"
+  },
+  {
+   "effective_from": "2026-10-23",
+   "evidence": "NSE symbolchange.csv",
+   "evidence_file": "evidence/identity/symbolchange.csv",
+   "evidence_sha256": "6937337dd726222cd6bb5c8af9964073d215a84f28e7edecf1861f25fd3fd66f",
+   "isin": "INE726G01019",
+   "new_symbol": "ICICILIFE",
+   "previous_symbol": "ICICIPRULI",
+   "record_line": 187,
+   "status": "VERIFIED_DATED_RENAME"
+  }
+ ],
+ "research_use": {
+  "EXCLUDED": 50412,
+  "EXPLORATORY_ONLY_NOT_CERTIFIED": 73366
+ },
+ "rows_failing_gate": {
+  "corporate_action": 123778,
+  "eod": 383,
+  "identity": 2455,
+  "membership": 44627,
+  "price_continuity": 1132
+ },
+ "rows_failing_only_this_gate": {
+  "corporate_action": 78621
+ },
+ "rows_passing_every_data_gate": 0,
+ "sessions": 1234,
+ "symbols": 164,
+ "universe_matches_ledger_conversion": true,
+ "window": [
+  "2020-12-31",
+  "2025-12-31"
+ ]
+}

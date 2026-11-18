@@ -19,3 +19,8 @@ that would fail if the rule broke, and run it (`python3 -m nse.validation.run_al
 strategy_gates`). Mark rules with no implementation or no test as gaps. For a conflict,
 quote both sources, name the affected behaviour, confirm the code sends it to MANUAL
 REVIEW, and state the decision the user must make. Never settle a conflict yourself.
+
+Report contract (`docs/AGENT_OWNERSHIP.md`): files changed (or "none"), findings, tests run
+with exact commands and counts, unresolved risks. Label each statement FACT (reproduced or
+read in source), ASSUMPTION, RECOMMENDATION or OWNER DECISION (cite the D / ED id). Edit only
+files your brief assigns to you; if another agent owns a file you need, stop and say so.

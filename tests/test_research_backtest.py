@@ -9,7 +9,6 @@ import unittest
 
 import _research as R
 from nse.research import backtest as bt, models as m, scanner, universe
-from nse.research.deps import mtf
 
 D = datetime.date
 T0 = datetime.datetime(2025, 1, 3, 15, 30)
@@ -30,11 +29,17 @@ def bars(rows, start=D(2025, 1, 6)):
 LEVELS = (100.0, 95.0, 110.0)      # entry, stop, target
 
 
+def weekday_calendar_patch():
+    """CLI tests: --calendar TEST_WEEKDAYS loads the weekday fixture (not an NSE calendar)."""
+    from unittest import mock
+    from nse.research.deps import calendar as cal_mod
+    return mock.patch.object(cal_mod.NseCalendar, "load", return_value=R.WeekdayCalendar())
+
+
 class Model(unittest.TestCase):
     def test_nothing_has_a_default(self):
         # B9, B12: no execution assumption has a default. The only defaulted fields are the
-        # optional portfolio rules (RB 2392), whose None means "not applied" and is listed as a
-        # limitation (Portfolio.test_old_model_json_loads_and_lists_rules_not_applied).
+        # portfolio limits, which default to the owner limits (D42, D46) and refuse None (D45).
         with self.assertRaises(TypeError):
             bt.ExecutionModel()
         assumptions = ("entry", "stop", "target", "statuses", "entry_expiry_sessions", "cancel_if_target_first",
@@ -44,7 +49,7 @@ class Model(unittest.TestCase):
                 self.assertIs(field.default, dataclasses.MISSING, field.name)
             else:
                 self.assertIn(field.name, ("monthly_trade_cap", "max_open_positions"))
-                self.assertIsNone(field.default, field.name)
+                self.assertEqual(field.default, 10, field.name)
             self.assertIs(field.default_factory, dataclasses.MISSING, field.name)
         self.assertEqual(tuple(f.name for f in dataclasses.fields(bt.ExecutionModel))[:10], assumptions)
 
@@ -152,7 +157,8 @@ class EndToEnd(unittest.TestCase):
         # entry max 161.94 (PL 159.94 + 2), normal wide SL 155.8, target W supply PL
         self.candles = R.extend(base, [(175.0, 176.0, 161.5, 163.0), (163.0, 175.0, 162.0, 174.0),
                                        (174.0, 200.0, 173.0, 198.0)])
-        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0)
+        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0,
+                                      corporate_action_coverage=R.verified_ca("SYN"))
 
     def test_a_synthetic_trade_from_a_point_in_time_signal(self):
         res = bt.run([R.daily_input("SYN", self.candles)], [self.signal], self.cfg, model(entry_expiry_sessions=3))
@@ -163,6 +169,12 @@ class EndToEnd(unittest.TestCase):
         self.assertIn("TRADER_STATE", t["manual_checks_pending"])
         self.assertIn(bt.NOT_PERFORMANCE_EVIDENCE, res["limitations"])
         self.assertIn(bt.SURVIVORSHIP_UNCONTROLLED, res["limitations"])
+        unverified = universe.Universe("FILE", [universe.Membership(
+            "SYN", "EQ", D(2019, 1, 1), None, False, "unreviewed file")], adhoc=False)
+        verified = universe.Universe("FILE", [universe.Membership(
+            "SYN", "EQ", D(2019, 1, 1), None, True, "reviewed file")], adhoc=False)
+        self.assertIn(bt.SURVIVORSHIP_UNCONTROLLED, bt._limitations(model(), unverified, calendar=object()))
+        self.assertNotIn(bt.SURVIVORSHIP_UNCONTROLLED, bt._limitations(model(), verified, calendar=object()))
         self.assertEqual(bt.to_json(res), bt.to_json(bt.run([R.daily_input("SYN", self.candles)], [self.signal],
                                                             self.cfg, model(entry_expiry_sessions=3))))
 
@@ -218,7 +230,7 @@ class Cli(unittest.TestCase):
                 fh.write("date,open,high,low,close\n")
                 for c in cs:
                     fh.write("%s,%s,%s,%s,%s\n" % (c.start.date(), c.open, c.high, c.low, c.close))
-            spec = dataclasses.asdict(model(statuses=(m.MANUAL_REVIEW,)))     # no calendar: G0 MANUAL
+            spec = dataclasses.asdict(model(statuses=(m.ACTIONABLE, m.MANUAL_REVIEW)))
             mpath = os.path.join(tmp, "model.json")
             with open(mpath, "w") as fh:
                 json.dump(spec, fh)
@@ -226,12 +238,26 @@ class Cli(unittest.TestCase):
             args = ["backtest", "--model", mpath, "--start", str(cs[-3].start.date()), "--end", str(cs[-3].start.date()),
                     "--symbols", "SYN", "--csv-dir", data, "--price-adjustment", "NONE", "--risk-per-trade", "1000",
                     "--out", out]
-            with contextlib.redirect_stdout(io.StringIO()):
+            # D42, D45: without a calendar expiry cannot count verified sessions, so the run is refused
+            with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+                self.assertEqual(cli.main(args), 2)
+            self.assertIn("calendar", err.getvalue())
+            args += ["--calendar", "TEST_WEEKDAYS"]
+            with weekday_calendar_patch(), contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(cli.main(args), 0)
             with open(out) as fh:
                 res = json.load(fh)
             self.assertEqual([t["exit_reason"] for t in res["trades"]], ["TARGET"])
             self.assertIn(bt.NOT_PERFORMANCE_EVIDENCE, res["limitations"])
+            # ED-18: the run manifest records the execution model as declared assumptions and
+            # hashes the result file; the result itself carries no run metadata
+            with open(out + ".manifest.json") as fh:
+                man = json.load(fh)
+            self.assertEqual(man["kind"], "backtest")
+            self.assertEqual(man["assumptions"]["same_bar"], spec["same_bar"])
+            self.assertEqual([o["path"] for o in man["outputs"]], ["bt.json"])
+            self.assertIn(bt.NOT_PERFORMANCE_EVIDENCE, man["limitations"])
+            self.assertNotIn("run_id", res)
             del spec["same_bar"]
             with open(mpath, "w") as fh:
                 json.dump(spec, fh)
@@ -295,20 +321,23 @@ class ExtendedMetrics(unittest.TestCase):
         gap_entry = sim.run_([(98, 99, 97, 98)], gap_fill="AT_OPEN")
         self.assertEqual([e["type"] for e in gap_entry["assumption_events"]], ["GAP_THROUGH_ENTRY"])
         at_level = sim.run_([(98, 99, 97, 98)])                         # recorded whatever the policy
-        self.assertEqual([e["policy"] for e in at_level["assumption_events"]], ["gap_fill=AT_LEVEL"])
+        # entry 100 above this bar's high 99: the fill price never traded (audit 2026-11-06 D4)
+        self.assertEqual([(e["type"], e["policy"]) for e in at_level["assumption_events"]],
+                         [("GAP_THROUGH_ENTRY", "gap_fill=AT_LEVEL"), ("PRICE_OUTSIDE_BAR", "gap_fill=AT_LEVEL")])
         both = sim.run_([(103, 103, 99, 101), (100, 111, 94, 100)])
         self.assertEqual([(e["type"], e["kind"]) for e in both["assumption_events"]],
                          [("SAME_BAR_AMBIGUOUS", "STOP_AND_TARGET")])
         stop_gap = sim.run_([(103, 103, 99, 101), (93, 94, 90, 91)])
-        self.assertEqual([e["type"] for e in stop_gap["assumption_events"]], ["GAP_THROUGH_STOP"])
+        self.assertEqual([e["type"] for e in stop_gap["assumption_events"]], ["GAP_THROUGH_STOP", "PRICE_OUTSIDE_BAR"])
         target_gap = sim.run_([(103, 103, 99, 101), (112, 113, 111, 112)])
-        self.assertEqual([e["type"] for e in target_gap["assumption_events"]], ["GAP_THROUGH_TARGET"])
+        self.assertEqual([e["type"] for e in target_gap["assumption_events"]], ["GAP_THROUGH_TARGET", "PRICE_OUTSIDE_BAR"])
         clean = sim.run_([(103, 103, 99, 101), (101, 111, 100, 110)])
         self.assertEqual(clean["assumption_events"], [])
         got = bt.extended_metrics([gap_entry, both, stop_gap, target_gap, clean])
         self.assertEqual((got["same_bar_ambiguous_trades"], got["gap_fill_trades"]), (1, 3))
         self.assertEqual(got["assumption_event_counts"], {"GAP_THROUGH_ENTRY": 1, "SAME_BAR_AMBIGUOUS": 1,
-                                                         "GAP_THROUGH_STOP": 1, "GAP_THROUGH_TARGET": 1})
+                                                         "GAP_THROUGH_STOP": 1, "GAP_THROUGH_TARGET": 1,
+                                                         "PRICE_OUTSIDE_BAR": 2})
 
 
 def filled(sym, zone, signal, fill, exit_, r=1.0):
@@ -375,14 +404,21 @@ class Portfolio(unittest.TestCase):
         bt.apply_portfolio_rules(trades, model(max_open_positions=1, monthly_trade_cap=2))
         self.assertEqual([t["exit_reason"] for t in trades], ["TARGET", bt.NOT_TRADED_MAX_OPEN_POSITIONS, "TARGET"])
 
-    def test_rules_left_at_none_change_nothing(self):
+    def test_default_model_enforces_the_owner_limits(self):
+        # D42, D45: twelve trades that never close; the 11th is refused by the 10-position
+        # limit (it is also the 11th of the month), the 12th likewise
         d = R.weekdays(D(2025, 1, 6), 12)
         trades = [filled("S%02d" % n, "Z", D(2025, 1, 3), x, None) for n, x in enumerate(d)]
-        self.assertEqual(bt.apply_portfolio_rules([dict(t) for t in trades], model()), trades)
+        out = bt.apply_portfolio_rules([dict(t) for t in trades], model())
+        self.assertEqual([t["exit_reason"] for t in out[:10]], ["OPEN_AT_END_OF_DATA"] * 10)
+        self.assertEqual([t["exit_reason"] for t in out[10:]], [bt.NOT_TRADED_MAX_OPEN_POSITIONS] * 2)
 
     def test_invalid_rule_values_are_refused(self):
         for bad in (dict(monthly_trade_cap=0), dict(monthly_trade_cap=True), dict(monthly_trade_cap=1.5),
-                    dict(max_open_positions=0), dict(max_open_positions="3")):
+                    dict(max_open_positions=0), dict(max_open_positions="3"),
+                    dict(monthly_trade_cap=None), dict(max_open_positions=None),            # D45: unlimited
+                    dict(monthly_trade_cap=11), dict(max_open_positions=11),                # D45: above the limit
+                    dict(entry_expiry_sessions=11), dict(entry_expiry_sessions=True)):
             with self.assertRaises(ValueError, msg=bad):
                 model(**bad)
 
@@ -398,9 +434,9 @@ class Portfolio(unittest.TestCase):
             with open(path, "w") as fh:
                 json.dump(spec, fh)
             old = bt.load_model(path)
-            self.assertEqual((old.monthly_trade_cap, old.max_open_positions), (None, None))
-            self.assertEqual(sorted(old.not_applied()),
-                             [bt.MONTHLY_TRADE_CAP_NOT_ENFORCED, bt.PORTFOLIO_CONCURRENCY_NOT_MODELLED])
+            # D45: a file written before these fields gets the owner limits, never "unlimited"
+            self.assertEqual((old.monthly_trade_cap, old.max_open_positions), (10, 10))
+            self.assertEqual(old.not_applied(), [])
             del spec["gap_fill"]
             with open(path, "w") as fh:
                 json.dump(spec, fh)
@@ -418,13 +454,17 @@ class PortfolioEndToEnd(unittest.TestCase):
         self.signal = base[-1].end
         self.candles = R.extend(base, [(175.0, 176.0, 161.5, 163.0), (163.0, 175.0, 162.0, 174.0),
                                        (174.0, 200.0, 173.0, 198.0)])
-        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0)
+        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0,
+                                      corporate_action_coverage=R.verified_ca("AAA", "BBB"))
         self.inputs = [R.daily_input("BBB", self.candles), R.daily_input("AAA", self.candles)]
 
-    def test_limitations_name_the_rules_not_applied(self):
+    def test_owner_limits_apply_by_default(self):
+        # D45: the caps can no longer be left out, so "not applied" never appears
         res = bt.run(self.inputs, [self.signal], self.cfg, model(entry_expiry_sessions=3))
-        self.assertIn(bt.MONTHLY_TRADE_CAP_NOT_ENFORCED, res["limitations"])
-        self.assertIn(bt.PORTFOLIO_CONCURRENCY_NOT_MODELLED, res["limitations"])
+        self.assertNotIn(bt.MONTHLY_TRADE_CAP_NOT_ENFORCED, res["limitations"])
+        self.assertNotIn(bt.PORTFOLIO_CONCURRENCY_NOT_MODELLED, res["limitations"])
+        self.assertEqual((res["portfolio_rules"]["monthly_trade_cap"], res["portfolio_rules"]["max_open_positions"]),
+                         (10, 10))
         self.assertEqual([t["exit_reason"] for t in res["trades"]], ["TARGET", "TARGET"])
 
     def test_monthly_cap(self):
@@ -434,7 +474,7 @@ class PortfolioEndToEnd(unittest.TestCase):
         self.assertEqual(res["metrics"]["ALL"]["closed_trades"], 1)
         self.assertNotIn(bt.MONTHLY_TRADE_CAP_NOT_ENFORCED, res["limitations"])
         self.assertIn(bt.MONTHLY_CAP_SELECTION_BY_FILL_ORDER, res["limitations"])
-        self.assertEqual(res["portfolio_rules"]["monthly_cap_counts"], "FILL_MONTH")
+        self.assertEqual(res["portfolio_rules"]["monthly_cap_counts"], "FILL_MONTH_IST")
 
     def test_concurrency(self):
         res = bt.run(self.inputs, [self.signal], self.cfg, model(entry_expiry_sessions=3, max_open_positions=1))
@@ -450,7 +490,8 @@ class SetupAttributes(unittest.TestCase):
         self.signal = base[-1].end
         self.candles = R.extend(base, [(175.0, 176.0, 161.5, 163.0), (163.0, 175.0, 162.0, 174.0),
                                        (174.0, 200.0, 173.0, 198.0)])
-        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0)
+        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0,
+                                      corporate_action_coverage=R.verified_ca("SYN"))
 
     def test_recorded_from_the_signal_candidate(self):
         res = bt.run([R.daily_input("SYN", self.candles)], [self.signal], self.cfg, model(entry_expiry_sessions=3))
@@ -488,7 +529,8 @@ class WalkForward(unittest.TestCase):
         self.signal = base[-1].end
         self.candles = R.extend(base, [(175.0, 176.0, 161.5, 163.0), (163.0, 175.0, 162.0, 174.0),
                                        (174.0, 200.0, 173.0, 198.0)])
-        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0)
+        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0,
+                                      corporate_action_coverage=R.verified_ca("SYN"))
         c1, c2, c3 = self.candles[-3:]
         self.fold = (self.signal, c2.end, c3.end, c3.end)
 
@@ -533,7 +575,8 @@ class Sensitivity(unittest.TestCase):
         self.signal = base[-1].end
         self.candles = R.extend(base, [(175.0, 176.0, 161.5, 163.0), (163.0, 175.0, 162.0, 174.0),
                                        (174.0, 200.0, 173.0, 198.0)])
-        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0)
+        self.cfg = scanner.ScanConfig(as_of=self.signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0,
+                                      corporate_action_coverage=R.verified_ca("SYN"))
         self.models = [model(entry_expiry_sessions=3), model(entry_expiry_sessions=1, entry="ENTRY_MIN"),
                        model(entry_expiry_sessions=3, cost_pct_per_side=0.5)]
 
@@ -563,8 +606,8 @@ class ExtraCommands(unittest.TestCase):
             fh.write("date,open,high,low,close\n")
             for c in self.cs:
                 fh.write("%s,%s,%s,%s,%s\n" % (c.start.date(), c.open, c.high, c.low, c.close))
-        spec = dataclasses.asdict(model(statuses=(m.MANUAL_REVIEW,)))   # no calendar: G0 MANUAL
-        del spec["monthly_trade_cap"], spec["max_open_positions"]
+        spec = dataclasses.asdict(model(statuses=(m.ACTIONABLE, m.MANUAL_REVIEW)))
+        del spec["monthly_trade_cap"], spec["max_open_positions"]       # a file without them: owner limits
         self.mpath = self.write("model.json", spec)
 
     def tearDown(self):
@@ -586,13 +629,14 @@ class ExtraCommands(unittest.TestCase):
         sub = p.add_subparsers(dest="cmd")
         bt.add_commands(sub)
         args = p.parse_args(argv)
-        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as err:
+        with weekday_calendar_patch(), contextlib.redirect_stdout(io.StringIO()), \
+                contextlib.redirect_stderr(io.StringIO()) as err:
             code = args.func(args)
         return code, err.getvalue()
 
-    def common(self, out):
+    def common(self, out, calendar=True):
         return ["--symbols", "SYN", "--csv-dir", self.data, "--price-adjustment", "NONE", "--risk-per-trade",
-                "1000", "--out", out]
+                "1000", "--out", out] + (["--calendar", "TEST_WEEKDAYS"] if calendar else [])
 
     def test_walk_forward_command(self):
         import os
@@ -605,7 +649,13 @@ class ExtraCommands(unittest.TestCase):
         with open(out) as fh:
             res = json.load(fh)
         self.assertEqual(len(res["folds"]), 1)
-        self.assertIn(bt.MONTHLY_TRADE_CAP_NOT_ENFORCED, res["limitations"])
+        self.assertTrue(os.path.isfile(out + ".manifest.json"))
+        self.assertNotIn(bt.MONTHLY_TRADE_CAP_NOT_ENFORCED, res["limitations"])       # owner limits (D45)
+        self.assertNotIn(bt.EXPIRY_COUNTS_CANDLES_NO_CALENDAR, res["limitations"])    # the calendar is passed on
+        code, err = self.call(["backtest-walk-forward", "--model", self.mpath, "--folds", folds]
+                              + self.common(out, calendar=False))
+        self.assertEqual(code, 2)
+        self.assertIn("calendar", err)
         bad = self.write("bad.json", [[d, d, d, d]])                  # IN not before OUT
         code, err = self.call(["backtest-walk-forward", "--model", self.mpath, "--folds", bad] + self.common(out))
         self.assertEqual(code, 2)
@@ -613,7 +663,7 @@ class ExtraCommands(unittest.TestCase):
 
     def test_sensitivity_command(self):
         import os
-        spec2 = dataclasses.asdict(model(statuses=(m.MANUAL_REVIEW,), entry="ENTRY_MIN"))
+        spec2 = dataclasses.asdict(model(statuses=(m.ACTIONABLE, m.MANUAL_REVIEW), entry="ENTRY_MIN"))
         m2 = self.write("m2.json", spec2)
         out = os.path.join(self.tmp, "sens.json")
         d = str(self.cs[-3].start.date())
@@ -640,12 +690,144 @@ class CapAuditRegressions(unittest.TestCase):
         self.assertIn(bt.MONTHLY_CAP_COUNTED_AT_FILL, lim)
         self.assertNotIn(bt.MONTHLY_CAP_ABOVE_RULEBOOK, lim)
 
-    def test_cap_above_ten_is_labelled(self):
-        self.assertIn(bt.MONTHLY_CAP_ABOVE_RULEBOOK, bt._limitations(model(monthly_trade_cap=11), None))
+    def test_cap_above_ten_is_refused(self):
+        # D45 supersedes the 2026-11-02 label: a cap above RB 2392's maximum is not simulated
+        with self.assertRaisesRegex(ValueError, "owner limit"):
+            model(monthly_trade_cap=11)
 
     def test_concurrency_is_not_cited_as_a_rule(self):
         src = bt._portfolio_rules(model())["sources"]
         self.assertEqual(src["max_open_positions"], ["user parameter (not a Rulebook rule)"])
+
+class AuditRegressions20261106(unittest.TestCase):
+    """Execution defects confirmed by the 2026-11-06 audit (Agents 2, 4 and 6), each
+    reproduced against the real simulator before the fix."""
+
+    def sim(self, rows, start=D(2025, 1, 6), **kw):
+        over = dict((k, kw.pop(k)) for k in list(kw) if k in bt.ExecutionModel.__dataclass_fields__)
+        return bt.simulate(LEVELS, bars(rows, start), T0, model(**over), **kw)
+
+    def test_a_planned_point_below_two_to_one_is_not_traded(self):
+        # RB 82 / RF8: G7 DEPENDS_ON_BUFFER lets a MANUAL candidate through; the chosen point must give 2:1
+        class Gate(object):
+            evidence = {"target": {"proximal": 104.0}}
+
+        class Cand(object):
+            levels = {"valid": True, "entry": [100.0, 101.0], "sl": {"normal": [97.0, 98.0], "exceptional": [97.0, 98.0]}}
+
+            def gate(self, name):
+                return Gate()
+        self.assertEqual(bt.plan(Cand(), model()), (None, "RR_BELOW_2"))           # (104-101)/(101-97) = 0.75
+        Gate.evidence = {"target": {"proximal": 109.0}}
+        self.assertEqual(bt.plan(Cand(), model()), ((101.0, 97.0, 109.0), None))   # exactly 2.0 trades
+
+    def test_opening_at_the_target_cancels_before_any_fill(self):
+        # O=112 >= target 110, then down to 99: the target traded first, for certain
+        for same_bar in bt.SAME_BAR:
+            r = self.sim([(112, 112, 99, 100)], cancel_if_target_first=True, same_bar=same_bar)
+            self.assertEqual((r["exit_reason"], r["fill_time"]), ("CANCELLED_TARGET_FIRST", None))
+
+    def test_an_incomplete_bar_ends_the_record_instead_of_being_skipped(self):
+        cs = bars([(103, 103, 99, 101), (98, 99, 90, 92), (101, 111, 100, 110)])
+        cs[1] = dataclasses.replace(cs[1], complete=False)                       # it hit the stop
+        r = bt.simulate(LEVELS, cs, T0, model())
+        self.assertEqual(r["exit_reason"], bt.DATA_INCOMPLETE_CANDLE)
+        self.assertIsNone(bt.r_multiple(r, model()))
+
+    def test_expiry_counts_verified_sessions_and_a_missing_one_fails_closed(self):
+        # Tue 7 Jan is a verified session with no candle; expiry 2 must not stretch to Wed
+        cs = [c for c in bars([(104, 105, 102, 104), (104, 105, 102, 104), (101, 103, 99, 101), (101, 111, 100, 110)],
+                              start=D(2025, 1, 6)) if c.start.date() != D(2025, 1, 7)]
+        r = bt.simulate(LEVELS, cs, T0, model(entry_expiry_sessions=2), calendar=R.WeekdayCalendar())
+        self.assertEqual((r["exit_reason"], r["fill_time"], r["data_stop"]),
+                         (bt.DATA_MISSING_SESSION, None, "2025-01-07"))
+        # the same data without a calendar still counts candles (and the result says so)
+        r = bt.simulate(LEVELS, cs, T0, model(entry_expiry_sessions=2))
+        self.assertEqual(r["exit_reason"], "TARGET")
+        # a declared holiday is not a missing session
+        r = bt.simulate(LEVELS, cs, T0, model(entry_expiry_sessions=2),
+                        calendar=R.WeekdayCalendar(closed=[D(2025, 1, 7)]))
+        self.assertEqual(r["exit_reason"], "TARGET")
+
+    def test_a_candle_on_a_non_session_day_fails_closed(self):
+        cs = bars([(103, 103, 99, 101), (101, 111, 100, 110)])
+        r = bt.simulate(LEVELS, cs, T0, model(), calendar=R.WeekdayCalendar(closed=[cs[1].start.date()]))
+        self.assertEqual(r["exit_reason"], bt.DATA_EXCLUDED_SESSION)
+
+    def test_a_duplicate_session_row_fails_closed_for_that_record_only(self):
+        cs = bars([(103, 103, 99, 101), (101, 111, 100, 110)])
+        r = bt.simulate(LEVELS, cs + [cs[0]], T0, model(), calendar=R.WeekdayCalendar())
+        self.assertEqual((r["exit_reason"], r["fill_time"]), (bt.DATA_DUPLICATE_SESSION, None))
+
+    def test_an_unclassifiable_date_fails_closed(self):
+        class Cal(object):
+            def is_trading_day(self, d):
+                raise LookupError("no circular")
+        r = bt.simulate(LEVELS, bars([(103, 103, 99, 101)]), T0, model(), calendar=Cal())
+        self.assertEqual(r["exit_reason"], bt.DATA_UNVERIFIED_SESSION)
+
+    def test_revalidation_cancels_a_pending_order_but_not_a_filled_trade(self):
+        rows = [(104, 105, 102, 104), (101, 103, 99, 101), (101, 111, 100, 110)]
+        first_close = bars(rows)[0].end
+        bad = [(first_close, False, "REJECTED")]
+        r = self.sim(rows, revalidation=bad)
+        self.assertEqual(r["exit_reason"], bt.CANCELLED_SETUP_INVALID)
+        self.assertEqual(r["trade_events"][0]["detail"], "REJECTED")
+        self.assertEqual(self.sim(rows, revalidation=[(first_close, True, m.ACTIONABLE)])["exit_reason"], "TARGET")
+        # a scan known only after the bar opened cannot cancel that bar's fill; after the fill nothing is re-evaluated
+        late = [(bars(rows)[1].end, False, "REJECTED")]
+        self.assertEqual(self.sim(rows, revalidation=late)["exit_reason"], "TARGET")
+        # checks at or before the signal are not revalidation
+        self.assertEqual(self.sim(rows, revalidation=[(T0, False, "REJECTED")])["exit_reason"], "TARGET")
+
+    def test_end_to_end_a_later_scan_that_drops_the_zone_cancels_the_order(self):
+        base = R.long_mit_candles()
+        signal = base[-1].end
+        candles = R.extend(base, [(176.0, 177.0, 170.0, 175.0), (175.0, 176.0, 161.5, 163.0),
+                                  (163.0, 175.0, 162.0, 174.0), (174.0, 200.0, 173.0, 198.0)])
+        cfg = scanner.ScanConfig(as_of=signal, calendar=R.WeekdayCalendar(), risk_per_trade=1000.0,
+                                 corporate_action_coverage=R.verified_ca("SYN"))
+        inputs = [R.daily_input("SYN", candles)]
+        later = candles[len(base)].end
+        history = scanner.scan_history(inputs, [signal, later], cfg)
+        ok = bt._from_history(history, inputs, cfg, model(entry_expiry_sessions=4))
+        [t] = ok["trades"]
+        self.assertEqual(t["exit_reason"], "TARGET")                      # still a candidate later: fills
+        sym = history[1].symbols[0]
+        history[1].symbols[0] = dataclasses.replace(sym, candidates=[])  # the later scan no longer has it
+        res = bt._from_history(history, inputs, cfg, model(entry_expiry_sessions=4))
+        [t] = res["trades"]
+        self.assertEqual((t["exit_reason"], t["r"]), (bt.CANCELLED_SETUP_INVALID, None))
+        self.assertEqual(t["trade_events"][0]["detail"], "ZONE_NO_LONGER_A_CANDIDATE")
+        self.assertIn(bt.REVALIDATION_AT_SCAN_TIMES_ONLY, res["limitations"])
+
+    def test_limitations_name_manual_simulation_level_fills_and_owner_policy(self):
+        lims = bt._limitations(model(statuses=(m.MANUAL_REVIEW,)), None, None)
+        for code in (bt.MANUAL_REVIEW_SIMULATED, bt.GAP_FILL_AT_LEVEL_UNTRADED_PRICES,
+                     bt.ENTRY_EXPIRY_NOT_OWNER_POLICY, bt.EXPIRY_COUNTS_CANDLES_NO_CALENDAR):
+            self.assertIn(code, lims)
+        with self.assertRaises(ValueError):                    # D45: no longer a label but a refusal
+            model(max_open_positions=11)
+        lims = bt._limitations(model(gap_fill="AT_OPEN", max_open_positions=10, entry_expiry_sessions=10),
+                               None, R.WeekdayCalendar())
+        for code in (bt.MANUAL_REVIEW_SIMULATED, bt.GAP_FILL_AT_LEVEL_UNTRADED_PRICES,
+                     bt.MAX_OPEN_POSITIONS_ABOVE_OWNER_LIMIT, bt.ENTRY_EXPIRY_NOT_OWNER_POLICY,
+                     bt.EXPIRY_COUNTS_CANDLES_NO_CALENDAR):
+            self.assertNotIn(code, lims)
+
+
+class ProvisionalWindow(unittest.TestCase):
+    def test_a_membership_backtest_before_2020_12_31_is_labelled(self):
+        u = universe.Universe("NIFTY 100", [universe.Membership(
+            "AAA", "EQ", D(2020, 12, 31), None, False, "SYNTHETIC")])
+        cs = bars([(100, 101, 99, 100)], start=D(2019, 6, 3))
+        when = cs[0].end
+        cfg = scanner.ScanConfig(as_of=when, calendar=R.WeekdayCalendar())
+        res = bt.run([R.daily_input("AAA", cs)], [when], cfg,
+                     model(statuses=(m.MANUAL_REVIEW,)), universe=u)
+        self.assertIn(m.MEMBERSHIP_BEFORE_PROVISIONAL_WINDOW, res["limitations"])
+        self.assertIn(bt.SURVIVORSHIP_UNCONTROLLED, res["limitations"])
+
 
 if __name__ == "__main__":
     unittest.main()

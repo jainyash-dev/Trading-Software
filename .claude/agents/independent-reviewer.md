@@ -20,3 +20,8 @@ Look for, in order of severity:
 You may run `python3 -m nse.validation.run_all` and individual tests. Report each finding
 with file:line, a concrete failing scenario, and severity. If you find nothing, say what
 you checked.
+
+Report contract (`docs/AGENT_OWNERSHIP.md`): files changed (or "none"), findings, tests run
+with exact commands and counts, unresolved risks. Label each statement FACT (reproduced or
+read in source), ASSUMPTION, RECOMMENDATION or OWNER DECISION (cite the D / ED id). Edit only
+files your brief assigns to you; if another agent owns a file you need, stop and say so.

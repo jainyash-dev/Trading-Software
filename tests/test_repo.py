@@ -17,9 +17,16 @@ ORDER_PATH = ["trader-scanner", "trader-entry", "trader-exit", "trader-timemachi
 V1_ONLY = ["trader-copycat", "trader-screener", "trader-tax", "trader-rebalance"]
 RULEBOOK_PDF = "340fe490-8783-4eea-8cbd-e834449e9a42_Trading_Rulebook.pdf"
 RULEBOOK_PDF_SHA256 = "e41cd0e7893513a492a39095c0f771ec67b320f1b51bc356da7c6a2c2946c2fc"
-# the owner's original master prompt, moved verbatim out of CLAUDE.md
+
+
+with open(os.path.join(ROOT, ".claude", "vendored-skills.json"), encoding="utf-8") as _fh:
+    VENDORED = tuple(os.path.join(".claude", "skills", s) + os.sep for s in json.load(_fh)["skills"])
+# the owner's original 65 KB master prompt, moved verbatim out of CLAUDE.md (ED-16)
 OWNER_PROMPT = os.path.join("docs", "owner", "MASTER_IMPLEMENTATION_PROMPT.md")
 OWNER_PROMPT_SHA256 = "c6c8cd9176e83ed40452149a3e784fd6c45c66de98ff4c8144f0f58b5f86ba8f"
+# git-ignored local tool state at the repository root only (.gitignore anchors these to
+# the root); never committed. A nested folder with one of these names is still checked.
+LOCAL_ONLY = (".venv", ".ruff_cache", ".pytest_cache", ".env")
 
 
 def frontmatter(path):
@@ -31,7 +38,8 @@ def frontmatter(path):
 
 def every_text_file():
     for base, dirs, files in os.walk(ROOT):
-        dirs[:] = [d for d in dirs if d not in (".git", "__pycache__")]
+        dirs[:] = [d for d in dirs if d not in (".git", "__pycache__", "node_modules", "dist")
+                   and not (base == ROOT and d in LOCAL_ONLY)]
         for f in files:
             if f.endswith((".md", ".py", ".json", ".csv", ".txt", ".xml")) or f == "LICENSE":
                 yield os.path.join(base, f)
@@ -48,9 +56,15 @@ class Repo(unittest.TestCase):
         # hooks, which Claude Code reads only from the root), and the owner's two root
         # documents (the product status register and the Trading Rulebook PDF, an
         # authoritative reference kept exactly as supplied) are the only additions
-        root = sorted(d for d in os.listdir(ROOT) if not d.startswith(".git"))
+        # Foundation milestone (ED-16): docs/ (engineering and project-management documents,
+        # the owner's archived master prompt), pyproject.toml (tool settings, no runtime
+        # dependencies) and .env.example (documents that no credential is needed)
+        # GTF_ENGINEERING_FIRST_ROADMAP.md is the permanent engineering-priority assessment
+        # that records P0-parked / P5-next sequencing without changing P0 acceptance criteria.
+        root = sorted(d for d in os.listdir(ROOT) if not d.startswith(".git") and d not in LOCAL_ONLY)
         self.assertEqual(root, sorted([".claude", ".claude-plugin", "CLAUDE.md", "LICENSE", "README.md", "nse",
-                                       "tests", "PRODUCT_MASTER_STATUS.md", RULEBOOK_PDF, "docs"] + SKILLS))
+                                       "tests", "PRODUCT_MASTER_STATUS.md", RULEBOOK_PDF, "docs", "pyproject.toml",
+                                       ".env.example", "platform", "GTF_ENGINEERING_FIRST_ROADMAP.md"] + SKILLS))
 
     def test_owner_master_prompt_is_kept_verbatim(self):
         # the owner's original CLAUDE.md, moved out of the root instruction file unchanged
@@ -108,9 +122,10 @@ class Repo(unittest.TestCase):
             with open(path, encoding="utf-8", errors="replace") as fh:
                 text = fh.read()
             rel = os.path.relpath(path, ROOT)
-            # fixtures are real data, nse/sources holds the user's reference documents and CLAUDE.md
-            # is the user's own instruction file; all kept exactly as written
-            if not rel.startswith((os.path.join("tests", "fixtures"), os.path.join("nse", "sources"))) \
+            # fixtures are real data, nse/sources holds the user's reference documents, CLAUDE.md
+            # and its archived master prompt are the user's own instruction text, and vendored
+            # skills are third-party files pinned by hash (test_claude_hooks); all kept as written
+            if not rel.startswith((os.path.join("tests", "fixtures"), os.path.join("nse", "sources")) + VENDORED) \
                     and rel not in ("CLAUDE.md", OWNER_PROMPT):
                 self.assertNotIn("\u2014", text, rel)
             self.assertNotIn("jakeschincariol" + "@" + "gmail.com", text, rel)  # built, so this file passes too

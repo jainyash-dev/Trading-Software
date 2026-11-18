@@ -5,6 +5,7 @@ changes one input and checks the gate outcome and the final status, so a gate th
 stopped working would show up as an unexpected ACTIONABLE.
 """
 
+import datetime
 import unittest
 
 import _research as R
@@ -83,6 +84,20 @@ class G0(unittest.TestCase):
         b = R.ideal_mit_builder()
         b.unresolved = [R.DT(2025, 3, 3).date()]
         self.assertEqual(R.only(R.evaluate(b)).status, m.MANUAL_REVIEW)
+
+    def test_corporate_action_coverage_unknown_unverified_and_covered(self):
+        unknown = R.only(R.evaluate(R.ideal_mit_builder(), coverage=None))
+        self.assertEqual(gates(unknown)["G0"], m.MANUAL)
+        self.assertIn("G0:CORPORATE_ACTION_COVERAGE_UNKNOWN", unknown.manual_review)
+        self.assertNotEqual(unknown.status, m.ACTIONABLE)
+        empty = R.only(R.evaluate(R.ideal_mit_builder(), coverage={}))
+        self.assertEqual(gates(empty)["G0"], m.MANUAL)
+        self.assertIn("G0:CORPORATE_ACTION_COVERAGE_UNVERIFIED", empty.manual_review)
+        short = R.only(R.evaluate(R.ideal_mit_builder(), coverage={"SYN": [(datetime.date(2099, 1, 1), datetime.date(2099, 12, 31))]}))
+        self.assertIn("G0:CORPORATE_ACTION_COVERAGE_UNVERIFIED", short.manual_review)
+        covered = R.only(R.evaluate(R.ideal_mit_builder(), coverage=R.verified_ca("SYN")))
+        self.assertEqual(gates(covered)["G0"], m.PASS)
+        self.assertNotIn("CORPORATE_ACTION_COVERAGE", " ".join(covered.gate("G0").reasons))
 
 
 def wit_builder(recency=5, daily=None, weekly=None):
@@ -209,10 +224,54 @@ class G3(unittest.TestCase):
         self.assertEqual(ev["bottom"]["zone_id"], "m-lower")
         self.assertIn("m-bottom", ev["skipped_tested_boundaries"])
 
-    def test_price_inside_a_tested_monthly_demand_needs_review(self):
+    def test_price_inside_a_tested_monthly_demand_redraws_from_the_next_fresh_zone(self):
+        # P-LOC-2 (owner-approved 2026-11-08; RB 1621): this replaces the earlier MANUAL
+        # reading. 880 is inside the TESTED m-coinciding (900-850); the curve is redrawn from
+        # m-bottom (PL 700) to m-top (PL 1500): (880-700)/(1500-700) = 22.5% -> LOC
         c = R.only(R.evaluate(R.ideal_mit_builder(), price=880.0))
+        ev = c.gate("G3").evidence
+        self.assertEqual((gates(c)["G3"], ev["bottom"]["zone_id"], ev["position_at_price"]),
+                         (m.PASS, "m-bottom", [structure.LOC]))
+        self.assertEqual(ev["redrawn_past_tested"], ["m-coinciding"])
+        self.assertIn("m-coinciding", ev["skipped_tested_boundaries"])
+        self.assertIn("P-LOC-2", c.gate("G3").sources)
+        self.assertFalse(any(r.startswith("PRICE_INSIDE_TESTED_HTF_DEMAND") for r in c.gate("G3").reasons))
+
+    def test_redraw_stops_at_a_boundary_of_unknown_freshness(self):
+        # P-LOC-3: the next Monthly demand below has unknown freshness -> MANUAL, never a guess
+        b = R.ideal_mit_builder()
+        b.zones["M:m-bottom"].status = mtf.UNKNOWN_DATA_GAP
+        c = R.only(R.evaluate(b, price=880.0))
         self.assertEqual(gates(c)["G3"], m.MANUAL)
-        self.assertTrue(any(r.startswith("PRICE_INSIDE_TESTED_HTF_DEMAND") for r in c.gate("G3").reasons))
+        self.assertIn("BOUNDARY_FRESHNESS_UNKNOWN m-bottom", c.gate("G3").reasons)
+        self.assertNotEqual(c.status, m.ACTIONABLE)
+
+    def test_redraw_without_any_fresh_monthly_demand_below_is_manual(self):
+        b = R.ideal_mit_builder()
+        b.zones["M:m-bottom"].status = mtf.TESTED
+        c = R.only(R.evaluate(b, price=880.0))
+        self.assertEqual(gates(c)["G3"], m.MANUAL)
+        self.assertTrue(any("NO_FRESH_DEMAND_BELOW" in r for r in c.gate("G3").reasons))
+
+    def test_redraw_rules_in_build_curve(self):
+        def zv(tf, zid, side, prox, dist, fr):
+            return structure.ZoneView(tf, zid, side, "DBR", prox, dist, dist, "", fr, fr, [], True, "", 7)
+        top = zv("M", "top", "supply", 200.0, 210.0, m.Z_FRESH)
+        lower = zv("M", "lower", "demand", 100.0, 90.0, m.Z_FRESH)
+        tested_m = zv("M", "tm", "demand", 150.0, 130.0, m.Z_TESTED)
+        # a fresh zone that also holds price stays the bottom; nothing is "redrawn"
+        fresh_inside = zv("M", "fi", "demand", 145.0, 135.0, m.Z_FRESH)
+        cv = structure.build_curve([top, lower, tested_m, fresh_inside], 140.0, [])
+        self.assertEqual((cv["bottom"].zone_id, cv["redrawn_past"], cv["issues"]), ("fi", [], []))
+        # P-LOC-2 covers Monthly demand only: a tested Weekly demand holding price stays MANUAL
+        tested_w = zv("W", "tw", "demand", 150.0, 130.0, m.Z_TESTED)
+        cv = structure.build_curve([top, lower, tested_w], 140.0, [])
+        self.assertTrue(any(i.startswith("PRICE_INSIDE_TESTED_HTF_DEMAND tw") for i in cv["issues"]))
+        self.assertEqual(structure.positions(cv, 140.0), set())
+        # a tested supply holding price stays MANUAL
+        tested_s = zv("M", "ts", "supply", 195.0, 205.0, m.Z_TESTED)
+        cv = structure.build_curve([tested_s, lower], 198.0, [])
+        self.assertTrue(any(i.startswith("PRICE_INSIDE_TESTED_HTF_SUPPLY ts") for i in cv["issues"]))
 
     def test_missing_location_series_is_data_insufficient(self):
         b = R.ideal_mit_builder()
@@ -523,6 +582,9 @@ class Levels(unittest.TestCase):
         self.assertIn("LEVELS_INVALID", g7.manual_review)
         self.assertNotIn("rr", g7.evidence)
         self.assertIsNone(g7.evidence.get("quantity"))
+        # audit 2026-11-06 (Agent 3 D5): G8 no longer reports Essential Checks 5-6 as PASS here
+        [ec56] = [i for i in c.gate("G8").evidence["items"] if i["item"].startswith("Essential Checks 5-6")]
+        self.assertEqual(ec56["result"], m.MANUAL)
         self.assertNotEqual(c.status, m.ACTIONABLE)
 
     def test_target_inside_the_entry_range_or_below_is_never_a_target(self):
@@ -550,6 +612,85 @@ class G8(unittest.TestCase):
         b = R.ideal_mit_builder()
         b.series.pop("Y")
         self.assertIn("EC1", R.only(R.evaluate(b)).gate("G8").manual_review)
+
+
+class PineOnlyD43(unittest.TestCase):
+    """D43 (owner-approved 2026-11-08): a relevant opposing Pine-only zone cannot be validated
+    independently, so it makes G5 / G7 MANUAL; it is never ignored and never a target."""
+
+    def pine(self, b, tf, pl, dl, created_index=40, invalidated_index=None, test_count=0, side="supply"):
+        b.series[tf].engine.pine_only_zones.append({
+            "reason": "PINE_ONLY_ZONE", "side": side, "pattern": "RBD", "start_index": created_index - 2,
+            "created_index": created_index, "proximal": pl, "distal": dl, "zero_base": False,
+            "invalidated_index": invalidated_index, "test_count": test_count})
+
+    def test_reference_is_actionable_without_pine_only_zones(self):
+        self.assertEqual(R.only(R.evaluate(R.ideal_mit_builder())).status, m.ACTIONABLE)
+
+    def test_pine_only_supply_inside_the_conflict_band_makes_g5_manual(self):
+        b = R.ideal_mit_builder()
+        self.pine(b, "M", 950.0, 980.0)                  # 6.7% above PL 890: WITHIN_10 on a reject TF
+        c = R.only(R.evaluate(b))
+        g5 = c.gate("G5")
+        self.assertEqual(g5.outcome, m.MANUAL)           # MANUAL, not the FAIL a validated zone would give
+        self.assertIn("PINE_ONLY_ZONE_REVIEW", g5.manual_review)
+        self.assertIn("D43", g5.sources)
+        self.assertEqual(g5.evidence["pine_only_findings"][0]["zone"]["source"], "PINE_ONLY (D12, D43)")
+        self.assertNotEqual(c.status, m.ACTIONABLE)
+        self.assertIn("G5:PINE_ONLY_ZONE_REVIEW", c.manual_review)
+
+    def test_pine_only_supply_never_softens_a_failed_g5(self):
+        b = R.ideal_mit_builder()
+        b.add_zone("M", "supply", 900.0, 920.0, zid="m-near")       # a validated fresh supply: RF2 FAIL
+        self.pine(b, "M", 950.0, 980.0)
+        self.assertEqual(R.only(R.evaluate(b)).gate("G5").outcome, m.FAIL)
+
+    def test_a_clear_or_broken_pine_only_supply_is_not_relevant_to_g5(self):
+        b = R.ideal_mit_builder()
+        self.pine(b, "M", 1300.0, 1320.0)                # beyond 10%: CLEAR (and above the W target)
+        self.pine(b, "M", 950.0, 980.0, invalidated_index=45)       # Pine deleted it (PS 2613; RB 1313)
+        c = R.only(R.evaluate(b))
+        self.assertEqual(c.gate("G5").outcome, m.PASS)
+        self.assertEqual(c.gate("G5").evidence["pine_only_findings"], [])
+
+    def test_a_pine_only_demand_is_not_an_opposing_zone(self):
+        b = R.ideal_mit_builder()
+        self.pine(b, "M", 950.0, 930.0, side="demand")
+        self.pine(b, "W", 1000.0, 980.0, side="demand")
+        self.assertEqual(R.only(R.evaluate(b)).status, m.ACTIONABLE)
+
+    def test_pine_only_supply_below_the_target_makes_g7_manual_and_is_not_the_target(self):
+        b = R.ideal_mit_builder()
+        self.pine(b, "W", 1100.0, 1120.0)                # above the entry, below the W target PL 1200
+        c = R.only(R.evaluate(b))
+        g7 = c.gate("G7")
+        self.assertEqual(g7.outcome, m.MANUAL)
+        self.assertEqual(g7.evidence["target"]["proximal"], 1200.0)    # the validated zone stays the target
+        self.assertEqual([z["proximal"] for z in g7.evidence["pine_only_zones_below_target"]], [1100.0])
+        self.assertIn("PINE_ONLY_ZONE_REVIEW", g7.manual_review)
+        self.assertNotEqual(c.status, m.ACTIONABLE)
+
+    def test_g7_ignores_pine_only_supply_that_pine_saw_tested_or_broken_or_beyond_the_target(self):
+        b = R.ideal_mit_builder()
+        self.pine(b, "W", 1100.0, 1120.0, test_count=1)  # tested: cannot be the fresh target (RB 551-558)
+        self.pine(b, "W", 1050.0, 1070.0, invalidated_index=50)
+        self.pine(b, "W", 1250.0, 1270.0)                # beyond the target
+        g7 = R.only(R.evaluate(b)).gate("G7")
+        self.assertEqual(g7.outcome, m.PASS)
+        self.assertNotIn("pine_only_zones_below_target", g7.evidence)
+
+    def test_a_record_without_test_count_or_breach_fields_counts_as_relevant(self):
+        b = R.ideal_mit_builder()
+        self.pine(b, "W", 1100.0, 1120.0)
+        z = b.series["W"].engine.pine_only_zones[-1]
+        del z["test_count"], z["invalidated_index"]      # unknown is neither tested nor broken
+        self.assertEqual(R.only(R.evaluate(b)).gate("G7").outcome, m.MANUAL)
+
+    def test_a_failed_rr_stays_failed_with_a_pine_only_zone(self):
+        b = R.ideal_mit_builder()
+        b.add_zone("W", "supply", 900.0, 910.0, zid="w-near")        # R:R < 2 for every choice
+        self.pine(b, "W", 895.0, 905.0)
+        self.assertEqual(R.only(R.evaluate(b)).gate("G7").outcome, m.FAIL)
 
 
 if __name__ == "__main__":

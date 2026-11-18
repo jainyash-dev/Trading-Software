@@ -1,6 +1,6 @@
 # Traceability: Rule, Source, Implementation, Test, Validation
 
-**Dated 2026-11-02.** "Validation" is external evidence only (TradingView, reference data);
+**Dated 2026-11-02; rows 51-56 added 2026-11-06; rows 57-63 added 2026-11-08; rows 64-68 added 2026-11-08 (real-data milestone).** "Validation" is external evidence only (TradingView, reference data);
 synthetic tests are listed under Test. A row with no implementation or no test says so.
 R1-R6 are product-owner approved in `DECISION_REGISTER.md`; other D41 interpretations
 remain PROPOSED (`RESEARCH_PIPELINE.md` section 4, `DECISION_LOG.md` D41).
@@ -95,7 +95,77 @@ Precedence (`models.derive_status`): BLOCKED > REJECTED > DATA_INSUFFICIENT > MA
 | # | Rule | Source | Implementation | Test | Validation |
 |---|---|---|---|---|---|
 | 46 | Quantity = floor(RPT / (Entry - SL)), exact; RPT within stage band; never average down; F&O refused; 10 trades/month ceiling | RB 37-75, 2157-2214, 2140, 2388-2408 | `risk.py` (separate risk plan; never changes a status); `levels.quantity_range` (exact decimals, regression for float off-by-one) | `test_research_risk` (RB worked examples exact); `G7`/`Levels.test_quantity_uses_exact_prices_regression` | n/a |
-| 47 | Monthly 10-trade cap and concurrency in backtests are owner options; unset = recorded limitation; cap selection by fill order is recorded, "best 10" stays a human choice | RB 2392, 2400, 2408, 2414; B12 | `backtest.apply_portfolio_rules` | `test_research_backtest.Portfolio` | None |
+| 47 | Monthly 10-trade cap (IST month of first fill) and 10 concurrent positions are enforced in backtests; None or above 10 is refused (D45, superseding "unset = limitation"); cap selection by fill order is recorded, "best 10" stays a human choice | RB 2392, 2400, 2408, 2414; B12; D42, D45, D46 | `backtest.ExecutionModel`, `apply_portfolio_rules`, `models.ist_month` | `test_research_backtest.Portfolio`; `test_research_execution_policy.IstMonth`, `D45Refusals` | None |
 | 48 | Journal: SL locked after trigger; no add-to-position; SL hit and zone invalidation separate; no entries for failed gates | RB 2139, 2140, 2380; R4 | `store.journal_add`, `journal_event` | `test_research_store` | n/a |
 | 49 | Scenario regression library through the real pipeline | spec 10.2 spirit; every rule cited per scenario | `nse/research/scenarios.py`, `nse/scenarios/` | `test_research_scenarios` (19 SYNTHETIC scenarios) | None (synthetic) |
-| 50 | Rulebook revision: PDF lacks RB 1784, 1786-1803 | RB-VERSION-1 | code cites the Markdown | `test_repo` pins both hashes | Owner decision |
+| 50 | Rulebook revision: an earlier extraction said the PDF lacks RB 1784, 1786-1803; the owner pack (2026-11-03) reports PDF page 62 contains them (disputed, not re-checked) | RB-VERSION-1 | code cites the Markdown | `test_repo` pins both hashes | Owner decision |
+| 51 | An in-progress candle that has reached a fresh zone's PL is not freshness: G1 MANUAL | spec 6.2; D23; RB 264, 683-697 | `MtfSnapshot.incomplete_touches`; `qualification._g1` (`INCOMPLETE_CANDLE_TOUCH`) | `test_research_adversarial.AuditRegressions20261106` | None (synthetic) |
+| 52 | Coinciding HTF zone: an excluded-session touch, or a gap after its first test, leaves its DL status unknown (never "untouched") | D15, D30 H1, R6 | `structure._dl_hidden`, `zone_views` | `test_research_adversarial.AuditRegressions20261106` | None (synthetic) |
+| 53 | Pending order cancelled when a later point-in-time scan no longer allows the setup; nothing re-evaluated after the fill | RB 2530-2538, 2540-2551; D42 | `backtest.simulate` (`revalidation`), `_from_history`; `store.journal_event` (TRIGGERED) | `test_research_backtest.AuditRegressions20261106`, `test_research_store.JournalAuditRegressions20261106` | None |
+| 54 | Expiry in verified sessions; missing, excluded or unclassifiable sessions and incomplete bars fail closed; chosen entry/stop must give 2:1 | RB 82 RF8; D30; D42 | `backtest._sessions`, `plan` | `test_research_backtest.AuditRegressions20261106` | None |
+| 55 | One journal order per zone; 10 simultaneous positions; monthly ceiling independent | P-BT-1; RB 2392; D42 | `store.journal_add`, `journal_event`, `_open_positions` | `test_research_store.JournalAuditRegressions20261106`, `Journal.test_monthly_summary_and_ceiling` | n/a |
+| 56 | Provenance is a matching file hash, not a hash-shaped string | D31; B7, B11 | `models.source_verified` (universe, corporate actions, instruments); `run_all._evidence_hashes` | `test_research_reports.Universe`, `test_research_data.CorporateActions`, `test_validation_runner.ReferenceEvidence` | Local INFY screenshots re-hashed: 5/5 match (not independent validation) |
+
+## Additional rows (2026-11-08, owner approvals; `DECISION_LOG.md` 1F)
+
+| # | Rule | Source | Implementation | Test | Validation |
+|---|---|---|---|---|---|
+| 57 | Price inside a TESTED Monthly demand: redraw from the next fresh Monthly demand below; unknown boundary MANUAL; other TFs / supply stay MANUAL | RB 1621; P-LOC-2, P-LOC-3 | `structure.build_curve` (`redrawn_past`); `_g3` evidence `redrawn_past_tested` | `test_research_gates.G3.test_price_inside_a_tested_monthly_demand_redraws_from_the_next_fresh_zone`, `test_redraw_*`; adversarial `CouncilRegressions20261108` | None (synthetic) |
+| 58 | Relevant opposing Pine-only zones make G5 / G7 MANUAL; never ignored, never a target | D43; D12; PS 2613; RB 1313, 551-558 | `zone_engine` (Pine-only `invalidated_index`, `test_count`); `structure.pine_only_zones`; `_g5`, `_g7` | `test_research_gates.PineOnlyD43`; adversarial `test_a_d43_restriction_survives_every_export` | None (B10) |
+| 59 | Undated errors: bounded by neighbouring rows when possible, otherwise block every scan; later-dated findings never reach earlier scans | D44; P-DQ-1 | `marketdata._bad_date`, `Finding.known_at` | `test_research_lookahead.FutureDataQuality` | None |
+| 60 | Backtest configurations above owner limits are refused, not labelled; a backtest needs a calendar | D45; D42 | `ExecutionModel.__post_init__`; `backtest._from_history` | `test_research_execution_policy.D45Refusals`; adversarial `test_dataclasses_replace_cannot_bypass_the_d45_limits` | n/a |
+| 61 | Journal monthly ceiling by IST month; closed position frees a slot, not a monthly trade; one order per zone even after CANCELLED / EXPIRED | D42, D46; RB 2392; ED-3 | `store.journal_add`, `journal_event`, `journal_summary` | `test_research_store.JournalIstMonth20261108`, `JournalAuditRegressions20261106` | n/a |
+| 62 | Owner execution policy: AT_OPEN, STOP_FIRST + EXCLUDE, slippage 0.05 / 0.10 / 0.20, dated per-instrument costs, predeclared B9 scenarios, nothing selected | B9, B12 | `execution_policy.owner_grid`, `CostSchedule` | `test_research_execution_policy` | None (no Zerodha schedule held) |
+| 63 | Rulebook PDF canonical; Markdown citation companion; discrepancies escalated (D40-Q1 escalated, not reconciled) | RB-VERSION-1; D40 | protected hashes; `DECISION_REGISTER.md` open items | `test_repo` | Owner decision |
+
+## Additional rows (2026-11-08, real-data readiness milestone)
+
+| # | Rule | Source | Implementation | Test | Validation |
+|---|---|---|---|---|---|
+| 64 | Two-window primary/DR sessions: one trading date for expiry, never a fill / exit bar, daily high/low as a bound | D40, D30; NSE/MSD/60677, 61893 | `backtest._sessions`, `_Shortened`, `simulate` | `test_research_execution_policy.D40TwoWindowSessions` | Two independent reviews of the held circulars (hash-verified) |
+| 65 | A plan never submitted does not use the zone's one order; a submitted order always does | ED-3 (owner brief); P-BT-1 | `store.journal_orders` (migration 2), `journal_order_submitted`, `_holds_zone` | `test_research_store` `test_ed3_*` | n/a |
+| 66 | Per-file EOD coverage; a missing session is never a holiday without the calendar | D31, D30; B17, B18 | `eod_coverage.py` (`eod-coverage`) | `test_research_eod_coverage` | Local files only |
+| 67 | Universe: overlapping periods refused; a member without data is reported | B11; survivorship | `universe.load`, `scanner.scan` | `test_research_reports.Universe` | None (no membership file) |
+| 68 | Execution realism gaps are disclosed on every backtest result | B12 | `backtest.EXECUTION_REALISM_GAPS` | `test_research_backtest`, `test_research_execution_policy` | n/a |
+
+## Additional rows (2026-11-09, MP1 real NSE data readiness)
+
+| # | Rule | Source | Implementation | Test | Validation |
+|---|---|---|---|---|---|
+| 69 | One EOD source per trade date: legacy to 2024-07-05, UDiFF from 2024-07-08; only verified schemas; never mixed for one date | D31; B18; NSE/MSD/62424; ED-20 | `nse_bhavcopy.selected_format`, `load_many`, `cross_check`; `acquisition._ingest_one` (`FORMAT_NOT_SELECTED_FOR_DATE`); `manifest_tool.rows_for` | `test_nse_eod_evidence`; `test_research_acquisition.SourceSelection` | 4 official overlap dates identical (`EOD_FORMAT_EVIDENCE.md` §9); no external source |
+| 70 | Instrument identity on every bhavcopy input: an unexplained ISIN change, a contradicting record, a reused symbol, an uncovered symbol (with records) and a split history are dated ERRORs (DATA_INSUFFICIENT from that date); otherwise `IDENTITY_UNVERIFIED` without verified records | Owner instrument-identity approval (1F); D44; ED-21 | `instruments.apply_to_input` via `inputs.load` and `scenarios._inputs` | `test_research_instruments.InputIdentityIntegration`, `RenameRegression`, `QaRegressions20261109` | None (B11) |
+| 71 | Point-in-time Nifty 100 from a dated baseline and releases; effective date = first session; declared count exceptions only | D1; B11; ED-22 | `membership.convert`, `universe.Universe.balance` | `test_research_membership` | None: no reviewed transcription yet |
+| 72 | Coverage distinguishes downloaded, parsed, validated and accepted; coverage counts accepted files only | MP1 brief section 4; ED-24 | `eod_coverage._states` | `test_research_eod_coverage` | Real report 2021-2025: 62 of 1,233 accepted |
+| 73 | 20 Jan 2024 is one regular primary-site session; the withdrawn NSE/MSD/59999 plan is not a session | D40 (owner approval kept; factual correction) | `nse/data/calendar/events.csv`, `sources.csv` | `test_nse_calendar_data.Tables.test_d40_twentieth_january_is_one_primary_session_not_the_withdrawn_dr_plan` | Official circulars, hash-verified |
+
+## Additional rows (2026-11-09, owner decisions D47-D51)
+
+| # | Rule | Source | Implementation | Test | Validation |
+|---|---|---|---|---|---|
+| 74 | Scripted backfill only for the approved window and official URLs; rate-limited, resumable, never overwriting, ingested through quarantine | D47; ED-25 | `.claude/skills/nse-data-engineering/scripts/eod_backfill.py` | acquisition tests (ingest path) | 1,171 real files, 0 quarantined |
+| 75 | Calendar 2016-2020 from official circulars; unresolved dates flagged, never inferred | D48; ED-26, ED-31 | `nse/data/calendar/` | `test_nse_calendar_data` (2016-2020 block, Dhanteras test); `test_research_data.UnresolvedDateScope` | text re-check of every date |
+| 76 | No universe period is verified without an accepted human review of the exact files; counts other than 100 only when declared from a release | D49; ED-22, ED-27, ED-32 | `membership.review_status`, `load_count_exceptions`, `RENAME` | `test_research_membership.ReviewGate`, `CountExceptions`, `Renames` | checkpoints Mar 2021, Sep 2021, Mar 2022 |
+| 77 | Raw OHLC canonical; events stored separately; no adjustment; unparsed terms never guessed | D50; ED-28 | `corporate_actions.from_nse_json` | `test_research_data.CorporateActionStoreD50` | INFY / RELIANCE records |
+| 78 | Renames joined only through verified ISIN continuity and dates; otherwise DATA_INSUFFICIENT | D51; ED-29 | `instruments.lineage`, `join_files`, `inputs.load` | `test_research_instruments.LineageD51` | none (B11-I) |
+| 79 | Invalid non-EQ rows isolated; EQ and format failures refuse the file | ED-30 | `nse_bhavcopy._parse` | `test_nse_eod_evidence.NonEqRowIsolation` | 112 official files |
+
+## Additional rows (2026-11-09, owner decisions D52-D56)
+
+| # | Rule | Source | Implementation | Test | Validation |
+|---|---|---|---|---|---|
+| 80 | A PREVCLOSE discontinuity is "explained" only across calendar-excluded sessions with no file, no missing trading day, verified CA coverage and no recorded price action in the gap; never a corporate action; no candle created | D52; ED-33 | `scanner._explained_by_excluded_session` | `test_research_data.ExcludedSessionD52` | 12 excluded-session files held, so real data rarely needs it |
+| 81 | An excluded session with no candle inside a zone's span makes G1 MANUAL (D33 touch check impossible); never ACTIONABLE | D52, D33; ED-33 | `scanner._unobserved_excluded_sessions`, `qualification` G1 | `test_research_data.ExcludedSessionD52` | none |
+| 82 | Excluded-session files are accepted only in their own role; never candles, never trading-day coverage; UNRESOLVED-date files never accepted | D52, D54; ED-34 | `eod_coverage._states`, overlay H1 / L10 | `test_research_eod_coverage`, `test_research_data` | real report 2016-2025 |
+| 83 | Universe periods are verified only through human, row-level, hash-matched decisions; agents never accept | D53; ED-35 | `membership.convert`, `review_template`, `read_review` | `test_research_membership.ReviewGate`, `ReviewCoversExceptions` | 271 rows verified by independent agents; human review pending |
+| 84 | Unresolved calendar dates block only ranges that contain them | D54, D58; ED-31, ED-42, ED-44 | `inventory`, `run_all.check_local_data`, `scanner._last_unresolved_date` | `test_research_data.UnresolvedDateScope`, `RealWindow` | 0 unresolved dates after D58; the rule remains for any future one |
+| 85 | 2016-2020 official EOD files, strictly verified; exact layout variants only | D55, D58; ED-38, ED-41 | `nse_bhavcopy` (`LEGACY_13_CRLF*`, `archive_layout_ok`, `load_many(keep=)`), `acquisition._header_format` | `test_nse_eod_evidence.LegacyCrlfSchema`, `LegacyShortDateAndNestedMember`; `test_research_acquisition`; `test_research_instruments.FilteredLoadingEquivalence` | 1,242 real files; 2,466 of 2,466 equity sessions accepted after D58 |
+| 86 | Official CA records for every historical member; an unrecognised subject is an UNPARSED price event, never skipped; empty responses are not coverage | D56, D50; ED-39 | `collect_corporate_actions.py`, `corporate_actions._part_row`, `load_coverage` | `test_research_data.CorporateActionStoreD50` | 189 symbols, 145 covered, 2,064 events |
+| 87 | An ISIN change counts as evidenced only through an official price-scale CA record dated at the change; otherwise never joined | D56, D51; ED-37 | `instrument_records.csv` (build script in the MP1 report), `instruments.isin_consistency` | `test_research_instruments` | 27 of 30 changes evidenced; the identity check over every member observation leaves 3 dated findings (the unevidenced changes) |
+
+## Additional rows (2026-11-13, GTF P1 journal hardening)
+
+| # | Rule | Source | Implementation | Test | Validation |
+|---|---|---|---|---|---|
+| 88 | Monthly cap and open-position cap are independent and enforced in one write transaction; IST month; a closed position frees only a slot | D42, D46; RB 2392; ED-46, ED-51 | `store._Immediate`, `journal_event`, `_refuse_new_trigger`, `_open_positions` | `test_research_store.P1JournalIntegrity`, `Journal`, `JournalIstMonth20261108` | Synthetic journal only |
+| 89 | One order per zone; cancel before submission releases it; submission, stop-out and close do not; the check and the insert commit together | ED-3; P-BT-1; ED-51 | `journal_add`, `_holds_zone`, `journal_order_submitted` | `test_research_store` `test_ed3_*`, `test_two_connections_cannot_both_reserve_one_zone`, `test_stop_and_close_do_not_release_a_submitted_zone` | Synthetic journal only |
+| 90 | A print is not a second order; unfilled quantity is not a fill; charges exist only when entered or scheduled | RB 2140; ED-51; B12 | `journal_execution`, `journal_record_charges`, `charges.quote` | `P1JournalIntegrity.test_partial_prints_*`, `test_absent_charges_*`, `test_research_execution_policy.ItemisedCharges` | No statutory tariff is stored |

@@ -20,12 +20,12 @@ See `nse/data/calendar/README.md` for the exact circulars to download and where 
 ## 2. Daily end-of-day data (B18)
 
 ### 2.1 Files
-NSE's capital-market bhavcopy is reported to have changed format from the legacy file to UDiFF. An NSE report listing, seen in an earlier search but not kept as evidence, gives the switch as 8 July 2024. **That date is unverified**, so the dates each format covers are not known beyond the samples below.
+**MP1 update (2026-11-09).** The switch is now verified from NSE/MSD/62424: legacy files were published until 2024-07-05 and discontinued from 2024-07-08. Both formats are supported, with one selected source per date (ED-20). The evidence is in `EOD_FORMAT_EVIDENCE.md` §9 and the samples are in `nse/data/eod/evidence/`. The table and paragraphs below are the 2026-10-26 state, kept for history.
 
 | Format | File (as NSE names it) | Dates verified | Status |
 |---|---|---|---|
 | Legacy CM bhavcopy (CSV) | `cmDDMMMYYYYbhav.csv.zip` | **2022-01-03 and 2023-12-29 only** | Verified for those two dates only; provenance user-confirmed, not independently authenticated (B18 open) |
-| UDiFF common bhavcopy (CSV) | `BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip` (unverified) | None | **Not verified**: no sample inspected; reported to start 2024-07-08 (unverified) |
+| UDiFF common bhavcopy (CSV) | `BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip` | 2024-01-20, 03-02, 05-18, 07-05, 07-08 (official samples) | **Verified (MP1)**: two header variants; the selected source from 2024-07-08 (ED-20) |
 
 **Legacy format: verified for two dates (2022-01-03, 2023-12-29).** The header, column order, encoding, line endings, date format (`DD-MMM-YYYY`) and the mapping of every field in §2.2 are recorded in `EOD_FORMAT_EVIDENCE.md`, with hashes in `nse/data/eod/manifest.csv`. Provenance is user-confirmed (official NSE website, downloaded 2026-10-27; exact page not supplied) and the files are not independently authenticated (B18 open).
 
@@ -148,7 +148,7 @@ Measured with `python3 -m nse.research.cli inventory --as-of <date>` on the file
 
 **Example: a scan as of 2024-01-31** needs every session from 2021-01-01 to 2024-01-31. 699 sessions are missing. The calendar covers 2021-2025, so no calendar work is needed for that range. A scan as of 2022-03-31 would also need 2019-2020 calendar circulars.
 
-**Format.** Legacy `cmDDMMMYYYYbhav.csv.zip` up to the legacy-to-UDiFF switch. The switch date is reported as 2024-07-08 but is unverified. A UDiFF sample must be documented, and a loader added, before later dates can be used (B18).
+**Format.** Legacy `cmDDMMMYYYYbhav.csv.zip` up to 2024-07-05; UDiFF `BhavCopy_NSE_CM_0_0_0_YYYYMMDD_F_0000.csv.zip` from 2024-07-08 (ED-20, NSE/MSD/62424). `acquire-plan` prints the file name and official URL for each session.
 
 **Acceptance.** All four must hold:
 - every archive and member is recorded in `nse/data/eod/manifest.csv` with its size and SHA-256;

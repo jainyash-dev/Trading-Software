@@ -16,13 +16,14 @@
      "G2": "PASS",
      "G3": "PASS",
      "G4": "PASS",
-     "G5": "PASS",
+     "G5": "MANUAL",
      "G6": "MANUAL",
      "G7": "PASS",
      "G8": "PASS"
     },
     "manual_review_contains": [
-     "G6:AGGRESSIVE_ENTRY_REVIEW"
+     "G6:AGGRESSIVE_ENTRY_REVIEW",
+     "G5:PINE_ONLY_ZONE_REVIEW"
     ],
     "match": {
      "proximal": 166.6
@@ -32,14 +33,15 @@
   ],
   "symbol_status": "EVALUATED"
  },
- "explanation": "R3: Coinciding means actual price-range overlap; a zone merely above the HTF demand is not Coinciding, and Aggressive stays a separate class (RB 1826-1856). An aggressive entry needs a person, so G6 is MANUAL and the status is MANUAL_REVIEW, while every other gate is unchanged from the reference.",
+ "explanation": "R3: Coinciding means actual price-range overlap; a zone merely above the HTF demand is not Coinciding, and Aggressive stays a separate class (RB 1826-1856). An aggressive entry needs a person, so G6 is MANUAL and the status is MANUAL_REVIEW, while every other gate is unchanged from the reference. D43 (owner-approved 2026-11-08): a Pine-only Weekly supply (PL 184.91, Pine-recorded as tested) lies 9.67% above ENTRY_MAX 168.6, inside the 10% band; it cannot be validated independently, so G5 is MANUAL too.",
  "id": "mit_aggressive_zone_above_monthly_demand",
  "risk_per_trade": 1000.0,
  "rule_refs": [
   "R3",
   "D15",
   "RB 1826-1856",
-  "spec 7.5"
+  "spec 7.5",
+  "D43"
  ],
  "title": "Execution zone wholly above the Monthly demand: Aggressive, MANUAL",
  "trade_type": "MIT"

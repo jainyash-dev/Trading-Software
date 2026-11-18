@@ -1,0 +1,765 @@
+{
+ "acceptance_mode": false,
+ "checks": [
+  {
+   "details": {
+    "branch": "main",
+    "git_diff_check": "clean",
+    "head": "69858d0",
+    "missing_test_modules": [],
+    "protected_files": {
+     "340fe490-8783-4eea-8cbd-e834449e9a42_Trading_Rulebook.pdf": "OK",
+     "nse/sources/Demand&Supply Indicator.pine": "OK",
+     "nse/sources/Trading Rulebook 341a82c22ebf8056a235c9695e1c0d87.md": "OK"
+    },
+    "staged_files": [],
+    "unassigned_test_modules": []
+   },
+   "name": "repository_checks",
+   "problems": [],
+   "required": true,
+   "status": "PASS"
+  },
+  {
+   "errors": 0,
+   "failed_tests": [],
+   "failures": 0,
+   "load_errors": [],
+   "modules": [
+    "test_repo"
+   ],
+   "name": "repository",
+   "other_skips": [],
+   "prerequisite_skips": [],
+   "ran": 15,
+   "required": true,
+   "seconds": 0.81,
+   "skipped": 0,
+   "status": "PASS"
+  },
+  {
+   "errors": 0,
+   "failed_tests": [],
+   "failures": 0,
+   "load_errors": [],
+   "modules": [
+    "test_architecture"
+   ],
+   "name": "architecture",
+   "other_skips": [],
+   "prerequisite_skips": [],
+   "ran": 28,
+   "required": true,
+   "seconds": 4.61,
+   "skipped": 0,
+   "status": "PASS"
+  },
+  {
+   "errors": 0,
+   "failed_tests": [],
+   "failures": 0,
+   "load_errors": [],
+   "modules": [
+    "test_research_risk",
+    "test_research_instruments",
+    "test_research_membership",
+    "test_research_dataset_eligibility",
+    "test_research_p0_certification",
+    "test_research_p0_build_e2e",
+    "test_research_identity_policy"
+   ],
+   "name": "risk_instruments",
+   "other_skips": [],
+   "prerequisite_skips": [],
+   "ran": 235,
+   "required": true,
+   "seconds": 2.18,
+   "skipped": 0,
+   "status": "PASS"
+  },
+  {
+   "errors": 0,
+   "failed_tests": [],
+   "failures": 0,
+   "load_errors": [],
+   "modules": [
+    "test_validation_runner"
+   ],
+   "name": "validation_framework",
+   "other_skips": [],
+   "prerequisite_skips": [],
+   "ran": 14,
+   "required": true,
+   "seconds": 2.57,
+   "skipped": 0,
+   "status": "PASS"
+  }
+ ],
+ "checks_not_run": [
+  "local_data, reference_comparison, static_lint (--group run)"
+ ],
+ "readiness": [
+  {
+   "blocked": false,
+   "component": "nse/zone-engine/zone_engine.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "zone_engine",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "no TradingView zone references recorded (B10)",
+    "Pine parity not claimed (spec 10)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "audit M1, L5-L9, rows 13 and 31"
+   ],
+   "unit_tested": [
+    "test_zone_engine"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_zone_engine"
+  },
+  {
+   "blocked": false,
+   "component": "nse/mtf-freshness/mtf_freshness.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "mtf_overlay",
+   "implemented": true,
+   "integration_tested": [
+    "test_nse_replay",
+    "test_research_integration"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_nse_replay, test_research_integration",
+   "limits": [
+    "HTF candle boundaries not compared with TradingView (B8, D23)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_mtf_freshness"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_mtf_freshness"
+  },
+  {
+   "blocked": true,
+   "component": "nse/mtf-freshness (75m/125m zones), WIT execution",
+   "deferred": true,
+   "externally_validated": false,
+   "id": "intraday_75_125",
+   "implemented": false,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "no intraday data source approved (B6, D32); WIT results are always BLOCKED"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "approve the 75/125-minute session and gap design (audit M4b)"
+   ],
+   "unit_tested": [],
+   "unit_tested_state": "NO"
+  },
+  {
+   "blocked": false,
+   "component": "nse/calendar/nse_calendar.py, nse/data/calendar/",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "calendar",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "normal-hours review 2019-2025 not done",
+    "no TradingView spot checks (B17)"
+   ],
+   "reference_validated": "PARTIAL: 2016-2025 reconciles with all 2,466 official trading-day EOD files (D47, D55); the four 2016-2019 Dhanteras dates are confirmed regular equity sessions (D58, CAL-2 option A); no UNRESOLVED row",
+   "requires_human_decision": [
+    "the 20 Jan 2024 hours are inferred from NSE/CMTR/41180 (D40 trail otherwise closed, 2026-11-09)"
+   ],
+   "unit_tested": [
+    "test_nse_calendar",
+    "test_nse_calendar_data"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_nse_calendar, test_nse_calendar_data"
+  },
+  {
+   "blocked": false,
+   "component": "nse/eod/nse_bhavcopy.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "eod_loader",
+   "implemented": true,
+   "integration_tested": [
+    "test_nse_replay"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_nse_replay",
+   "limits": [
+    "UDiFF verified on 5 official samples (2 schema versions); a new header is refused",
+    "unadjusted prices (B7)"
+   ],
+   "reference_validated": "PARTIAL: 2,466 official equity-session archives 2016-2025 accepted (2,098 legacy, 368 UDiFF); 12 excluded-session archives held separately (D30, D52); legacy and UDiFF agree exactly on 4 official overlap dates (ED-20); 210 non-EQ rows isolated (ED-30)",
+   "requires_human_decision": [
+    "a new approval before any download outside 2016-2025"
+   ],
+   "unit_tested": [
+    "test_nse_bhavcopy",
+    "test_nse_eod_evidence"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_nse_bhavcopy, test_nse_eod_evidence"
+  },
+  {
+   "blocked": false,
+   "component": "nse/eod/nse_reference.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "ohlc_reference_comparison",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "zone comparison not implemented: matching rules to be set against real references"
+   ],
+   "reference_validated": "PARTIAL: INFY Q1 2022 daily rows match a Yahoo Finance reference (not independent)",
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_nse_replay"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_nse_replay"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/trend.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "trend_sma_clock",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "SMA values not compared with TradingView (B8)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_gates"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_gates"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/structure.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "location_curve",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "P-LOC-2 is USER_APPROVED (decision log section 1F, 2026-11-08): a tested Monthly demand redraws from the next fresh Monthly demand below; unknown boundaries stay MANUAL. Not reference-validated and not externally validated.",
+    "ambiguities the approval does not cover stay MANUAL REVIEW"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_gates"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_gates"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/structure.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "htf_conflict",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "'coming from' analysis is a manual check"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_gates"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_gates"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/structure.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "coinciding",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "a non-overlapping execution zone wholly above HTF demand is Aggressive and stays MANUAL pending its Rulebook conditions"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "Aggressive entry criteria, including achievement (RB 1843-1847, 1854-1855)"
+   ],
+   "unit_tested": [
+    "test_research_gates"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_gates"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/levels.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "trade_levels",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "volatility SL adjustment not applied numerically (RB 2108-2110)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "B9 buffer selection (deterministic backtests only)"
+   ],
+   "unit_tested": [
+    "test_research_gates"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_gates"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/qualification.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "qualification_mit",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_e2e"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_e2e",
+   "limits": [
+    "no status means validated or approved"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_gates",
+    "test_research_adversarial"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_gates, test_research_adversarial"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/scanner.py, reports.py, cli.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "scanner_and_reports",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_integration",
+    "test_research_lookahead"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_integration, test_research_lookahead",
+   "limits": [],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_reports"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_reports"
+  },
+  {
+   "blocked": true,
+   "component": "nse/research/universe.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "universe",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "nifty100_universe.csv (2020-12-31..2025-12-31, 185 periods) is UNVERIFIED until each row is accepted by a human reviewer: every scan is UNIVERSE_UNVERIFIED",
+    "D59 provisional membership research starts 2020-12-31; earlier as-of dates are labelled, not certified, and 2016-2020 has no baseline (B11-P)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "B11-R: row-level human review of nse/data/universe/nifty100_review.csv (D49, D53)"
+   ],
+   "unit_tested": [
+    "test_research_reports"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_reports"
+  },
+  {
+   "blocked": true,
+   "component": "nse/research/corporate_actions.py (interface; no adjustment)",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "corporate_actions",
+   "implemented": "PARTIAL: records file and G0 MANUAL for an action inside the history; no adjustment method (D50)",
+   "integration_tested": [
+    "test_research_data"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_data",
+   "limits": [
+    "D50: raw prices canonical, never adjusted",
+    "D56: official NSE records for 189 historical members, 2016-2025; coverage only where the response was non-empty (145 symbols, ED-39)",
+    "the API's completeness is not documented by NSE (R-10): the PREVCLOSE discontinuity check stays active"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "optional: an independent source to test the NSE API's completeness (R-10)"
+   ],
+   "unit_tested": [
+    "test_research_data"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_data"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/inventory.py; cli inventory",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "data_inventory",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_data"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_data",
+   "limits": [
+    "legacy up to 2024-07-05, UDiFF from 2024-07-08 (ED-20)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "approval to download the EOD range it reports as missing (D31)"
+   ],
+   "unit_tested": [
+    "test_research_data"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_data"
+  },
+  {
+   "blocked": true,
+   "component": "nse/research/refcheck.py compare_trend; nse_reference Q/HY/Y",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "trend_reference_comparison",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_data"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_data",
+   "limits": [
+    "no TradingView SMA or HTF OHLC reference recorded"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "approve the validation set (REFERENCE_VALIDATION_PLAN.md)"
+   ],
+   "unit_tested": [
+    "test_research_data"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_data"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/manifest_tool.py; cli manifest-rows",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "eod_manifest_tool",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "official .csv.zip archives only"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "download approval (D31)"
+   ],
+   "unit_tested": [
+    "test_research_data"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_data"
+  },
+  {
+   "blocked": true,
+   "component": "nse/research/refcheck.py",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "zone_reference_comparison",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "no TradingView zone reference recorded (B10): nothing has been compared"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "matching key P-REF-1 (D41)"
+   ],
+   "unit_tested": [
+    "test_research_data"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_data"
+  },
+  {
+   "blocked": true,
+   "component": "nse/research/backtest.py; cli backtest",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "backtesting",
+   "implemented": "PARTIAL: signals, fills, exits, costs, R metrics, splits; every execution assumption is a required user input",
+   "integration_tested": [
+    "test_research_backtest"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_backtest",
+   "limits": [
+    "EOD 2016-2025 held, but the universe is unverified (B11-R) and the execution model undecided",
+    "no performance figure has been produced"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "execution model: buffer choice (B9), fills, same bar, expiry, costs (B12)",
+    "point-in-time universe (B11)"
+   ],
+   "unit_tested": [
+    "test_research_backtest"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_backtest"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/acquisition.py; cli acquire-plan, acquire-ingest, daily-update, acquire-coverage",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "acquisition",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_acquisition"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_acquisition",
+   "limits": [
+    "local inbox only, no network code (D31)",
+    "a verified file in the format not selected for its date is quarantined (ED-20)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "approval to download the missing sessions (D31)"
+   ],
+   "unit_tested": [
+    "test_research_acquisition"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_acquisition"
+  },
+  {
+   "blocked": true,
+   "component": "nse/research/instruments.py; cli instruments-check; --instruments on scan, scan-history, backtest, replay-decision (ED-21)",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "instruments",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "nse/data/universe/instrument_records.csv: NSE EQUITY_L / symbolchange, bhavcopy first sessions and 27 ISIN changes evidenced by official corporate actions (ED-37); BAJFINANCE 2016-09-09, GRASIM 2016-10-07 and YESBANK 2020-03-16 unevidenced (ISIN_CHANGED_WITHOUT_RECORD)",
+    "renames joined only through verified ISIN continuity (D51, ED-29); ISIN changes never joined"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "confirm the record semantics in the module docstring"
+   ],
+   "unit_tested": [
+    "test_research_instruments"
+   ],
+   "unit_tested_state": "CONFIRMED"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/risk.py; cli risk-plan",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "risk_position_sizing",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "separate from G0-G8: never changes a status",
+    "quantities are ranges over the printed buffer tiers"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "buffer choice inside the printed ranges (B9)"
+   ],
+   "unit_tested": [
+    "test_research_risk"
+   ],
+   "unit_tested_state": "CONFIRMED"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/confluence.py (spec 5.3 display)",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "pre_entry_score_14",
+   "implemented": "PARTIAL: core evaluated; EMA20, crossover, gap provisional; sector and RSI/Stoch not evaluated",
+   "integration_tested": [
+    "test_research_confluence"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_confluence",
+   "limits": [
+    "information only: no gate reads it",
+    "EMA values not compared with TradingView (B8)"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "trending-timeframe and gap-meaningfulness judgements are manual"
+   ],
+   "unit_tested": [
+    "test_research_confluence"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_confluence"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/scenarios.py, nse/scenarios/",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "scenario_library",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_scenarios"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_scenarios",
+   "limits": [
+    "seed scenarios are SYNTHETIC: software evidence only"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "owner chart scenarios to record"
+   ],
+   "unit_tested": [
+    "test_research_scenarios"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_scenarios"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/decision_replay.py, dashboard.py; cli replay-decision, dashboard",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "decision_replay_and_dashboard",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_dashboard"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_dashboard",
+   "limits": [
+    "display only; charts not compared with TradingView",
+    "static HTML, no server"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_dashboard"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_dashboard"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/explain.py, alerts.py, narrative.py; cli explain, alerts, report",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "research_assistant_alerts_reports",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_explain",
+    "test_research_alerts"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_explain, test_research_alerts",
+   "limits": [
+    "explains recorded evidence only; no LLM call; cannot change a status",
+    "notifications: stdout and local JSONL only"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [
+    "external alert delivery (email, webhook) needs owner configuration and approval"
+   ],
+   "unit_tested": [
+    "test_research_explain",
+    "test_research_alerts"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_explain, test_research_alerts"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/store.py; cli store-*, journal-*",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "research_store_journal",
+   "implemented": true,
+   "integration_tested": [
+    "test_research_store"
+   ],
+   "integration_tested_state": "UNCONFIRMED: test_research_store",
+   "limits": [
+    "optional local SQLite; JSON/CSV reports remain the record",
+    "journal records owner decisions; places no order"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_store"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_store"
+  },
+  {
+   "blocked": false,
+   "component": "nse/research/health.py; cli health",
+   "deferred": false,
+   "externally_validated": false,
+   "id": "health_check",
+   "implemented": true,
+   "integration_tested": [],
+   "integration_tested_state": "NO",
+   "limits": [
+    "checks the checkout can run; is not validation"
+   ],
+   "reference_validated": false,
+   "requires_human_decision": [],
+   "unit_tested": [
+    "test_research_health"
+   ],
+   "unit_tested_state": "UNCONFIRMED: test_research_health"
+  }
+ ],
+ "totals": {
+  "errors": 0,
+  "failures": 0,
+  "ran": 292,
+  "skipped": 0
+ },
+ "verdict": "PASS"
+}

@@ -16,7 +16,6 @@ ACTIONABLE CANDIDATE: MANUAL CHECKS PENDING. Each test changes one thing.
 """
 
 import datetime
-import os
 import sys
 
 from _load import ROOT
@@ -116,9 +115,23 @@ def ideal_mit_builder():
     return b
 
 
-def evaluate(builder, trade_type=models.MIT, price=950.0, risk=1000.0, data_errors=()):
+def verified_ca(*symbols):
+    """A hash-verified collection window wide enough for the synthetic fixtures.
+
+    This is not market evidence. It is the covered case of P01-H1: an empty event list
+    counts only inside a window the caller states was checked. Pass coverage=None for
+    the unknown-file case.
+    """
+    span = (datetime.date(1990, 1, 1), datetime.date(2100, 1, 1))
+    return {s: [span] for s in (symbols or ("SYN",))}
+
+
+def evaluate(builder, trade_type=models.MIT, price=950.0, risk=1000.0, data_errors=(), coverage="VERIFIED"):
+    if coverage == "VERIFIED":
+        coverage = verified_ca("SYN")
     ctx = qualification.SymbolContext("SYN", trade_type, builder.build(), price,
-                                      risk_per_trade=risk, data_errors=list(data_errors))
+                                      risk_per_trade=risk, data_errors=list(data_errors),
+                                      corporate_action_coverage=coverage)
     return qualification.evaluate_symbol(ctx)
 
 

@@ -1,0 +1,13 @@
+blocker_id,topic,closure_state,proposed_owner_decision,affected_scope
+OD-MEM-1,271 review decisions blank,UNDER_REVIEW,decision remains the full period approval. All 271 are blank. ED-48 adds count_approval and mapping_approval on the same file.,all dates
+OD-EX-1,25 count exceptions,SCHEMA_READY,Owner approved the derived counts on 2026-11-11. count_approval is the field. It is blank until the reviewer name is supplied. A dry run verified 0 periods.,all 185 periods
+E03,10 image rows,SCHEMA_READY,Owner approved the ten mappings on 2026-11-11. mapping_approval does not verify BANKBARODA or CHOLAFIN. The ten cells are blank until the reviewer name is supplied.,2021-09-30 reconstitution
+DUMMYREL,symbol not printed on Nifty 100 release,UNDER_REVIEW,Classification corrected in the closure file. Seat stays non-tradable.,2023-07-20..2023-08-20
+DUMMY-ISINs,four inferred ISINs,UNDER_REVIEW,Do not approve inferred ISINs.,dummy seat dates
+OD-ID-1,BAJFINANCE 2016-09-09,UNRESOLVED,Need a notice naming INE296A01024 on that session.,symbol from 2016-09-09
+OD-ID-2,GRASIM 2016-10-07,UNRESOLVED,Need a notice naming INE047A01021 on that session. Blocks every full-index date.,2020-12-31 onward
+OD-ID-3,YESBANK 2020-03-16,UNRESOLVED,Saved response has no March 2020 event.,2020-03-16 onward
+B11-P,no baseline before 2020-12-31,UNRESOLVED,IndexInclExcl.xls is not parsed. D59 stands.,before 2020-12-31
+B7,47 empty CA responses,UNRESOLVED,Empty body is not proof of no event. SRTRANSFIN included.,uncovered symbols
+OD-PX-2,CROMPGREAV 2016-03-15 ratio,UNRESOLVED,Do not invent a factor.,continuity across that date
+TV-1,34 TradingView rows,UNRESOLVED,PENDING_EXTERNAL_EVIDENCE. Separate from this dataset.,external parity

@@ -1,0 +1,272 @@
+{
+  "log": [
+    {
+      "step": "P2 empty analysis without stored scan (OD-P2-1 kept deferred)",
+      "ok": true,
+      "shot": "01-p2-analysis-no-scan.png"
+    },
+    {
+      "step": "P2 stored-bundle chart D",
+      "ok": true,
+      "timeframe": "D",
+      "volume_state": "PRESENT",
+      "evidence": {
+        "Candles": "INCOMPLETE",
+        "Volume": "AVAILABLE",
+        "Stored bundle": "AVAILABLE",
+        "Qualification": "AVAILABLE",
+        "Explanation": "AVAILABLE",
+        "Data certification": "FIXTURE"
+      },
+      "legend": "Crosshair",
+      "fixture_banner": true,
+      "zones_listed": 6,
+      "shot": "02-p2-chart-D.png"
+    },
+    {
+      "step": "P2 stored-bundle chart W",
+      "ok": true,
+      "timeframe": "W",
+      "volume_state": "PRESENT",
+      "evidence": {
+        "Candles": "INCOMPLETE",
+        "Volume": "AVAILABLE",
+        "Stored bundle": "AVAILABLE",
+        "Qualification": "AVAILABLE",
+        "Explanation": "AVAILABLE",
+        "Data certification": "FIXTURE"
+      },
+      "legend": "Crosshair",
+      "fixture_banner": true,
+      "zones_listed": 6,
+      "shot": "03-p2-chart-W.png"
+    },
+    {
+      "step": "P2 stored-bundle chart M",
+      "ok": true,
+      "timeframe": "M",
+      "volume_state": "PRESENT",
+      "evidence": {
+        "Candles": "INCOMPLETE",
+        "Volume": "AVAILABLE",
+        "Stored bundle": "AVAILABLE",
+        "Qualification": "AVAILABLE",
+        "Explanation": "AVAILABLE",
+        "Data certification": "FIXTURE"
+      },
+      "legend": "Crosshair",
+      "fixture_banner": true,
+      "zones_listed": 6,
+      "shot": "04-p2-chart-M.png"
+    },
+    {
+      "step": "P2 wrong symbol (not in stored scan) -> MISSING, not a finding",
+      "ok": true,
+      "evidence": {
+        "Candles": "INCOMPLETE",
+        "Volume": "AVAILABLE",
+        "Stored bundle": "MISSING",
+        "Qualification": "UNAVAILABLE",
+        "Explanation": "AVAILABLE",
+        "Data certification": "FIXTURE"
+      },
+      "shot": "05-p2-wrong-symbol.png"
+    },
+    {
+      "step": "P2 unknown scan -> bundle MISSING",
+      "ok": true,
+      "evidence": {
+        "Candles": "UNAVAILABLE",
+        "Stored bundle": "MISSING",
+        "Qualification": "UNAVAILABLE",
+        "Explanation": "UNAVAILABLE",
+        "Data certification": "UNCERTIFIED"
+      },
+      "text_has_error": true,
+      "shot": "06-p2-unknown-scan.png"
+    },
+    {
+      "step": "P2 wrong data version / session -> STALE",
+      "ok": true,
+      "wrong_dataset": {
+        "Candles": "STALE",
+        "Stored bundle": "STALE",
+        "Qualification": "UNAVAILABLE",
+        "Explanation": "AVAILABLE",
+        "Data certification": "UNCERTIFIED"
+      },
+      "wrong_session": {
+        "Candles": "INCOMPLETE",
+        "Volume": "AVAILABLE",
+        "Stored bundle": "STALE",
+        "Qualification": "UNAVAILABLE",
+        "Explanation": "AVAILABLE",
+        "Data certification": "FIXTURE"
+      },
+      "shot": "07-p2-stale-session.png"
+    },
+    {
+      "step": "P4 settings: owner capital and risk percent (API from the browser session)",
+      "ok": true,
+      "status": 200
+    },
+    {
+      "step": "P4 create draft from stored candidate (UI)",
+      "ok": true,
+      "plan_id": "plan-edbaa1c65ead4974",
+      "state_draft": true,
+      "combinations": [
+        "0: entry 160.44 stop 154.92 target 188.56 qty 181 risk/share 5.52 loss@stop 999.12 R:R 5.0942 status MANUAL_REVIEW",
+        "1: entry 160.44 stop 155.76 target 188.56 qty 213 risk/share 4.68 loss@stop 996.84 R:R 6.0085 status MANUAL_REVIEW",
+        "2: entry 160.44 stop 156.92 target 188.56 qty 284 risk/share 3.52 loss@stop 999.68 R:R 7.9886 status MANUAL_REVIEW"
+      ],
+      "geometry": "VALID",
+      "shot": "08-p4-draft-geometry.png"
+    },
+    {
+      "step": "P4 approval refused with unanswered checklist (UI)",
+      "ok": true,
+      "refused": true,
+      "shot": "09-p4-approve-refused-checklist.png"
+    },
+    {
+      "step": "P4 approve with answered checklist (UI) - no order",
+      "ok": true,
+      "approved_msg": true,
+      "entry_id": 1,
+      "journal_state": "PLANNED",
+      "sync": "IN_SYNC",
+      "cancel_redirect": true,
+      "authorises_order_false": true,
+      "shot": "10-p4-approved.png"
+    },
+    {
+      "step": "P2 FR-4.9 plan overlay on chart (approved, journal PLANNED)",
+      "ok": true,
+      "panel": [
+        "Plan overlay (FR-4.9)",
+        "",
+        "Plan lines are recorded plan levels, labelled PLAN. They are not orders and are not recalculated here.",
+        "",
+        "PLAN edbaa1 entry (journal PLANNED): 160.44",
+        ""
+      ],
+      "lines": [
+        "PLAN edbaa1 entry",
+        "PLAN edbaa1 stop",
+        "PLAN edbaa1 target"
+      ],
+      "shot": "11-p2-plan-overlay-active.png"
+    },
+    {
+      "step": "P4 platform cancel of approved plan is not offered; journal cancel via Journal UI",
+      "ok": true,
+      "shot": "12-p4-journal-cancel.png"
+    },
+    {
+      "step": "P4-IR-04 plan mirrors journal cancel (UI)",
+      "ok": true,
+      "plan_state": "CANCELLED",
+      "journal_state": "CANCELLED",
+      "sync": "IN_SYNC",
+      "from_journal": true,
+      "approved_count": "0",
+      "cancelled_count": "1",
+      "shot": "13-p4-plan-mirrored-cancel.png"
+    },
+    {
+      "step": "P2 FR-4.9 cancelled plan is not drawn as active",
+      "ok": true,
+      "lines": 0,
+      "note": "plan-edbaa1c65ead4974: CANCELLED. Inactive plans are not drawn.",
+      "shot": "14-p2-plan-overlay-cancelled.png"
+    },
+    {
+      "step": "P4 second draft: submit then reject with reason (UI)",
+      "ok": true,
+      "awaiting": true,
+      "reason_required": true,
+      "rejected": true,
+      "expiry_note": true,
+      "shot": "15-p4-rejected.png"
+    },
+    {
+      "step": "P4 later-scan mismatch display (FR-5.9) present",
+      "ok": true
+    },
+    {
+      "step": "P3 scanner: stored scan outcome (qualified)",
+      "ok": true,
+      "outcome_kind": "QUALIFIED",
+      "outcome": [
+        "1 candidate(s) are ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING. Manual checks are still pending. Not an order.",
+        "",
+        "From stored statuses and gates only. The scanner page does not re-run qualification."
+      ],
+      "shot": "16-p3-scanner-qualified.png"
+    },
+    {
+      "step": "P3 run an authorised MIT scan through the real pipeline (API from browser) and inspect",
+      "ok": true,
+      "as_of_beyond_data": {
+        "http": 422,
+        "code": "DATA_INSUFFICIENT",
+        "message": "Accepted data does not cover as_of"
+      },
+      "http": 202,
+      "job_states": [
+        "VALIDATING",
+        "SUCCEEDED_COMPLETE"
+      ],
+      "result_ref": "scan-df2086c08de4e635",
+      "outcome": {
+        "kind": "NOTHING_QUALIFIED",
+        "lines": [
+          "No candidate reached ACTIONABLE_CANDIDATE_MANUAL_CHECKS_PENDING in this stored scan.",
+          "",
+          "EVIDENCE_MISSING 2 symbol(s) DATA_INSUFFICIENT: EXECUTION_SERIES_TRUNCATED (D) ×1, NO_INPUT_FILE: NOPE.csv not in /private/tmp/claude-501/-Users-yash-day-trader-skill/9ccd862a-d19f-4982-82a3-eaf4a06863fb/scratchpad/browser/env/csv ×1. Missing data is not a rejection.",
+          "",
+          "ZONES_BLOCKED 8 zone(s) were recorded in blocked_zones (tested, invalidated, or unknown freshness).",
+          "",
+          "From stored statuses and gates only. The scanner page does not re-run qualification."
+        ]
+      },
+      "shot": "17-p3-scanner-nothing-qualified.png"
+    },
+    {
+      "step": "P3 opportunities ingest + list (UI)",
+      "ok": true,
+      "ingest_button": [
+        "Ingest candidates"
+      ],
+      "discovered": "0",
+      "shows_syn": true,
+      "certified_claim": false,
+      "shot": "18-p3-opportunities.png"
+    },
+    {
+      "step": "P3 watchlist create / add / persist (UI)",
+      "ok": true,
+      "create_label": "Create watchlist",
+      "persisted_after_reload": true,
+      "eligibility_shown": true,
+      "shot": "19-p3-watchlist.png"
+    },
+    {
+      "step": "P3 scan history lists both scans",
+      "ok": true,
+      "has_syn": true,
+      "has_walk": true,
+      "shot": "20-p3-scan-history.png"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 401 (Unauthorized)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)",
+    "Failed to load resource: the server responded with a status of 409 (Conflict)",
+    "Failed to load resource: the server responded with a status of 422 (Unprocessable Entity)"
+  ]
+}

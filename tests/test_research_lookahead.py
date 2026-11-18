@@ -10,11 +10,12 @@ import json
 import unittest
 
 import _research as R
-from nse.research import models as m, reports, scanner
+from nse.research import reports, scanner
 from nse.research.deps import mtf
 
 
 def scan(candles, as_of, **kw):
+    kw.setdefault("corporate_action_coverage", R.verified_ca("SYN"))
     cfg = scanner.ScanConfig(as_of=as_of, calendar=R.WeekdayCalendar(), calendar_label="TEST_WEEKDAYS", **kw)
     return scanner.scan([R.daily_input("SYN", candles)], cfg)
 
@@ -102,6 +103,81 @@ class FutureDataQuality(unittest.TestCase):
         self.assertEqual(clean, dirty_later)
         self.assertEqual(clean["symbols"][0]["status"], scanner.SYMBOL_EVALUATED)
 
+    def _bad_date_input(self, bad_after, swap_neighbours=False):
+        import os
+        import shutil
+        import tempfile
+        from nse.research import marketdata
+        cs = R.random_walk(6, 400)
+        tmp = tempfile.mkdtemp()
+        try:
+            p = os.path.join(tmp, "SYN.csv")
+            with open(p, "w") as fh:
+                fh.write("date,open,high,low,close\n")
+                rows = list(cs)
+                if swap_neighbours:                          # the rows around the bad one are out of order
+                    rows[bad_after], rows[bad_after + 1] = rows[bad_after + 1], rows[bad_after]
+                if bad_after < 0:
+                    fh.write("2O24-13-45,1,1,1,1\n")
+                for i, c in enumerate(rows):
+                    fh.write("%s,%s,%s,%s,%s\n" % (c.start.date(), c.open, c.high, c.low, c.close))
+                    if i == bad_after:
+                        fh.write("2O24-13-45,1,1,1,1\n")     # unreadable date (letter O)
+            return cs, marketdata.from_csv(p, price_adjustment="NONE")
+        finally:
+            shutil.rmtree(tmp)
+
+    def _status(self, cs, inp, as_of_index):
+        cfg = scanner.ScanConfig(as_of=cs[as_of_index].end, calendar=R.WeekdayCalendar(), calendar_label="T")
+        return scanner.scan([inp], cfg).symbols[0]
+
+    def test_d44_a_bad_date_row_is_bounded_by_its_neighbours(self):
+        # D44: the unreadable row lies after row 380 in a file whose neighbours are in order, so
+        # its true date is on or after row 380's date: a scan at row 350 is not contaminated
+        cs, inp = self._bad_date_input(380)
+        [f] = [f for f in inp.findings if f.code == "BAD_DATE"]
+        self.assertEqual((f.date, f.verified, f.extra["bound"]), (cs[380].start.date(), False, "EARLIEST_POSSIBLE_DATE"))
+        self.assertIn("ERROR_DATE_BOUND_INFERRED", [x.code for x in inp.findings])   # the inference is visible
+        self.assertEqual(self._status(cs, inp, 350).status, scanner.SYMBOL_EVALUATED)
+        # on the bound itself (it may be a duplicate of that date) and later: blocked
+        for k in (380, 390):
+            s = self._status(cs, inp, k)
+            self.assertEqual(s.status, scanner.SYMBOL_DATA_INSUFFICIENT, k)
+            self.assertTrue(any("BAD_DATE" in r for r in s.reasons), k)
+
+    def test_d44_an_unbounded_bad_date_still_blocks_every_scan(self):
+        # before the first valid row: no lower bound, so the impact cannot be bounded
+        cs, inp = self._bad_date_input(-1)
+        [f] = [f for f in inp.findings if f.code == "BAD_DATE"]
+        self.assertEqual((f.date, f.extra["bound"]), (None, "UNBOUNDED"))
+        self.assertEqual(self._status(cs, inp, 100).status, scanner.SYMBOL_DATA_INSUFFICIENT)
+        # neighbours out of order: the file's order cannot bound it either
+        cs, inp = self._bad_date_input(380, swap_neighbours=True)
+        [f] = [f for f in inp.findings if f.code == "BAD_DATE"]
+        self.assertEqual(f.date, None)
+        self.assertEqual(self._status(cs, inp, 100).status, scanner.SYMBOL_DATA_INSUFFICIENT)
+
+    def test_d44_a_file_out_of_order_elsewhere_cannot_bound_a_bad_date(self):
+        # QA 2026-11-08 reproduction: in-order neighbours (01-09, 01-10) but a later row (01-03)
+        # proves the file unsorted, so the lost row could be 01-02: the error stays unbounded
+        import os
+        import shutil
+        import tempfile
+        from nse.research import marketdata
+        tmp = tempfile.mkdtemp()
+        try:
+            p = os.path.join(tmp, "SYN.csv")
+            with open(p, "w") as fh:
+                fh.write("date,open,high,low,close\n2024-01-01,1,1,1,1\n2024-01-09,1,1,1,1\nbad,1,1,1,1\n"
+                         "2024-01-10,1,1,1,1\n2024-01-03,1,1,1,1\n")
+            inp = marketdata.from_csv(p, price_adjustment="NONE")
+        finally:
+            shutil.rmtree(tmp)
+        [f] = [f for f in inp.findings if f.code == "BAD_DATE"]
+        self.assertEqual((f.date, f.extra["bound"]), (None, "UNBOUNDED"))
+        self.assertTrue(any(x.code == "BAD_DATE" for x in inp.findings_at(datetime.date(2024, 1, 5))))
+        self.assertNotIn("ERROR_DATE_BOUND_INFERRED", [x.code for x in inp.findings])
+
     def test_a_past_duplicate_row_stops_the_symbol(self):
         res = self._csv_scan(300, 350)
         self.assertEqual(res.symbols[0].status, scanner.SYMBOL_DATA_INSUFFICIENT)
@@ -126,7 +202,8 @@ class Determinism(unittest.TestCase):
     def test_history_scans_equal_single_scans(self):
         cs = R.random_walk(13, 420)
         times = [close_of(cs[i]) for i in (300, 360, 419)]
-        cfg = scanner.ScanConfig(as_of=times[0], calendar=R.WeekdayCalendar(), calendar_label="TEST_WEEKDAYS")
+        cfg = scanner.ScanConfig(as_of=times[0], calendar=R.WeekdayCalendar(), calendar_label="TEST_WEEKDAYS",
+                                 corporate_action_coverage=R.verified_ca("SYN"))
         hist = scanner.scan_history([R.daily_input("SYN", cs)], list(reversed(times)), cfg)
         self.assertEqual([h.as_of for h in hist], [t.isoformat() for t in times])
         for h, t in zip(hist, times):

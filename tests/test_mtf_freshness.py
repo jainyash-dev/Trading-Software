@@ -237,6 +237,66 @@ class DataGaps(unittest.TestCase):
         self.assertFalse(z.usable_as_fresh_context)
         self.assertNotEqual(z.status, mtf.FRESH)                       # (3 Feb is also a gap here)
 
+    class CoveredFrom(Cal):
+        """Covers dates from `start` only; earlier dates raise the declared coverage error."""
+        class Uncovered(Exception):
+            pass
+        COVERAGE_ERRORS = (Uncovered,)
+
+        def __init__(self, days, start):
+            super().__init__(days)
+            self.start = start
+
+        def is_trading_day(self, d):
+            if d < self.start:
+                raise self.Uncovered("%s: SYNTHETIC not covered" % d)
+            return d in self.days
+
+    def test_h2a_uncovered_days_before_history_make_the_first_period_partial(self):
+        # ED-43 (real case: history from Fri 2016-01-01, calendar from 2016): the first week's
+        # earlier days hold no data; uncovered, they make it partial and never stop the replay
+        wk0 = [D(2025, 1, 8), D(2025, 1, 9), D(2025, 1, 10)]
+        rows = [(100, 100.5, 97, 98), (98, 99, 95, 96), (96, 97, 94, 95)]
+        cs = [day(d, *r) for d, r in zip(wk0, rows)]
+        cs += [day(d, *r) for d, r in zip(MONDAYS[1:], DBR_WEEKS[2:])]
+        cal = self.CoveredFrom(wk0 + MONDAYS[1:], start=wk0[0])
+        s = mtf.replay(cs, "D", htf=("W",), as_of=close(MONDAYS[4]), calendar=cal)
+        self.assertTrue(s.series["W"].candles[0].partial_first_period)
+        self.assertIn(mtf.PARTIAL_FIRST_PERIOD, s.zones["W:demand-1-2"].manual_review)
+
+    def test_h2a_an_unresolved_day_before_history_makes_the_first_period_partial(self):
+        # ED-44: history restarted after an UNRESOLVED date in the same period
+        wk0 = [D(2025, 1, 8), D(2025, 1, 9), D(2025, 1, 10)]
+        rows = [(100, 100.5, 97, 98), (98, 99, 95, 96), (96, 97, 94, 95)]
+        cs = [day(d, *r) for d, r in zip(wk0, rows)]
+        cs += [day(d, *r) for d, r in zip(MONDAYS[1:], DBR_WEEKS[2:])]
+
+        class Unresolved(Exception):
+            pass
+
+        class Cal7(Cal):
+            UNRESOLVED_ERRORS = (Unresolved,)
+
+            def is_trading_day(self, d):
+                if d == D(2025, 1, 7):
+                    raise Unresolved("SYNTHETIC")
+                return d in self.days
+        cal = Cal7([D(2025, 1, 6)] + wk0 + MONDAYS[1:])
+        s = mtf.replay(cs, "D", htf=("W",), as_of=close(MONDAYS[4]), calendar=cal)
+        self.assertTrue(s.series["W"].candles[0].partial_first_period)
+        self.assertEqual(s.series["W"].candles[0].period_key, mtf.period_key("W", D(2025, 1, 6)))
+        self.assertIn(mtf.PARTIAL_FIRST_PERIOD, s.zones["W:demand-1-2"].manual_review)
+        # inside the history the same date still truncates the series at its week (L10)
+        later = [day(D(2025, 1, 6), 101, 101, 100, 100.5)] + cs
+        s2 = mtf.replay(later, "D", htf=("W",), as_of=close(MONDAYS[4]), calendar=cal)
+        self.assertEqual((s2.series["W"].candles, s2.series["W"].truncated_at), ([], mtf.period_key("W", D(2025, 1, 6))))
+
+    def test_h2a_does_not_excuse_uncovered_days_inside_the_history(self):
+        cs, _ = weekly_case()
+        cal = self.CoveredFrom(MONDAYS + W5, start=MONDAYS[2])        # a gap in coverage after the first candle
+        with self.assertRaises(self.CoveredFrom.Uncovered):
+            mtf.replay(cs, "D", htf=("W",), as_of=close(W5[4]), calendar=cal)
+
 
 class SupplyMirror(unittest.TestCase):
     SKEY = "W:supply-2-3"

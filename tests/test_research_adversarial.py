@@ -1,10 +1,9 @@
 """Adversarial tests: each one tries to break an invariant of the research pipeline.
-Numbers refer to the questions in CLAUDE.md section 21.11. SYNTHETIC data only.
+Numbers refer to the questions in docs/owner/MASTER_IMPLEMENTATION_PROMPT.md section 21.11. SYNTHETIC data only.
 """
 
 import json
 import os
-import random
 import re
 import unittest
 from unittest import mock
@@ -12,7 +11,7 @@ from unittest import mock
 import _research as R
 from _load import ROOT
 from nse.research import models as m, qualification as q, readiness, reports, scanner, structure
-from nse.research.deps import mtf, reference, ze
+from nse.research.deps import mtf, reference
 
 
 def sweep(seeds=range(8), n=430):
@@ -234,6 +233,158 @@ class TestsExerciseTheirPath(unittest.TestCase):
                 mock.patch.object(q, "_g8", return_value=m.GateResult("G8", m.PASS)):
             # the RB 1232 caution still holds it at review, but the matrix rejection is gone
             self.assertEqual(R.only(R.evaluate(b)).status, m.MANUAL_REVIEW)
+
+
+class _Prebuilt(object):
+    """A SnapBuilder stand-in that hands evaluate() an already-edited snapshot."""
+    def __init__(self, snap):
+        self.snap = snap
+
+    def build(self):
+        return self.snap
+
+
+class AuditRegressions20261106(unittest.TestCase):
+    """Defects confirmed by the 2026-11-06 multi-agent audit, each reproduced end to end
+    with the real replay before the fix."""
+
+    def _long_scan(self, candles, as_of, calendar=None):
+        cfg = scanner.ScanConfig(as_of=as_of, calendar=calendar or R.WeekdayCalendar(), calendar_label="T",
+                                 risk_per_trade=1000.0, corporate_action_coverage=R.verified_ca("SYN"))
+        s = scanner.scan([R.daily_input("SYN", candles)], cfg).symbols[0]
+        return [c for c in s.candidates if c.zone["proximal"] == R.LONG_PL]
+
+    def test_in_progress_candle_through_the_pl_is_never_a_plain_fresh_pass(self):
+        import dataclasses, datetime
+        cs = R.long_mit_candles()
+        self.assertEqual([c.status for c in self._long_scan(cs, cs[-1].end)], [m.ACTIONABLE])
+        nd = R.weekdays(cs[-1].start.date() + datetime.timedelta(1), 1)[0]
+        noon = datetime.datetime.combine(nd, datetime.time(12, 0))
+        inprog = dataclasses.replace(R.candle(nd, 170.0, 170.5, R.LONG_PL - 0.5, 170.0), end=noon, complete=False)
+        [c] = self._long_scan(cs + [inprog], noon)
+        self.assertEqual(c.gate("G1").outcome, m.MANUAL)
+        self.assertIn(m.INCOMPLETE_CANDLE_TOUCH, c.gate("G1").manual_review)
+        self.assertEqual(c.status, m.MANUAL_REVIEW)
+        # an in-progress candle that stays above the PL changes nothing (completed candles only)
+        above = dataclasses.replace(inprog, low=R.LONG_PL + 1.0)
+        self.assertEqual([x.status for x in self._long_scan(cs + [above], noon)], [m.ACTIONABLE])
+
+    def test_excluded_session_touch_on_a_coinciding_htf_dl_is_unknown_not_untouched(self):
+        import datetime
+        base = R.long_mit_candles()
+        first = base[-17].start.date()
+        sunday = first - datetime.timedelta(days=first.weekday() + 1)
+        muhurat = R.candle(sunday, 165.0, 166.0, 148.0, 165.0)        # below the Monthly DL
+
+        class Cal(R.WeekdayCalendar):
+            def session_type(self, d):
+                return "EXCLUDED_MUHURAT" if d == sunday else "CLOSED"
+
+        [c] = self._long_scan(sorted(base + [muhurat], key=lambda x: x.start), base[-1].end, Cal())
+        self.assertNotEqual(c.status, m.ACTIONABLE)
+        self.assertEqual(c.gate("G6").outcome, m.MANUAL)
+        self.assertIsNot(c.gate("G6").evidence.get("htf_zone_dl_untouched"), True)
+
+    def test_tested_htf_zone_with_a_later_gap_has_unknown_dl_status(self):
+        import datetime
+        b = R.ideal_mit_builder()
+        snap = b.build()
+        key = [k for k in snap.zones if k.startswith("M:")][0]
+        st = snap.zones[key]
+        st.status, st.first_touch_at, st.manual_review = mtf.TESTED, R.AS_OF - datetime.timedelta(days=30), []
+        snap.data_gaps.append(mtf.DataGap(R.AS_OF.date() - datetime.timedelta(days=5), True, "MISSING_SESSION"))
+        view = [v for v in structure.zone_views(snap, "M") if "%s:%s" % ("M", v.zone_id) == key][0]
+        self.assertIsNone(view.dl_untouched)
+
+    def test_a_gap_between_formation_and_the_first_touch_also_hides_the_dl(self):
+        # Agent 6 review H1: the window starts at formation, not at the first touch
+        import datetime
+        b = R.ideal_mit_builder()
+        snap = b.build()
+        st = snap.zones["M:m-coinciding"]
+        st.first_touch_at = R.AS_OF - datetime.timedelta(days=2)
+        gap_day = st.creation_period_end.date() + datetime.timedelta(days=1)
+        self.assertLess(gap_day, st.first_touch_at.date())
+        snap.data_gaps.append(mtf.DataGap(gap_day, True, "MISSING_SESSION"))
+        [v] = [v for v in structure.zone_views(snap, "M") if v.zone_id == "m-coinciding"]
+        self.assertIsNone(v.dl_untouched)
+        c = R.only(R.evaluate(_Prebuilt(snap)))
+        self.assertNotEqual(c.status, m.ACTIONABLE)
+        self.assertEqual(c.gate("G6").outcome, m.MANUAL)
+
+    def test_a_forming_candle_stamped_with_its_scheduled_close_is_still_touch_evidence(self):
+        # Agent 6 review H2: the forming bar is end=15:30 while as_of is noon
+        import dataclasses, datetime
+        cs = R.long_mit_candles()
+        nd = R.weekdays(cs[-1].start.date() + datetime.timedelta(1), 1)[0]
+        noon = datetime.datetime.combine(nd, datetime.time(12, 0))
+        forming = dataclasses.replace(R.candle(nd, 170.0, 170.5, R.LONG_PL - 0.5, 170.0), complete=False)
+        self.assertGreater(forming.end, noon)
+        [c] = self._long_scan(cs + [forming], noon)
+        self.assertEqual((c.gate("G1").outcome, c.status), (m.MANUAL, m.MANUAL_REVIEW))
+        # and the fresh-zone report says the same thing as G1 (review M1)
+        cfg = scanner.ScanConfig(as_of=noon, calendar=R.WeekdayCalendar(), calendar_label="T", risk_per_trade=1000.0)
+        rows = scanner.scan([R.daily_input("SYN", cs + [forming])], cfg).symbols[0].fresh_zones
+        [row] = [r for r in rows if r["tf"] == "D" and r["proximal"] == R.LONG_PL]
+        self.assertTrue(row["zone_level"].startswith(m.INCOMPLETE_CANDLE_TOUCH))
+        # a COMPLETE candle ending after as_of is the future: never read, not even as evidence
+        future = dataclasses.replace(forming, complete=True)
+        self.assertEqual([x.status for x in self._long_scan(cs + [future], noon)], [m.ACTIONABLE])
+
+
+class CouncilRegressions20261108(unittest.TestCase):
+    """Attacks on the 2026-11-08 changes (P-LOC-2 redraw, D43, D45)."""
+
+    def test_vloc_coinciding_with_a_tested_zone_that_is_not_the_boundary_is_manual(self):
+        # the redrawn curve's fresh boundary holds price (VLOC) but the Daily zone overlaps only
+        # a TESTED Monthly demand: the VLOC + Coinciding route must not open through it
+        b = R.SnapBuilder()
+        b.add_series("D", [700.0] * 60)
+        b.add_zone("D", "demand", 690.0, 682.0, normal_dl=684.0, created_index=50)
+        b.add_series("W", R.rising(60))
+        b.add_zone("W", "supply", 1200.0, 1230.0)
+        b.add_series("M", [800.0 + i for i in range(60)])
+        b.add_zone("M", "demand", 700.0, 694.0, zid="m-fresh")
+        b.add_zone("M", "demand", 692.0, 660.0, status=mtf.TESTED, zid="m-tested-in")
+        b.add_zone("M", "supply", 1500.0, 1550.0, zid="m-top")
+        for tf in ("Q", "HY", "Y"):
+            b.add_series(tf, [800.0, 820.0, 840.0, 860.0])
+        c = R.only(R.evaluate(b, price=695.0))
+        self.assertEqual(c.gate("G3").evidence["position_at_price"], [structure.VLOC])
+        self.assertEqual((c.gate("G6").outcome, c.gate("G6").evidence["htf_zone"]["zone_id"]), (m.MANUAL, "m-tested-in"))
+        self.assertIn("COINCIDING_ZONE_IS_NOT_CURVE_BOUNDARY", c.gate("G6").manual_review)
+        self.assertEqual(c.status, m.MANUAL_REVIEW)
+
+    def test_a_redrawn_curve_never_uses_the_coinciding_bonus_away_from_vloc(self):
+        # P-LOC-2 at 880: the Daily zone overlaps the skipped tested Monthly zone, so G6 may say
+        # COINCIDING; the matrix only grants Coinciding at VLOC, and the position is LOC
+        c = R.only(R.evaluate(R.ideal_mit_builder(), price=880.0))
+        self.assertEqual(c.gate("G3").evidence["redrawn_past_tested"], ["m-coinciding"])
+        self.assertNotIn(structure.VLOC, c.gate("G3").evidence["position_at_price"])
+        self.assertFalse(any("Coinciding" in r for r in c.gate("G4").reasons), c.gate("G4").reasons)
+
+    def test_a_d43_restriction_survives_every_export(self):
+        cs = R.long_mit_candles(k=1.75)
+        cfg = scanner.ScanConfig(as_of=cs[-1].end, calendar=R.WeekdayCalendar(), calendar_label="TEST_WEEKDAYS",
+                                 risk_per_trade=1000.0)
+        res = scanner.scan([R.daily_input("AGR", cs)], cfg)
+        [c] = res.candidates()
+        self.assertIn("G5:PINE_ONLY_ZONE_REVIEW", c.manual_review)
+        self.assertNotEqual(c.status, m.ACTIONABLE)
+        self.assertIn("G5:PINE_ONLY_ZONE_REVIEW", reports.candidates_csv(res))
+        doc = json.loads(reports.to_json(res))
+        self.assertIn("pine_only_findings", json.dumps(doc))
+        self.assertIn("PINE_ONLY_ZONE_REVIEW", json.dumps(doc))
+
+    def test_dataclasses_replace_cannot_bypass_the_d45_limits(self):
+        import dataclasses
+        from nse.research import backtest as bt
+        ok = bt.ExecutionModel(entry="ENTRY_MAX", stop="NORMAL_WIDE", target="STRUCTURAL", statuses=(m.ACTIONABLE,),
+                               entry_expiry_sessions=10, cancel_if_target_first=False, gap_fill="AT_OPEN",
+                               same_bar="STOP_FIRST", cost_pct_per_side=0.0, slippage_pct_per_side=0.0)
+        for over in (dict(max_open_positions=11), dict(monthly_trade_cap=None), dict(entry_expiry_sessions=20)):
+            with self.assertRaises(ValueError, msg=over):
+                dataclasses.replace(ok, **over)
 
 
 if __name__ == "__main__":
